@@ -11,12 +11,6 @@ export const metadata: Metadata = {
   title: "NemoAI - Your Business Operating System",
   description: "AI-powered business operating system with intelligent task management, ideas, CRM, and more",
   generator: "v0.app",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   icons: {
     icon: [
       {
@@ -27,10 +21,16 @@ export const metadata: Metadata = {
         url: "/icon-dark-32x32.png",
         media: "(prefers-color-scheme: dark)",
       },
-
     ],
     apple: "/apple-icon.png",
   },
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
