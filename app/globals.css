@@ -1,0 +1,749 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Updated color scheme to gradient black and grey with enhanced glassmorphism */
+:root {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.06 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.04 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.65 0 0);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.12 0 0);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.2 0 0);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.15 0 0);
+  --input: oklch(0.1 0 0);
+  --ring: oklch(0.4 0 0);
+  --chart-1: oklch(0.6 0 0);
+  --chart-2: oklch(0.65 0 0);
+  --chart-3: oklch(0.55 0 0);
+  --chart-4: oklch(0.62 0 0);
+  --chart-5: oklch(0.58 0 0);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.04 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.65 0 0);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.12 0 0);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.12 0 0);
+  --sidebar-ring: oklch(0.5 0 0);
+}
+
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.06 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.04 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.65 0 0);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.12 0 0);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.2 0 0);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.12 0 0);
+  --input: oklch(0.08 0 0);
+  --ring: oklch(0.4 0 0);
+  --chart-1: oklch(0.6 0 0);
+  --chart-2: oklch(0.65 0 0);
+  --chart-3: oklch(0.55 0 0);
+  --chart-4: oklch(0.62 0 0);
+  --chart-5: oklch(0.58 0 0);
+  --sidebar: oklch(0.03 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.65 0 0);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.1 0 0);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.12 0 0);
+  --sidebar-ring: oklch(0.5 0 0);
+}
+
+@theme inline {
+  --font-sans: "Inter", "Geist", "Geist Fallback", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  /* Removed conflicting explicit font-size calculations that were overriding Tailwind utilities */
+  /* Font scaling now works through CSS variable without conflicting with Tailwind classes */
+  :root {
+    --font-scale: 1;
+  }
+
+  :root[data-font-size="small"] {
+    --font-scale: 0.9;
+  }
+
+  :root[data-font-size="medium"] {
+    --font-scale: 1;
+  }
+
+  :root[data-font-size="large"] {
+    --font-scale: 1.15;
+  }
+
+  body {
+    @apply bg-black text-foreground;
+    background: linear-gradient(180deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Removed conflicting font-size calculation - let Tailwind utilities handle sizing */
+  }
+
+  /* Removed explicit h1-h6 font-size overrides that conflicted with Tailwind text-{size} classes */
+  /* Removed explicit p font-size override - Tailwind classes will handle it */
+
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Enhanced minimalist dark scrollbar - very subtle grey */
+  .custom-scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+
+  .custom-scrollbar-dark::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  .custom-scrollbar-dark::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar-dark::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Auto-hide scrollbar - only appears on hover */
+  .scrollbar-autohide {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .scrollbar-autohide:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+
+  .scrollbar-autohide::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  .scrollbar-autohide::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-autohide::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 3px;
+  }
+
+  .scrollbar-autohide:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .scrollbar-autohide::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Legacy scrollbar class - also dark minimalist grey */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* Smooth transitions */
+  button,
+  a,
+  input {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+
+  /* Animation keyframes */
+  @keyframes slide-up {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  /* Siri orb animations */
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 15s linear infinite;
+  }
+
+  /* Enhanced Siri-like fluid wave animations */
+  @keyframes siri-flow-1 {
+    0%,
+    100% {
+      transform: scale(1) translate(0, 0) rotate(0deg);
+      border-radius: 60% 40% 50% 50% / 60% 50% 50% 40%;
+    }
+    25% {
+      transform: scale(1.1) translate(-3px, 2px) rotate(90deg);
+      border-radius: 50% 60% 40% 50% / 40% 60% 50% 50%;
+    }
+    50% {
+      transform: scale(0.95) translate(2px, -3px) rotate(180deg);
+      border-radius: 40% 50% 60% 50% / 50% 40% 60% 50%;
+    }
+    75% {
+      transform: scale(1.05) translate(-2px, -2px) rotate(270deg);
+      border-radius: 50% 50% 50% 60% / 50% 50% 40% 60%;
+    }
+  }
+
+  @keyframes siri-flow-2 {
+    0%,
+    100% {
+      transform: scale(1.05) translate(0, 0) rotate(45deg);
+      border-radius: 50% 50% 60% 40% / 60% 40% 50% 50%;
+    }
+    33% {
+      transform: scale(0.9) translate(3px, -2px) rotate(135deg);
+      border-radius: 60% 50% 50% 40% / 50% 60% 40% 50%;
+    }
+    66% {
+      transform: scale(1.15) translate(-2px, 3px) rotate(225deg);
+      border-radius: 40% 60% 50% 50% / 40% 50% 60% 50%;
+    }
+  }
+
+  @keyframes siri-flow-3 {
+    0%,
+    100% {
+      transform: scale(0.95) translate(0, 0) rotate(90deg);
+      border-radius: 50% 60% 40% 50% / 50% 50% 60% 40%;
+    }
+    40% {
+      transform: scale(1.1) translate(-2px, -3px) rotate(180deg);
+      border-radius: 60% 40% 50% 50% / 40% 60% 50% 50%;
+    }
+    80% {
+      transform: scale(1) translate(3px, 2px) rotate(270deg);
+      border-radius: 50% 50% 50% 60% / 60% 50% 40% 50%;
+    }
+  }
+
+  @keyframes siri-flow-4 {
+    0%,
+    100% {
+      transform: scale(1) translate(0, 0) rotate(135deg);
+      border-radius: 40% 50% 50% 60% / 50% 60% 40% 50%;
+    }
+    30% {
+      transform: scale(1.08) translate(2px, 3px) rotate(225deg);
+      border-radius: 50% 40% 60% 50% / 60% 50% 50% 40%;
+    }
+    60% {
+      transform: scale(0.92) translate(-3px, -2px) rotate(315deg);
+      border-radius: 60% 50% 50% 40% / 40% 50% 60% 50%;
+    }
+  }
+
+  @keyframes spin-medium {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin-reverse {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
+  }
+
+  .animate-siri-flow-1 {
+    animation: siri-flow-1 4s ease-in-out infinite;
+  }
+
+  .animate-siri-flow-2 {
+    animation: siri-flow-2 5s ease-in-out infinite;
+  }
+
+  .animate-siri-flow-3 {
+    animation: siri-flow-3 5.5s ease-in-out infinite;
+  }
+
+  .animate-siri-flow-4 {
+    animation: siri-flow-4 6s ease-in-out infinite;
+  }
+
+  .animate-spin-medium {
+    animation: spin-medium 12s linear infinite;
+  }
+
+  .animate-spin-reverse {
+    animation: spin-reverse 10s linear infinite;
+  }
+
+  /* Added colorful animated orb styles */
+  @keyframes rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animated-orb {
+    border-radius: 50%;
+    width: 300px;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    /* Ensure perfect circular shape with aspect-ratio and prevent stretching */
+    aspect-ratio: 1 / 1;
+    min-width: 300px;
+    min-height: 300px;
+  }
+
+  /* Added responsive smaller orb sizes for idle and active states */
+  .animated-orb-idle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+  }
+
+  .animated-orb-active {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+  }
+
+  .animated-orb::before {
+    content: "";
+    width: 120%;
+    height: 100%;
+    border-radius: 50%;
+    top: 30%;
+    background: rgba(0, 0, 0, 0.01);
+    position: absolute;
+    left: -10%;
+    right: 0;
+    z-index: 1;
+  }
+
+  .orb-circle-wrapper {
+    /* Changed from purple (#261b99) to deep blue for chat bubble color matching */
+    background-color: #0a1a4a;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: -10%;
+    top: -10%;
+    filter: blur(20px);
+    animation: rotate 4s linear infinite;
+  }
+
+  .orb-circle {
+    border-radius: 50%;
+    position: absolute;
+  }
+
+  .orb-circle.c1 {
+    /* Changed from purple (#8f40ad) to blue gradient color */
+    background-color: #1e5ec7;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 50%;
+    animation: rotate 3s linear infinite;
+    transform-origin: bottom right;
+  }
+
+  .orb-circle.c2 {
+    /* Changed from pink (#db7cff) to cyan for gradient variety */
+    background-color: #00d4ff;
+    top: 0;
+    right: 0;
+    width: 60%;
+    height: 60%;
+    animation: rotate 6s linear infinite;
+    transform-origin: bottom left;
+  }
+
+  .orb-circle.c3 {
+    /* Already close to correct blue (#15a9fd) - keeping similar */
+    background-color: #1e7fd4;
+    bottom: 0;
+    left: 50%;
+    width: 40%;
+    height: 40%;
+    animation: rotate 7s linear infinite;
+    transform-origin: top left;
+  }
+
+  .orb-circle.c4 {
+    /* Already cyan (#15effd) - good for transition */
+    background-color: #00e5ff;
+    bottom: 0;
+    left: 0;
+    width: 60%;
+    height: 60%;
+    animation: rotate 12s linear infinite;
+    transform-origin: bottom left;
+  }
+
+  .orb-circle.c5 {
+    /* Changed from pink (#db7cff) to blue-cyan gradient */
+    background-color: #1e5ec7;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    height: 50%;
+    animation: rotate 7s linear infinite;
+    transform-origin: bottom right;
+  }
+
+  .orb-circle.c6 {
+    /* Changed from purple (#8f40ad) to deeper blue */
+    background-color: #0f3d99;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 50%;
+    animation: rotate 3s linear infinite;
+    transform-origin: bottom left;
+  }
+
+  .orb-circle.c7 {
+    /* Already cyan (#15effd) - perfect for final accent */
+    background-color: #00d9ff;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    height: 40%;
+    animation: rotate 4s linear infinite;
+    transform-origin: top left;
+  }
+
+  /* Added slow animation speeds for idle state */
+  @keyframes rotate-idle-1 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-idle-2 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-idle-3 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-idle-4 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-idle-5 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-idle-6 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-idle-7 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Added fast animation speeds for active state */
+  @keyframes rotate-fast-1 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-fast-2 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-fast-3 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-fast-4 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-fast-5 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-fast-6 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-fast-7 {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Idle state animations - slow speeds */
+  .animate-idle-1 {
+    animation: rotate-idle-1 20s linear infinite;
+  }
+  .animate-idle-2 {
+    animation: rotate-idle-2 25s linear infinite;
+  }
+  .animate-idle-3 {
+    animation: rotate-idle-3 30s linear infinite;
+  }
+  .animate-idle-4 {
+    animation: rotate-idle-4 35s linear infinite;
+  }
+  .animate-idle-5 {
+    animation: rotate-idle-5 28s linear infinite;
+  }
+  .animate-idle-6 {
+    animation: rotate-idle-6 22s linear infinite;
+  }
+  .animate-idle-7 {
+    animation: rotate-idle-7 32s linear infinite;
+  }
+
+  /* Active state animations - fast speeds */
+  .animate-fast-1 {
+    animation: rotate-fast-1 3s linear infinite;
+  }
+  .animate-fast-2 {
+    animation: rotate-fast-2 4s linear infinite;
+  }
+  .animate-fast-3 {
+    animation: rotate-fast-3 5s linear infinite;
+  }
+  .animate-fast-4 {
+    animation: rotate-fast-4 6s linear infinite;
+  }
+  .animate-fast-5 {
+    animation: rotate-fast-5 4.5s linear infinite;
+  }
+  .animate-fast-6 {
+    animation: rotate-fast-6 3.5s linear infinite;
+  }
+  .animate-fast-7 {
+    animation: rotate-fast-7 5.5s linear infinite;
+  }
+}
