@@ -266,10 +266,17 @@ export const DeleteCompetitor = async (id: string): Promise<void> => {
 }
 
 // Authentication
+// Authentication
 export const AuthenticateUser = async (username: string, password?: string): Promise<any> => {
     const supabase = createBrowserClient()
-    // First try with username and password if provided
-    let query = supabase.from('users').select('*').eq('username', username)
+
+    // Check if input looks like an email
+    const isEmail = username.includes('@');
+    const field = isEmail ? 'email' : 'username';
+
+    console.log(`[v0] Attempting DB auth via ${field}: ${username}`)
+
+    let query = supabase.from('users').select('*').eq(field, username)
 
     if (password) {
         query = query.eq('password', password)
@@ -277,21 +284,48 @@ export const AuthenticateUser = async (username: string, password?: string): Pro
 
     const { data, error } = await query.single()
 
-    if (error) throw error
+    if (error) {
+        console.warn("[v0] DB Auth failed:", error.message)
+        throw error
+    }
     return data
 }
 
 export const LoginWithWebhook = async (credentials: any): Promise<any> => {
-    const response = await fetch("https://admin.orcadigital.online/webhook/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials)
-    })
-
-    if (!response.ok) {
-        throw new Error(`Login failed: ${response.statusText}`)
+    // Enhance credentials to cover potential field mismatches
+    const payload = {
+        ...credentials,
+        email: credentials.username.includes('@') ? credentials.username : undefined,
+        user_email: credentials.username.includes('@') ? credentials.username : undefined,
     }
 
-    const data = await response.json()
-    return data
+    console.log("[v0] Attempting Webhook login...", payload)
+
+    try {
+        const response = await fetch("https://admin.orcadigital.online/webhook/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+
+        const responseText = await response.text()
+        console.log("[v0] Webhook response status:", response.status)
+        console.log("[v0] Webhook response body:", responseText)
+
+        if (!response.ok) {
+            throw new Error(`Webhook Login failed: ${response.statusText} - ${responseText}`)
+        }
+
+        if (!responseText) return null
+
+        try {
+            return JSON.parse(responseText)
+        } catch (e) {
+            console.error("[v0] JSON Parse error on webhook response")
+            return null
+        }
+    } catch (err) {
+        console.error("[v0] Webhook fetch error:", err)
+        throw err
+    }
 }
