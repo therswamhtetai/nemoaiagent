@@ -90,31 +90,41 @@ export const UpdateThreadTitle = async (threadId: string, title: string): Promis
 }
 
 export const FetchQuickPrompts = async (userId: string): Promise<PromptCard[]> => {
+    console.log(`[v0-debug] FetchQuickPrompts called for userId: ${userId}`)
+    if (!userId) {
+        console.warn("[v0-debug] FetchQuickPrompts: No userId provided")
+        return []
+    }
     const supabase = createBrowserClient()
     const { data, error } = await supabase
-        .from('quick_prompts')
+        .from('quick_promots')
         .select('*')
         .eq('user_id', userId)
         .order('sort_order', { ascending: true })
-    if (error) throw error
+
+    if (error) {
+        console.error("[v0-debug] Supabase error in FetchQuickPrompts:", error)
+        throw error
+    }
+    console.log(`[v0-debug] FetchQuickPrompts success. Count: ${data?.length}`)
     return data || []
 }
 
 export const AddQuickPrompt = async (userId: string, prompt: any): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_prompts').insert({ ...prompt, user_id: userId })
+    const { error } = await supabase.from('quick_promots').insert({ ...prompt, user_id: userId })
     if (error) throw error
 }
 
 export const DeleteQuickPrompt = async (id: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_prompts').delete().eq('id', id)
+    const { error } = await supabase.from('quick_promots').delete().eq('id', id)
     if (error) throw error
 }
 
 export const UpdateQuickPrompt = async (id: string, updates: any): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_prompts').update(updates).eq('id', id)
+    const { error } = await supabase.from('quick_promots').update(updates).eq('id', id)
     if (error) throw error
 }
 
@@ -219,13 +229,15 @@ export const FetchCompetitors = async (userId: string): Promise<Competitor[]> =>
     return data || []
 }
 
-export const FetchSocialStats = async (userId: string): Promise<SocialStat[]> => {
+export const FetchSocialStats = async (competitorIds: string[]): Promise<SocialStat[]> => {
+    if (!competitorIds || competitorIds.length === 0) return []
+
     const supabase = createBrowserClient()
-    // Join with competitors table to filter by user_id
+    // Fetch stats for the specific list of competitor IDs
     const { data, error } = await supabase
         .from('social_stats')
-        .select('*, competitors!inner(user_id)')
-        .eq('competitors.user_id', userId)
+        .select('*')
+        .in('competitor_id', competitorIds)
         .order('scraped_at', { ascending: false })
 
     if (error) throw error
@@ -249,13 +261,13 @@ export const UpdateUserSettings = async (userId: string, settings: any): Promise
 // Additional Prompt functions
 export const SaveEditCard = async (id: string, text: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_prompts').update({ text }).eq('id', id)
+    const { error } = await supabase.from('quick_promots').update({ text }).eq('id', id)
     if (error) throw error
 }
 
 export const UpdateCardIcon = async (id: string, icon: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_prompts').update({ icon }).eq('id', id)
+    const { error } = await supabase.from('quick_promots').update({ icon }).eq('id', id)
     if (error) throw error
 }
 

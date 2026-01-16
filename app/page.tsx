@@ -38,6 +38,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Camera,
   Upload,
   Settings,
@@ -49,6 +51,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@/lib/supabase/client"
@@ -87,7 +90,14 @@ const availableIcons = [
 
 import { Message, Thread, Task, Idea, Contact, Competitor, SocialStat } from "@/lib/types"
 
-const loadingStates = ["Searching", "Thinking", "Finding", "Writing"]
+const loadingStates = [
+  "Analyzing your request...",
+  "Searching knowledge base...",
+  "Formulating response...",
+  "Thinking deeply...",
+  "Reviewing context...",
+  "Almost there...",
+]
 
 // FIXED_USER_ID removed for dynamic auth
 const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
@@ -152,9 +162,9 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   return (
     <div className="flex h-screen items-center justify-center bg-black text-white p-4 font-sans">
       <div className="w-full max-w-md z-10">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl font-light text-white tracking-wide mb-2">Welcome Back</h2>
-          <p className="text-white/40 text-sm">Sign in to your AI Dashboard</p>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4">Welcome Back</h2>
+          <p className="text-white/40 text-base font-light">Sign in to your AI Dashboard</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -280,7 +290,7 @@ export default function NemoAIDashboard() {
   const [selectedCalendarTask, setSelectedCalendarTask] = useState<Task | null>(null)
   const [taskMenuOpen, setTaskMenuOpen] = useState(false) // Renamed from taskMenuOpenId for clarity
 
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -336,7 +346,10 @@ export default function NemoAIDashboard() {
     language_code: "en",
   })
   const [settingsLoading, setSettingsLoading] = useState(false)
+
   const [settingsSaved, setSettingsSaved] = useState(false)
+  const [passwordData, setPasswordData] = useState({ newPassword: "", confirmPassword: "" })
+  const [showPasswordSection, setShowPasswordSection] = useState(false)
 
   const [ideaFormData, setIdeaFormData] = useState({
     title: "",
@@ -355,6 +368,17 @@ export default function NemoAIDashboard() {
   const [currentGreeting, setCurrentGreeting] = useState("")
   const [greetingTimestamp, setGreetingTimestamp] = useState(0)
 
+  const renderMessageContent = (content: string) => {
+    // Simple regex for **bold** text
+    const parts = content.split(/(\*\*.*?\*\*)/g)
+    return parts.map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>
+      }
+      return part
+    })
+  }
+
   const getTimeBasedGreeting = () => {
     return currentGreeting || "Good day!"
   }
@@ -365,49 +389,51 @@ export default function NemoAIDashboard() {
       const now = Date.now()
       const threeHours = 3 * 60 * 60 * 1000
 
-      if (!currentGreeting || now - greetingTimestamp > threeHours) {
-        const hour = new Date().getHours()
-        const userName = userSettings.full_name || "there"
+      // Always regenerate if the name changes or on initial load
+      // The 3-hour check prevented updates when the name loaded asynchronously
+      // if (!currentGreeting || now - greetingTimestamp > threeHours) {
+      const hour = new Date().getHours()
+      const userName = userSettings.full_name || "Boss" // Changed default to Boss as per tone
 
-        const greetings = {
-          morning: [
-            `Good morning, ${userName}!`,
-            `Rise and shine, ${userName}!`,
-            `Morning, ${userName}!`,
-            `Let's go, ${userName}!`,
-          ],
-          afternoon: [
-            `Good afternoon, ${userName}!`,
-            `Keep it up, ${userName}!`,
-            `Hey ${userName}!`,
-            `Let's keep going, ${userName}!`,
-          ],
-          evening: [
-            `Good evening, ${userName}!`,
-            `Winding down, ${userName}?`,
-            `Hey ${userName}!`,
-            `Almost there, ${userName}!`,
-          ],
-          night: [
-            `Night owl, ${userName}?`,
-            `Still here, ${userName}?`,
-            `Late night, ${userName}!`,
-            `Burning the candle, ${userName}?`,
-          ],
-        }
-
-        let period = "afternoon"
-        if (hour >= 5 && hour < 12) period = "morning"
-        else if (hour >= 12 && hour < 17) period = "afternoon"
-        else if (hour >= 17 && hour < 21) period = "evening"
-        else period = "night"
-
-        const periodGreetings = greetings[period as keyof typeof greetings]
-        const newGreeting = periodGreetings[Math.floor(Math.random() * periodGreetings.length)]
-
-        setCurrentGreeting(newGreeting)
-        setGreetingTimestamp(now)
+      const greetings = {
+        morning: [
+          `Good morning, ${userName}!`,
+          `Rise and shine, ${userName}!`,
+          `Morning, ${userName}!`,
+          `Let's go, ${userName}!`,
+        ],
+        afternoon: [
+          `Good afternoon, ${userName}!`,
+          `Keep it up, ${userName}!`,
+          `Hey ${userName}!`,
+          `Let's keep going, ${userName}!`,
+        ],
+        evening: [
+          `Good evening, ${userName}!`,
+          `Winding down, ${userName}?`,
+          `Hey ${userName}!`,
+          `Almost there, ${userName}!`,
+        ],
+        night: [
+          `Night owl, ${userName}?`,
+          `Still here, ${userName}?`,
+          `Late night, ${userName}!`,
+          `Burning the candle, ${userName}?`,
+        ],
       }
+
+      let period = "afternoon"
+      if (hour >= 5 && hour < 12) period = "morning"
+      else if (hour >= 12 && hour < 17) period = "afternoon"
+      else if (hour >= 17 && hour < 21) period = "evening"
+      else period = "night"
+
+      const periodGreetings = greetings[period as keyof typeof greetings]
+      const newGreeting = periodGreetings[Math.floor(Math.random() * periodGreetings.length)]
+
+      setCurrentGreeting(newGreeting)
+      setGreetingTimestamp(now)
+      // }
     }
 
     generateGreeting()
@@ -455,7 +481,7 @@ export default function NemoAIDashboard() {
     if (loading) {
       interval = setInterval(() => {
         setLoadingStateIndex((prev) => (prev + 1) % loadingStates.length)
-      }, 1500)
+      }, 3000) // Slower transition (3s)
     }
     return () => clearInterval(interval)
   }, [loading])
@@ -642,7 +668,11 @@ export default function NemoAIDashboard() {
   }
 
   const loadQuickPrompts = async () => {
-    if (!supabase || useFallbackMode || !userId) return
+    console.log(`[v0-debug] loadQuickPrompts called. supabase: ${!!supabase}, useFallbackMode: ${useFallbackMode}, userId: ${userId}`)
+    if (!supabase || useFallbackMode || !userId) {
+      console.log("[v0-debug] loadQuickPrompts: Early return (missing supabase, fallback mode, or no userId)")
+      return
+    }
 
     try {
       const data = await API.FetchQuickPrompts(userId)
@@ -650,6 +680,8 @@ export default function NemoAIDashboard() {
         console.log("[v0] Quick prompts loaded:", data.length)
         setPromptCards(data)
         setIsServerOnline(true)
+      } else {
+        console.log("[v0-debug] Quick prompts loaded but empty")
       }
     } catch (err) {
       console.error("[v0] Exception loading quick prompts:", err)
@@ -807,7 +839,11 @@ export default function NemoAIDashboard() {
         body: JSON.stringify({
           message: userMessage,
           user_id: userId,
+          userId: userId, // CamelCase alias
           thread_id: threadId,
+          threadId: threadId, // CamelCase alias
+          sessionId: threadId, // Critical for N8N Memory isolation
+          chatId: threadId, // Common alias
           name: userSettings.full_name || "Boss",
         }),
       })
@@ -892,6 +928,7 @@ export default function NemoAIDashboard() {
     try {
       if (userId) {
         await API.AddQuickPrompt(userId, { ...newCard, user_id: userId })
+        await loadQuickPrompts()
       }
     } catch (err) {
       console.error("[v0] Exception adding prompt card:", err)
@@ -905,6 +942,7 @@ export default function NemoAIDashboard() {
 
     try {
       await API.DeleteQuickPrompt(id)
+      await loadQuickPrompts()
     } catch (err) {
       console.error("[v0] Exception removing prompt card:", err)
     }
@@ -927,6 +965,7 @@ export default function NemoAIDashboard() {
 
     try {
       await API.SaveEditCard(id, editText)
+      await loadQuickPrompts()
     } catch (err) {
       console.error("[v0] Exception updating prompt card:", err)
     }
@@ -1081,9 +1120,13 @@ export default function NemoAIDashboard() {
       formData.append("data", audioBlob, "audio.webm")
       if (userId) {
         formData.append("user_id", userId)
+        formData.append("userId", userId) // CamelCase alias
       }
       if (activeThreadId) {
         formData.append("thread_id", activeThreadId)
+        formData.append("threadId", activeThreadId) // CamelCase alias
+        formData.append("sessionId", activeThreadId) // Critical for N8N Memory
+        formData.append("chatId", activeThreadId) // Common alias
       }
 
       console.log("[v0] Sending audio to n8n webhook...")
@@ -1386,7 +1429,8 @@ export default function NemoAIDashboard() {
 
       setCompetitors(competitorsData)
 
-      const statsData = await API.FetchSocialStats(userId)
+      const competitorIds = competitorsData.map((c: any) => c.id)
+      const statsData = await API.FetchSocialStats(competitorIds)
       if (!Array.isArray(statsData)) {
         console.error("[v0] Stats data is not an array:", statsData)
         setSocialStats([])
@@ -1411,13 +1455,21 @@ export default function NemoAIDashboard() {
   // Refresh market data via webhook
   const refreshMarketData = async () => {
     try {
-      console.log("[v0] Triggering market data refresh webhook...")
+      console.log(`[v0-debug] Triggering market data refresh webhook... UserID: ${userId}`)
+      if (!userId) {
+        console.error("[v0-debug] UserID is missing upon refresh!")
+        return
+      }
       setLoadingMarketData(true)
 
       const response = await fetch("https://admin.orcadigital.online/webhook/monitor-competitor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trigger: "manual_refresh" }),
+        body: JSON.stringify({
+          trigger: "manual_refresh",
+          user_id: userId,  // Add explicit user_id for N8N workflow
+          link: selectedCompetitor?.url || "" // Send competitor URL
+        }),
       })
 
       if (response.ok) {
@@ -1545,7 +1597,7 @@ export default function NemoAIDashboard() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-black text-white">
+    <div className="flex fixed inset-0 w-full overflow-hidden bg-black text-white">
       {/* Sidebar - Updated with gradient black and grey glassmorphism */}
       <div
         className={`${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -1737,17 +1789,20 @@ export default function NemoAIDashboard() {
               <span className="text-white/90 font-medium hidden sm:inline">Stable Sync</span>
               <span className="text-white/90 font-medium sm:hidden">Sync</span>
             </div>
-            <div className="flex items-center gap-2 px-2 md:px-3 py-1 rounded-lg bg-white/5 border border-white/10">
-              <Briefcase className="w-3 h-3 md:w-3.5 md:h-3.5 text-white/70" />
-              <span className="text-white/90 font-medium">
-                In Progress ({tasks.filter((t) => t.status === "in_progress").length})
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.2)] transition-all hover:bg-blue-500/20">
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
+                <div className="relative w-2 h-2 rounded-full bg-blue-400"></div>
+              </div>
+              <span className="text-blue-200 font-medium text-xs tracking-wide">
+                In Progress: {tasks.filter((t) => t.status === "in_progress").length}
               </span>
             </div>
             <div className="text-white/70 font-mono text-xs md:text-sm">{currentTime}</div>
           </div>
 
-          {/* Right: Settings (hidden on mobile) */}
-          <div className="hidden md:block">
+          {/* Right: Settings - Visible on all devices */}
+          <div>
             <Button
               variant="ghost"
               size="icon"
@@ -1832,30 +1887,22 @@ export default function NemoAIDashboard() {
                         : "bg-gradient-to-br from-white/[0.06] to-white/[0.02] text-zinc-300 border border-white/[0.08]"
                         } px-3.5 py-2.5 text-xs backdrop-blur-xl `}
                     >
-                      <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      <p className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
                     </div>
                   </div>
                 ))}
                 {loading && (
-                  <div className="flex justify-start">
-                    <div className="bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] rounded-2xl px-3.5 py-2.5 backdrop-blur-xl">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex gap-1">
-                          <div
-                            className="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce"
-                            style={{ animationDelay: "0ms" }}
-                          />
-                          <div
-                            className="w-1.5 h-1.5 bg-white/50 rounded-full animate-bounce"
-                            style={{ animationDelay: "150ms" }}
-                          />
-                          <div
-                            className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce"
-                            style={{ animationDelay: "300ms" }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-zinc-400 animate-pulse">
-                          {loadingStates[loadingStateIndex]}...
+                  <div className="flex justify-start animate-slide-up">
+                    <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] px-4 py-4 backdrop-blur-xl">
+                      <div className="space-y-2.5 mb-3">
+                        <div className="h-2 w-24 bg-white/20 rounded animate-pulse" />
+                        <div className="h-2 w-full max-w-[200px] bg-white/10 rounded animate-pulse" />
+                        <div className="h-2 w-full max-w-[160px] bg-white/10 rounded animate-pulse" />
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Sparkles className="w-3 h-3 text-blue-400 animate-pulse" />
+                        <span className="text-[10px] text-zinc-400 font-medium animate-pulse transition-opacity duration-500 uppercase tracking-wider">
+                          {loadingStates[loadingStateIndex]}
                         </span>
                       </div>
                     </div>
@@ -1975,23 +2022,8 @@ export default function NemoAIDashboard() {
                   {filteredTasks.map((task) => (
                     <Card
                       key={task.id}
-                      onTouchStart={(e) => task.status !== "completed" && handleTouchStart(task.id, e)}
-                      onTouchMove={(e) => slidingTaskId === task.id && handleTouchMove(e)}
-                      onTouchEnd={() => slidingTaskId === task.id && handleTouchEnd(task.id)}
                       className="relative overflow-hidden p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group"
-                      style={{
-                        transform: slidingTaskId === task.id ? `translateX(${slideOffset}px)` : "none",
-                        transition: slidingTaskId === task.id ? "none" : "transform 0.3s ease",
-                      }}
                     >
-                      {slidingTaskId === task.id && slideOffset > 0 && (
-                        <div
-                          className="absolute inset-y-0 left-0 bg-gradient-to-br from-green-500/[0.3] to-green-500/[0.1] flex items-center justify-center"
-                          style={{ width: `${slideOffset}px` }}
-                        >
-                          <Check className="w-8 h-8 text-green-400 opacity-70" />
-                        </div>
-                      )}
 
                       {editingTaskId === task.id ? (
                         <div className="space-y-4">
@@ -2168,7 +2200,7 @@ export default function NemoAIDashboard() {
                           e.preventDefault()
                           const formData = new FormData(e.currentTarget)
                           createTask({
-                            user_id: FIXED_USER_ID,
+                            user_id: userId || "", // Use dynamic userId
                             title: formData.get("title") as string,
                             description: formData.get("description") as string,
                             status: (formData.get("status") as any) || "todo",
@@ -2510,7 +2542,7 @@ export default function NemoAIDashboard() {
                         onSubmit={(e) => {
                           e.preventDefault()
                           createIdea({
-                            user_id: FIXED_USER_ID,
+                            user_id: userId || "", // Use dynamic userId
                             title: ideaFormData.title,
                             description: ideaFormData.description || null,
                             type: ideaFormData.type,
@@ -2622,14 +2654,7 @@ export default function NemoAIDashboard() {
               <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl md:text-3xl font-bold">Market Intelligence</h1>
-                  <Button
-                    onClick={refreshMarketData}
-                    disabled={loadingMarketData}
-                    className="bg-gradient-to-br from-white/10 to-white/5 hover:from-white/15 hover:to-white/10 border border-white/10 backdrop-blur-xl"
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
-                    Refresh Data
-                  </Button>
+                  {/* Refresh Button Moved to Modal */}
                 </div>
 
                 {/* Competitor Cards */}
@@ -2734,7 +2759,16 @@ export default function NemoAIDashboard() {
                 {competitors.length === 0 && !loadingMarketData && (
                   <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
                     <TrendingUp className="w-12 h-12 mx-auto mb-4 text-white/20" />
-                    <p className="text-white/40">No competitor data available yet.</p>
+                    <p className="text-white/40 mb-4">No competitor data available yet.</p>
+                    <Button
+                      onClick={refreshMarketData}
+                      disabled={loadingMarketData}
+                      variant="outline"
+                      className="border-white/10 text-white hover:bg-white/10"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
+                      Refresh Data
+                    </Button>
                   </Card>
                 )}
 
@@ -2760,12 +2794,23 @@ export default function NemoAIDashboard() {
                               </p>
                             )}
                           </div>
-                          <button
-                            onClick={() => setShowCompetitorModal(false)}
-                            className="p-2 hover:bg-white/10 rounded-lg"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={refreshMarketData}
+                              disabled={loadingMarketData}
+                              size="sm"
+                              className="bg-white/10 hover:bg-white/20 border border-white/10"
+                            >
+                              <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
+                              Refresh Analysis
+                            </Button>
+                            <button
+                              onClick={() => setShowCompetitorModal(false)}
+                              className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
 
                         {selectedCompetitor.stats && (
@@ -2976,24 +3021,25 @@ export default function NemoAIDashboard() {
           ) : activeModule === "calendar" ? (
             <div className="flex-1 p-2 md:p-6 overflow-y-auto custom-scrollbar-dark">
               <div className="max-w-7xl mx-auto w-full">
-                <div className="flex flex-col gap-2 md:gap-4 mb-3 md:mb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-xl md:text-4xl font-bold text-white">Calendar</h1>
-                    <p className="text-white/60 text-xs md:text-sm mt-0.5">Manage your tasks by date</p>
+                    <h2 className="text-3xl font-light text-white tracking-wide">
+                      {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-white/40">{currentDate.getFullYear()}</span>
+                    </h2>
                   </div>
 
-                  <div className="flex gap-1.5 md:gap-2">
+                  <div className="flex items-center gap-2">
                     <Button
                       onClick={() => {
                         const newDate = new Date(currentDate)
-                        newDate.setDate(currentDate.getDate() - 7)
+                        newDate.setMonth(currentDate.getMonth() - 1)
                         setCurrentDate(newDate)
                       }}
                       variant="outline"
-                      size="sm"
-                      className="bg-white/10 border-white/20 hover:bg-white/20 text-xs px-2 md:px-4 py-1.5 h-8 md:h-10 flex-1 md:flex-none"
+                      size="icon"
+                      className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
                     >
-                      Prev
+                      <ChevronLeft className="w-4 h-4 text-white" />
                     </Button>
                     <Button
                       onClick={() => {
@@ -3001,195 +3047,138 @@ export default function NemoAIDashboard() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="bg-white/10 border-white/20 hover:bg-white/20 text-xs px-2 md:px-4 py-1.5 h-8 md:h-10 flex-1 md:flex-none"
+                      className="bg-white/5 border-white/10 hover:bg-white/10 text-xs px-3 h-9 rounded-full transition-colors text-white"
                     >
                       Today
                     </Button>
                     <Button
                       onClick={() => {
                         const newDate = new Date(currentDate)
-                        newDate.setDate(currentDate.getDate() + 7)
+                        newDate.setMonth(currentDate.getMonth() + 1)
                         setCurrentDate(newDate)
                       }}
+                      // Actually, let's fix the logic right now.
+                      // onClick={() => {
+                      //   const newDate = new Date(currentDate)
+                      //   newDate.setMonth(currentDate.getMonth() + 1)
+                      //   setCurrentDate(newDate)
+                      // }}
+                      // But I cannot easily inject complex logic change in a simple replace. 
+                      // I'll stick to button UI update first. 
+                      // Retaining original onClick but updating UI.
                       variant="outline"
-                      size="sm"
-                      className="bg-white/10 border-white/20 hover:bg-white/20 text-xs px-2 md:px-4 py-1.5 h-8 md:h-10 flex-1 md:flex-none"
+                      size="icon"
+                      className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
                     >
-                      Next
-                    </Button>
-                  </div>
-
-                  <div className="flex gap-1.5 md:gap-2">
-                    <Button
-                      onClick={() => setCalendarView("week")}
-                      variant={calendarView === "week" ? "default" : "outline"}
-                      size="sm"
-                      className={`text-xs px-2 md:px-4 py-1.5 h-8 md:h-10 flex-1 ${calendarView === "week" ? "bg-blue-600" : "bg-white/10 border-white/20"}`}
-                    >
-                      Week
-                    </Button>
-                    <Button
-                      onClick={() => setCalendarView("month")}
-                      variant={calendarView === "month" ? "default" : "outline"}
-                      size="sm"
-                      className={`text-xs px-2 md:px-4 py-1.5 h-8 md:h-10 flex-1 ${calendarView === "month" ? "bg-blue-600" : "bg-white/10 border-white/20"}`}
-                    >
-                      Month
+                      <ChevronRight className="w-4 h-4 text-white" />
                     </Button>
                   </div>
                 </div>
 
-                {calendarView === "month" ? (
-                  <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] overflow-hidden">
-                    {/* Weekday Headers */}
-                    <div className="grid grid-cols-7 bg-white/[0.05] border-b border-white/[0.1]">
-                      {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
-                        <div
-                          key={index}
-                          className="p-1.5 md:p-3 text-center text-xs md:text-sm font-semibold text-white/60 uppercase"
-                        >
-                          {day}
-                        </div>
-                      ))}
-                    </div>
+                {/* Calendar Grid - Month Only */}
+                <div className="space-y-4">
+                  {/* Weekday Headers */}
+                  <div className="grid grid-cols-7 gap-3 mb-2">
+                    {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
+                      <div
+                        key={index}
+                        className="text-left px-2 text-xs font-medium text-white/40"
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
 
-                    <div className="grid grid-cols-7">
-                      {Array.from({ length: 42 }).map((_, index) => {
-                        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
-                        const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-                        const dayNumber = index - firstDay + 1
+                  <div className="grid grid-cols-7 gap-3">
+                    {Array.from({ length: 42 }).map((_, index) => {
+                      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
+                      const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
+                      const dayNumber = index - firstDay + 1
 
-                        if (dayNumber < 1 || dayNumber > daysInMonth) {
-                          return (
-                            <div
-                              key={index}
-                              className="min-h-20 md:min-h-24 p-1.5 md:p-2 border border-white/[0.05] bg-white/[0.02]"
-                            />
-                          )
-                        }
-
-                        const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber)
-                        const cellDateStr = cellDate.toISOString().split("T")[0]
-                        const dayTasks = tasks.filter(
-                          (task) =>
-                            task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
-                        )
-
-                        const isToday = cellDate.toDateString() === new Date().toDateString()
-
+                      // Previous month logic for empty cells
+                      if (dayNumber < 1) {
+                        // Optional: Show previous month dates faded? For now empty matching reference style which shows empty slots or faded.
+                        // Reference shows explicit dates for prev/next month. Let's start with just empty for simplicity or calculate prev dates.
+                        // Actually reference image shows "30" for Sunday when month starts on Monday. So yes, show prev dates.
+                        const prevMonthLastDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate()
+                        const prevDate = prevMonthLastDate + dayNumber
                         return (
-                          <div
-                            key={index}
-                            className={`min-h-20 md:min-h-24 p-1.5 md:p-2 border border-white/[0.05] ${isToday ? "bg-white/[0.1]" : "bg-white/[0.02]"
-                              } hover:bg-white/[0.05] transition-colors`}
-                          >
-                            <div
-                              className={`text-xs md:text-sm font-semibold mb-1 md:mb-1 ${isToday ? "text-white" : "text-white/60"}`}
-                            >
-                              {dayNumber}
-                            </div>
-                            <div className="space-y-0.5 md:space-y-1">
-                              {dayTasks.slice(0, 2).map((task) => (
-                                <div
-                                  key={task.id}
-                                  onClick={() => {
-                                    setSelectedCalendarTask(task)
-                                    setShowCalendarTaskModal(true)
-                                  }}
-                                  className="text-[9px] md:text-[10px] p-0.5 md:p-1 rounded bg-blue-500/30 text-blue-200 truncate cursor-pointer hover:bg-blue-500/50 transition-colors border border-blue-500/20"
-                                  title={task.title}
-                                >
-                                  {task.title}
-                                </div>
-                              ))}
-                              {dayTasks.length > 2 && (
-                                <div className="text-[8px] md:text-[10px] p-0.5 text-white/40">
-                                  +{dayTasks.length - 2}
-                                </div>
-                              )}
-                            </div>
+                          <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                            <div className="text-lg font-medium text-white/50">{prevDate}</div>
                           </div>
                         )
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] p-3 md:p-4">
-                    <div className="mb-3 md:mb-4">
-                      <div className="text-xs md:text-sm text-white/60">
-                        {new Date(
-                          currentDate.getFullYear(),
-                          currentDate.getMonth(),
-                          currentDate.getDate() - currentDate.getDay(),
-                        ).toLocaleDateString()}{" "}
-                        -{" "}
-                        {new Date(
-                          currentDate.getFullYear(),
-                          currentDate.getMonth(),
-                          currentDate.getDate() - currentDate.getDay() + 6,
-                        ).toLocaleDateString()}
-                      </div>
-                    </div>
+                      }
 
-                    <div className="space-y-2 md:space-y-3">
-                      {tasks.length === 0 ? (
-                        <div className="text-center py-6 md:py-8">
-                          <p className="text-white/40 text-xs md:text-sm">No tasks for this week</p>
+                      // Next month logic
+                      if (dayNumber > daysInMonth) {
+                        const nextDate = dayNumber - daysInMonth
+                        return (
+                          <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                            <div className="text-lg font-medium text-white/50">{nextDate}</div>
+                          </div>
+                        )
+                      }
+
+                      const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber)
+                      const cellDateStr = cellDate.toISOString().split("T")[0]
+                      const dayTasks = tasks.filter(
+                        (task) =>
+                          task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
+                      )
+
+                      const isToday = cellDate.toDateString() === new Date().toDateString()
+                      // Selected date state? For now just use isToday for highlighting, or click to select styling.
+                      // Reference shows distinct highlight for "4" (Blue bg). Let's use isToday for that.
+
+                      return (
+                        <div
+                          key={index}
+                          className={`min-h-[120px] p-3 rounded-3xl border transition-all relative group flex flex-col items-start justify-start gap-2 ${isToday
+                            ? "bg-blue-600 border-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                            : "bg-white/[0.05] border-white/[0.08] hover:border-white/20 hover:bg-white/[0.08]"
+                            }`}
+                        >
+                          <div
+                            className={`text-xl font-medium ${isToday ? "text-white" : "text-white/90"}`}
+                          >
+                            {dayNumber}
+                          </div>
+
+                          <div className="w-full space-y-1.5 overflow-hidden">
+                            {dayTasks.slice(0, 3).map((task) => (
+                              <div
+                                key={task.id}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedCalendarTask(task)
+                                  setShowCalendarTaskModal(true)
+                                }}
+                                className="flex items-center gap-1.5 group/task cursor-pointer"
+                              >
+                                {/* Colored bar/dot */}
+                                <div className={`w-0.5 h-3 rounded-full flex-shrink-0 ${task.priority === "high" ? "bg-red-400" :
+                                  task.priority === "medium" ? "bg-amber-400" :
+                                    "bg-sky-400"
+                                  }`} />
+                                <span className={`text-[10px] truncate ${isToday ? "text-blue-100" : "text-white/70 group-hover/task:text-white"}`}>
+                                  {task.title}
+                                </span>
+                              </div>
+                            ))}
+                            {dayTasks.length > 3 && (
+                              <div className={`text-[10px] pl-2 ${isToday ? "text-blue-200" : "text-white/40"}`}>
+                                +{dayTasks.length - 3} more
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        tasks
-                          .filter((t) => t.due_date && t.status !== "completed")
-                          .sort((a, b) => new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime())
-                          .slice(0, 10)
-                          .map((task) => {
-                            const taskDate = new Date(task.due_date || "")
-                            const weekStart = new Date(currentDate)
-                            weekStart.setDate(currentDate.getDate() - currentDate.getDay())
-                            const weekEnd = new Date(weekStart)
-                            weekEnd.setDate(weekStart.getDate() + 6)
-
-                            if (taskDate >= weekStart && taskDate <= weekEnd) {
-                              return (
-                                <div
-                                  key={task.id}
-                                  onClick={() => {
-                                    setSelectedCalendarTask(task)
-                                    setShowCalendarTaskModal(true)
-                                  }}
-                                  className="p-3 md:p-4 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all cursor-pointer active:scale-95 md:hover:scale-[1.02]"
-                                >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-semibold text-white text-xs md:text-sm truncate">
-                                        {task.title}
-                                      </div>
-                                      <div className="text-xs md:text-sm text-blue-200/60 mt-1">
-                                        {taskDate.toLocaleDateString()}
-                                      </div>
-                                    </div>
-                                    <span
-                                      className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${task.priority === "urgent"
-                                        ? "bg-red-500/30 text-red-200"
-                                        : task.priority === "high"
-                                          ? "bg-orange-500/30 text-orange-200"
-                                          : "bg-yellow-500/30 text-yellow-200"
-                                        }`}
-                                    >
-                                      {task.priority.charAt(0).toUpperCase()}
-                                    </span>
-                                  </div>
-                                </div>
-                              )
-                            }
-                            return null
-                          })
-                      )}
-                    </div>
+                      )
+                    })}
                   </div>
-                )}
+                </div>
 
-                {/* Upcoming Tasks Sidebar - CHANGE: Hidden on mobile to save space, shown on md+ screens */}
-                <div className="hidden md:block mt-6 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] p-4">
+                {/* Upcoming Tasks Sidebar - Visible always */}
+                <div className="mt-6 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] p-4">
                   <h3 className="text-lg font-semibold text-white mb-4">Upcoming Tasks</h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {tasks
@@ -3238,167 +3227,165 @@ export default function NemoAIDashboard() {
         </div>
 
         {/* Quick Prompts - Changed to horizontal slider with rectangle cards */}
-        {activeModule === "home" && promptCards.length > 0 && (
-          <div className="px-2 md:px-3 pb-2 pt-2">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex items-center justify-between mb-2">
-                <button
-                  onClick={() => setShowQuickPrompts(!showQuickPrompts)}
-                  className="flex items-center gap-2 text-sm font-semibold text-white hover:text-white/90 transition-colors"
-                >
-                  <span className="mx-[11px]">Quick Prompts</span>
-                  {showQuickPrompts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {showQuickPrompts && (
+        {
+          activeModule === "home" && promptCards.length > 0 && (
+            <div className="px-2 md:px-3 pb-2 pt-2">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex items-center justify-between mb-2">
                   <button
-                    onClick={() => setIsEditingPrompts(!isEditingPrompts)}
-                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/[0.08] flex items-center gap-1.5 backdrop-blur"
-                    title="Edit Quick Prompts"
+                    onClick={() => setShowQuickPrompts(!showQuickPrompts)}
+                    className="flex items-center gap-2 text-sm font-semibold text-white hover:text-white/90 transition-colors"
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>Edit</span>
+                    <span className="mx-[11px]">Quick Prompts</span>
+                    {showQuickPrompts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
+                  {showQuickPrompts && (
+                    <button
+                      onClick={() => setIsEditingPrompts(!isEditingPrompts)}
+                      className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/[0.08] flex items-center gap-1.5 backdrop-blur"
+                      title="Edit Quick Prompts"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                  )}
+                </div>
+                {showQuickPrompts && (
+                  <div className="relative overflow-x-auto scrollbar-autohide pb-2">
+                    <div className="flex gap-2 min-w-max px-1">
+                      {promptCards.map((card) => {
+                        return (
+                          <Card
+                            key={card.id}
+                            className="relative group bg-transparent border-white/[0.2] hover:border-white/[0.4] transition-all duration-300 backdrop-blur rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] w-auto px-3 py-1.5 cursor-pointer"
+                          >
+                            {editingCardId === card.id ? (
+                              <div className="flex items-center gap-1.5 px-2 py-1">
+                                <Input
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  onKeyPress={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      saveEditCard(card.id)
+                                    }
+                                  }}
+                                  className="h-6 text-xs bg-white/10 border-white/20 text-white"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => saveEditCard(card.id)}
+                                  className="h-6 px-2 bg-white/20 hover:bg-white/30 text-white text-xs"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => !isEditingPrompts && handlePromptCardClick(card.text)}
+                                className="w-full flex items-center px-2 py-1 text-xs text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
+                              >
+                                <span className="font-medium">{card.text}</span>
+                              </button>
+                            )}
+                            {isEditingPrompts && editingCardId !== card.id && (
+                              <div className="absolute -top-1.5 -right-1.5 flex gap-1">
+                                <button
+                                  onClick={() => {
+                                    setIconPickerCardId(card.id)
+                                    setShowIconPicker(true)
+                                  }}
+                                  className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
+                                >
+                                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                                </button>
+                                <button
+                                  onClick={() => startEditCard(card)}
+                                  className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
+                                >
+                                  <Edit2 className="w-2.5 h-2.5 text-white" />
+                                </button>
+                                <button
+                                  onClick={() => removePromptCard(card.id)}
+                                  className="w-5 h-5 bg-red-500/80 backdrop-blur rounded-full flex items-center justify-center hover:bg-red-500 border border-red-500/40 shadow-lg transition-all"
+                                >
+                                  <X className="w-2.5 h-2.5 text-white" />
+                                </button>
+                              </div>
+                            )}
+                          </Card>
+                        )
+                      })}
+                      {isEditingPrompts && (
+                        <Button
+                          onClick={addPromptCard}
+                          variant="outline"
+                          className="h-auto min-h-[24px] border-dashed border border-white/15 hover:border-white/30 bg-transparent hover:bg-white/[0.05] text-zinc-400 hover:text-white backdrop-blur rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 px-2 py-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span className="text-xs font-semibold">Add</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-              {showQuickPrompts && (
-                <div className="relative overflow-x-auto scrollbar-autohide pb-2">
-                  <div className="flex gap-2 min-w-max px-1">
-                    {promptCards.map((card) => {
-                      return (
-                        <Card
-                          key={card.id}
-                          className="relative group bg-transparent border-white/[0.2] hover:border-white/[0.4] transition-all duration-300 backdrop-blur rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] w-auto px-3 py-1.5 cursor-pointer"
-                        >
-                          {editingCardId === card.id ? (
-                            <div className="flex items-center gap-1.5 px-2 py-1">
-                              <Input
-                                value={editText}
-                                onChange={(e) => setEditText(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    saveEditCard(card.id)
-                                  }
-                                }}
-                                className="h-6 text-xs bg-white/10 border-white/20 text-white"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => saveEditCard(card.id)}
-                                className="h-6 px-2 bg-white/20 hover:bg-white/30 text-white text-xs"
-                              >
-                                <Check className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => !isEditingPrompts && handlePromptCardClick(card.text)}
-                              className="w-full flex items-center px-2 py-1 text-xs text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
-                            >
-                              <span className="font-medium">{card.text}</span>
-                            </button>
-                          )}
-                          {isEditingPrompts && editingCardId !== card.id && (
-                            <div className="absolute -top-1.5 -right-1.5 flex gap-1">
-                              <button
-                                onClick={() => {
-                                  setIconPickerCardId(card.id)
-                                  setShowIconPicker(true)
-                                }}
-                                className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
-                              >
-                                <Sparkles className="w-2.5 h-2.5 text-white" />
-                              </button>
-                              <button
-                                onClick={() => startEditCard(card)}
-                                className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
-                              >
-                                <Edit2 className="w-2.5 h-2.5 text-white" />
-                              </button>
-                              <button
-                                onClick={() => removePromptCard(card.id)}
-                                className="w-5 h-5 bg-red-500/80 backdrop-blur rounded-full flex items-center justify-center hover:bg-red-500 border border-red-500/40 shadow-lg transition-all"
-                              >
-                                <X className="w-2.5 h-2.5 text-white" />
-                              </button>
-                            </div>
-                          )}
-                        </Card>
-                      )
-                    })}
-                    {isEditingPrompts && (
-                      <Button
-                        onClick={addPromptCard}
-                        variant="outline"
-                        className="h-auto min-h-[24px] border-dashed border border-white/15 hover:border-white/30 bg-transparent hover:bg-white/[0.05] text-zinc-400 hover:text-white backdrop-blur rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 px-2 py-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span className="text-xs font-semibold">Add</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
-        )}
+          )
+        }
 
-        {showIconPicker && iconPickerCardId && (
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => {
-              setShowIconPicker(false)
-              setIconPickerCardId(null)
-            }}
-          >
+        {
+          showIconPicker && iconPickerCardId && (
             <div
-              className="bg-gradient-to-br from-[#0a0a0a] to-black backdrop-blur-2xl rounded-2xl p-5 max-w-sm w-full border border-white/[0.12]"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              onClick={() => {
+                setShowIconPicker(false)
+                setIconPickerCardId(null)
+              }}
             >
-              <h3 className="text-sm font-semibold mb-3 text-white">Choose Icon</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {availableIcons.map(({ name, icon: Icon }) => (
-                  <button
-                    key={name}
-                    onClick={() => updateCardIcon(iconPickerCardId, name)}
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.03] hover:from-white/[0.15] hover:to-white/[0.08] transition-all duration-200 flex items-center justify-center border border-white/[0.1] hover:border-white/[0.2] backdrop-blur-xl"
-                  >
-                    <Icon className="w-4 h-4 text-zinc-400" />
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => {
-                  setShowIconPicker(false)
-                  setIconPickerCardId(null)
-                }}
-                className="mt-3 w-full py-2 bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-white/[0.1] hover:to-white/[0.04] rounded-xl transition-colors text-xs text-zinc-400 border border-white/[0.1] backdrop-blur-xl"
+              <div
+                className="bg-gradient-to-br from-[#0a0a0a] to-black backdrop-blur-2xl rounded-2xl p-5 max-w-sm w-full border border-white/[0.12]"
+                onClick={(e) => e.stopPropagation()}
               >
-                Close
-              </button>
+                <h3 className="text-sm font-semibold mb-3 text-white">Choose Icon</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {availableIcons.map(({ name, icon: Icon }) => (
+                    <button
+                      key={name}
+                      onClick={() => updateCardIcon(iconPickerCardId, name)}
+                      className="p-2.5 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.03] hover:from-white/[0.15] hover:to-white/[0.08] transition-all duration-200 flex items-center justify-center border border-white/[0.1] hover:border-white/[0.2] backdrop-blur-xl"
+                    >
+                      <Icon className="w-4 h-4 text-zinc-400" />
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowIconPicker(false)
+                    setIconPickerCardId(null)
+                  }}
+                  className="mt-3 w-full py-2 bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-white/[0.1] hover:to-white/[0.04] rounded-xl transition-colors text-xs text-zinc-400 border border-white/[0.1] backdrop-blur-xl"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Chat Input - Fixed for mobile zoom issue */}
         <div className="border-t border-white/10 bg-gradient-to-r from-black/40 via-black/30 to-black/40 backdrop-blur-md p-3 md:p-4">
           <div className="flex items-center gap-2 [&_input]:text-xs [&_input]:leading-tight">
-            <Input
+            <Textarea
               ref={inputRef}
-              type="text"
               placeholder="Ask anything..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSendMessage()
-                }
-              }}
-              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20"
+              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 min-h-[40px] resize-none py-3"
               style={{ fontSize: "12px", lineHeight: "1.2" }}
               disabled={loading}
+              rows={1}
             />
 
             <button
@@ -3455,412 +3442,458 @@ export default function NemoAIDashboard() {
             </Button>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
-      )}
+      {
+        isSidebarOpen && (
+          <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
+        )
+      }
 
       {/* Contact Modal */}
-      {showContactModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowContactModal(false)
-              setSelectedContact(null)
-              setFormData({
-                name: "",
-                email: "",
-                phone: "",
-                company: "",
-                role: "",
-                notes: "",
-              })
-            }
-          }}
-        >
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">{selectedContact ? "Edit Contact" : "Add New Contact"}</h2>
-              <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (selectedContact) {
-                  updateContact(selectedContact.id, formData)
-                } else {
-                  createContact(formData)
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Name *</label>
-                <Input
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter contact name"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Email *</label>
-                <Input
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Phone</label>
-                <Input
-                  name="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter phone number"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Company</label>
-                <Input
-                  name="company"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter company name"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Role/Title</label>
-                <Input
-                  name="role"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter role or job title"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Notes</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20"
-                  placeholder="Add any notes about this contact"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 bg-white/10 hover:bg-white/20">
-                  {selectedContact ? "Save Changes" : "Add Contact"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowContactModal(false)
-                    setSelectedContact(null)
-                    // Reset form when closing
-                    setFormData({
-                      name: "",
-                      email: "",
-                      phone: "",
-                      company: "",
-                      role: "",
-                      notes: "",
-                    })
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowSettingsModal(false)}
-        >
-          <Card
-            className="w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
+      {
+        showContactModal && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowContactModal(false)
+                setSelectedContact(null)
+                setFormData({
+                  name: "",
+                  email: "",
+                  phone: "",
+                  company: "",
+                  role: "",
+                  notes: "",
+                })
+              }
+            }}
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Settings</h2>
-              <button onClick={() => setShowSettingsModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Username */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Username</label>
-                <Input
-                  value={userSettings.username}
-                  onChange={(e) => setUserSettings({ ...userSettings, username: e.target.value })}
-                  placeholder="Enter username"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              {/* Full Name */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Full Name</label>
-                <Input
-                  value={userSettings.full_name}
-                  onChange={(e) => setUserSettings({ ...userSettings, full_name: e.target.value })}
-                  placeholder="Enter your full name"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Email</label>
-                <Input
-                  value={userSettings.email}
-                  onChange={(e) => setUserSettings({ ...userSettings, email: e.target.value })}
-                  placeholder="Enter your email"
-                  className="bg-white/5 border-white/10 text-white"
-                  type="email"
-                />
-              </div>
-
-              {/* Language Selection */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Language</label>
-                <div className="flex gap-2">
-                  {[
-                    { code: "en", label: "English" },
-                    { code: "my", label: "Burmese" },
-                  ].map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() =>
-                        setUserSettings((prev) => ({
-                          ...prev,
-                          language_code: lang.code,
-                        }))
-                      }
-                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${userSettings.language_code === lang.code
-                        ? "bg-white/20 border border-white/40 text-white"
-                        : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
-                        }`}
-                    >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Font Size Selection REMOVED */}
-              {/* <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Font Size</label>
-                <div className="flex gap-2">
-                  {[
-                    { size: "small" as const, label: "Small" },
-                    { size: "medium" as const, label: "Medium" },
-                    { size: "large" as const, label: "Large" },
-                  ].map((option) => (
-                    <button
-                      key={option.size}
-                      onClick={() => handleFontSizeChange(option.size)}
-                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        fontSizeScale === option.size
-                          ? "bg-white/20 border border-white/40 text-white"
-                          : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-white/40 mt-2">Adjust text size across the entire application</p>
-              </div> */}
-            </div>
-
-            {/* Save Button */}
-            <div className="pt-4 border-t border-white/10 space-y-3">
-              {settingsSaved && (
-                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm text-center">
-                  Settings saved successfully!
-                </div>
-              )}
-              <Button
-                onClick={updateUserSettings}
-                disabled={settingsLoading}
-                className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
-              >
-                {settingsLoading ? "Saving..." : "Save Settings"}
-              </Button>
-            </div>
-
-            {/* Sign Out Button */}
-            <div className="pt-2">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="font-medium text-sm">Sign Out</span>
-              </button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {showCalendarTaskModal && selectedCalendarTask && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowCalendarTaskModal(false)}
-        >
-          <Card
-            className="w-full max-w-2xl p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header with close and 3-dot menu */}
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
-                <p className="text-sm text-white/60 mt-1">
-                  Due:{" "}
-                  {selectedCalendarTask.due_date
-                    ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                    : "No date"}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button
-                    onClick={() => setTaskMenuOpen(!taskMenuOpen)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <MoreVertical className="w-5 h-5 text-white/70" />
-                  </button>
-                  {taskMenuOpen && (
-                    <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
-                      <button
-                        onClick={() => {
-                          setEditingTask(selectedCalendarTask)
-                          setEditingTaskId(selectedCalendarTask.id)
-                          setShowCalendarTaskModal(false)
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Edit Task
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (selectedCalendarTask.id) {
-                            deleteTask(selectedCalendarTask.id)
-                          }
-                          setShowCalendarTaskModal(false)
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Task
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (selectedCalendarTask.id) {
-                            updateTaskStatus(
-                              selectedCalendarTask.id,
-                              selectedCalendarTask.status === "completed" ? "todo" : "completed",
-                            )
-                          }
-                          setShowCalendarTaskModal(false)
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
-                      >
-                        <Check className="w-4 h-4" />
-                        {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowCalendarTaskModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-white/70" />
+            <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold">{selectedContact ? "Edit Contact" : "Add New Contact"}</h2>
+                <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-
-            {/* Task Details */}
-            <div className="space-y-6">
-              {/* Status and Priority */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
-                  <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (selectedContact) {
+                    updateContact(selectedContact.id, formData)
+                  } else {
+                    createContact(formData)
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="text-sm text-white/70 mb-1 block">Name *</label>
+                  <Input
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    placeholder="Enter contact name"
+                  />
                 </div>
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
-                  <p
-                    className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
-                      ? "text-red-400"
-                      : selectedCalendarTask.priority === "high"
-                        ? "text-orange-400"
-                        : "text-yellow-400"
-                      }`}
+                <div>
+                  <label className="text-sm text-white/70 mb-1 block">Email *</label>
+                  <Input
+                    name="email"
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-white/70 mb-1 block">Phone</label>
+                  <Input
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-white/70 mb-1 block">Company</label>
+                  <Input
+                    name="company"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-white/70 mb-1 block">Role/Title</label>
+                  <Input
+                    name="role"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    placeholder="Enter role or job title"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-white/70 mb-1 block">Notes</label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={3}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20"
+                    placeholder="Add any notes about this contact"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button type="submit" className="flex-1 bg-white/10 hover:bg-white/20">
+                    {selectedContact ? "Save Changes" : "Add Contact"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowContactModal(false)
+                      setSelectedContact(null)
+                      // Reset form when closing
+                      setFormData({
+                        name: "",
+                        email: "",
+                        phone: "",
+                        company: "",
+                        role: "",
+                        notes: "",
+                      })
+                    }}
+                    variant="outline"
+                    className="flex-1"
                   >
-                    {selectedCalendarTask.priority}
-                  </p>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )
+      }
+
+      {/* Settings Modal */}
+      {
+        showSettingsModal && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowSettingsModal(false)}
+          >
+            <Card
+              className="w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold">Settings</h2>
+                <button onClick={() => setShowSettingsModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Username */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/80">Username</label>
+                  <Input
+                    value={userSettings.username}
+                    onChange={(e) => setUserSettings({ ...userSettings, username: e.target.value })}
+                    placeholder="Enter username"
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+
+                {/* Full Name */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/80">Full Name</label>
+                  <Input
+                    value={userSettings.full_name}
+                    onChange={(e) => setUserSettings({ ...userSettings, full_name: e.target.value })}
+                    placeholder="Enter your full name"
+                    className="bg-white/5 border-white/10 text-white"
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white/80">Email</label>
+                  <Input
+                    value={userSettings.email}
+                    onChange={(e) => setUserSettings({ ...userSettings, email: e.target.value })}
+                    placeholder="Enter your email"
+                    className="bg-white/5 border-white/10 text-white"
+                    type="email"
+                  />
+                </div>
+
+                {/* Language Selection */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Language</label>
+                  <div className="flex gap-2">
+                    {[
+                      { code: "en", label: "English" },
+                      { code: "my", label: "Burmese" },
+                    ].map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() =>
+                          setUserSettings((prev) => ({
+                            ...prev,
+                            language_code: lang.code,
+                          }))
+                        }
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${userSettings.language_code === lang.code
+                          ? "bg-white/20 border border-white/40 text-white"
+                          : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+                          }`}
+                      >
+                        {lang.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Security Section (Change Password) */}
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                <button
+                  onClick={() => setShowPasswordSection(!showPasswordSection)}
+                  className="flex items-center justify-between w-full text-left"
+                >
+                  <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Security & Password</label>
+                  <ChevronDown className={`w-4 h-4 text-white/50 transition-transform ${showPasswordSection ? "rotate-180" : ""}`} />
+                </button>
+
+                {showPasswordSection && (
+                  <div className="space-y-3 animate-fade-in">
+                    <Input
+                      type="password"
+                      placeholder="New Password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Confirm New Password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    <Button
+                      onClick={() => {
+                        if (passwordData.newPassword !== passwordData.confirmPassword) {
+                          alert("Passwords do not match!")
+                          return
+                        }
+                        if (passwordData.newPassword.length < 6) {
+                          alert("Password must be at least 6 characters")
+                          return
+                        }
+                        // Mock success for now as we don't have the endpoint confirmed
+                        alert("Password update functionality is UI-only for this demo.")
+                        setPasswordData({ newPassword: "", confirmPassword: "" })
+                      }}
+                      className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 h-9 text-xs"
+                    >
+                      Update Password
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Change Log Section */}
+              <div className="pt-4 border-t border-white/10 space-y-2">
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.1)</label>
+                <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
+                  <p>• Fixed mobile layout "white block" issue.</p>
+                  <p>• Added "Tasks" slide-to-complete removal.</p>
+                  <p>• Chat input now uses Enter for new line.</p>
+                  <p>• Added "Ideas" module.</p>
+                  <p>• Updated Login Screen hierarchy.</p>
+                  <p>• Added formatting for greetings.</p>
+                  <p>• Improved "In Progress" top bar stats.</p>
                 </div>
               </div>
 
-              {/* Description */}
-              {selectedCalendarTask.description && (
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
-                  <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
-                </div>
-              )}
+              {/* Save Button */}
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                {settingsSaved && (
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm text-center">
+                    Settings saved successfully!
+                  </div>
+                )}
+                <Button
+                  onClick={updateUserSettings}
+                  disabled={settingsLoading}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                >
+                  {settingsLoading ? "Saving..." : "Save Settings"}
+                </Button>
+              </div>
 
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
-                  <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
-                </div>
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
-                  <p className="text-sm text-white">
+              {/* Sign Out Button */}
+              <div className="pt-2">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 p-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="font-medium text-sm">Sign Out</span>
+                </button>
+              </div>
+            </Card>
+          </div >
+        )
+      }
+
+      {
+        showCalendarTaskModal && selectedCalendarTask && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowCalendarTaskModal(false)}
+          >
+            <Card
+              className="w-full max-w-2xl p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header with close and 3-dot menu */}
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
+                  <p className="text-sm text-white/60 mt-1">
+                    Due:{" "}
                     {selectedCalendarTask.due_date
                       ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                      : "No due date"}
+                      : "No date"}
                   </p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <button
+                      onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <MoreVertical className="w-5 h-5 text-white/70" />
+                    </button>
+                    {taskMenuOpen && (
+                      <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
+                        <button
+                          onClick={() => {
+                            setEditingTask(selectedCalendarTask)
+                            setEditingTaskId(selectedCalendarTask.id)
+                            setShowCalendarTaskModal(false)
+                            setTaskMenuOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Edit Task
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (selectedCalendarTask.id) {
+                              deleteTask(selectedCalendarTask.id)
+                            }
+                            setShowCalendarTaskModal(false)
+                            setTaskMenuOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Task
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (selectedCalendarTask.id) {
+                              updateTaskStatus(
+                                selectedCalendarTask.id,
+                                selectedCalendarTask.status === "completed" ? "todo" : "completed",
+                              )
+                            }
+                            setShowCalendarTaskModal(false)
+                            setTaskMenuOpen(false)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowCalendarTaskModal(false)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-white/70" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </Card>
-        </div>
-      )}
-    </div>
+
+              {/* Task Details */}
+              <div className="space-y-6">
+                {/* Status and Priority */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
+                    <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
+                    <p
+                      className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
+                        ? "text-red-400"
+                        : selectedCalendarTask.priority === "high"
+                          ? "text-orange-400"
+                          : "text-yellow-400"
+                        }`}
+                    >
+                      {selectedCalendarTask.priority}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedCalendarTask.description && (
+                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
+                    <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
+                  </div>
+                )}
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
+                    <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
+                    <p className="text-sm text-white">
+                      {selectedCalendarTask.due_date
+                        ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                        : "No due date"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+    </div >
   )
 }
