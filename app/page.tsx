@@ -1555,7 +1555,7 @@ export default function NemoAIDashboard() {
         <div className="p-4 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 relative rounded-lg overflow-hidden">
-              <img src="/nemo-logo.png" alt="NemoAI" className="w-full h-full object-contain" />
+              <img src="/icon.png" alt="NemoAI" className="w-full h-full object-contain" />
             </div>
             <span className="font-semibold text-sm tracking-tight">NemoAI</span>
           </div>
@@ -1722,7 +1722,7 @@ export default function NemoAIDashboard() {
 
             <div className="hidden md:flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-                <img src="/nemo-logo.png" alt="NemoAI" className="w-full h-full object-contain" />
+                <img src="/icon.png" alt="NemoAI" className="w-full h-full object-contain" />
               </div>
               <span className="text-lg font-semibold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                 NemoAI

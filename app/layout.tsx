@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   description: "AI-powered business operating system with intelligent task management, ideas, CRM, and more",
   generator: "v0.app",
   icons: {
-    icon: "/fixed-icon.png",
-    apple: "/fixed-icon.png",
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
   },
 }
 
