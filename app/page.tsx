@@ -304,7 +304,7 @@ export default function NemoAIDashboard() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null)
   const [showNewTaskForm, setShowNewTaskForm] = useState(false)
-  const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "in_progress" | "completed">("all")
+  const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all")
   const [taskMenuOpenId, setTaskMenuOpenId] = useState<string | null>(null)
   const [slidingTaskId, setSlidingTaskId] = useState<string | null>(null)
   const [slideOffset, setSlideOffset] = useState(0)
@@ -393,7 +393,11 @@ export default function NemoAIDashboard() {
       // The 3-hour check prevented updates when the name loaded asynchronously
       // if (!currentGreeting || now - greetingTimestamp > threeHours) {
       const hour = new Date().getHours()
-      const userName = userSettings.full_name || "Boss" // Changed default to Boss as per tone
+      // Don't generate greeting if we don't have a name yet and are still loading settings
+      // This prevents the "Boss" flash
+      if (!userSettings.full_name && settingsLoading) return
+
+      const userName = userSettings.full_name || "Boss"
 
       const greetings = {
         morning: [
@@ -1087,8 +1091,7 @@ export default function NemoAIDashboard() {
           // The user wants "waiting for reply animation". 
           // The existing code has: `loading && (...)` inside the message list.
           // But if `messages.length === 0`, it shows the Orb!
-          // FIX: Add a temp invisible message or change the render logic?
-          // Safest: Add a temp placeholder message that says "Processing..."
+          // FIX: Add a temp placeholder message that says "Processing..."
         }
 
         setLoading(true) // Start loading animation
@@ -1266,15 +1269,26 @@ export default function NemoAIDashboard() {
   }
 
   const createTask = async (taskData: Omit<Task, "id" | "created_at" | "updated_at">) => {
+    console.log("[v0-debug] createTask called with:", taskData)
     try {
       if (userId) {
-        await API.CreateTask({ ...taskData, user_id: userId })
+        console.log("[v0-debug] Creating task for userId:", userId)
+        const newTask = { ...taskData, user_id: userId }
+        // Ensure due_date format is correct if present
+        if (newTask.due_date) {
+          // Basic validation/conversion could go here if needed
+          console.log("[v0-debug] Task due_date:", newTask.due_date)
+        }
+        await API.CreateTask(newTask)
         await loadTasks()
         setShowNewTaskForm(false)
-        console.log("[v0] Task created")
+        console.log("[v0] Task created successfully")
+      } else {
+        console.error("[v0-debug] Cannot create task: No userId found")
       }
     } catch (err) {
-      console.error("[v0] Error creating task:", err)
+      console.error("[v0] Error creating task raw:", err)
+      console.error("[v0] Error creating task JSON:", JSON.stringify(err, null, 2))
     }
   }
 
@@ -1516,7 +1530,7 @@ export default function NemoAIDashboard() {
     }
   }
 
-  const remainingTasksCount = tasks.filter((t) => t.status === "todo" || t.status === "in_progress").length
+  const remainingTasksCount = tasks.filter((t) => t.status === "pending" || t.status === "in_progress").length
 
   const filteredTasks = taskStatusFilter === "all" ? tasks : tasks.filter((t) => t.status === taskStatusFilter)
 
@@ -1993,7 +2007,7 @@ export default function NemoAIDashboard() {
                 {/* Filter and Action Section - Improved visual hierarchy */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-white/[0.05] to-white/[0.02] rounded-xl border border-white/[0.08]">
                   <div className="flex flex-wrap gap-2">
-                    {(["all", "in_progress", "completed"] as const).map((status) => (
+                    {(["all", "pending", "in_progress", "completed"] as const).map((status) => (
                       <button
                         key={status}
                         onClick={() => setTaskStatusFilter(status)}
@@ -2002,7 +2016,7 @@ export default function NemoAIDashboard() {
                           : "bg-white/[0.05] text-white/70 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white"
                           }`}
                       >
-                        {status === "all" ? "All Tasks" : status === "in_progress" ? "In Progress" : "Completed"}
+                        {status === "all" ? "All Tasks" : status === "in_progress" ? "In Progress" : status === "pending" ? "Pending" : "Completed"}
                       </button>
                     ))}
                   </div>
@@ -2042,11 +2056,11 @@ export default function NemoAIDashboard() {
                           />
                           <div className="grid grid-cols-2 gap-4">
                             <select
-                              value={editingTask?.status || "todo"}
+                              value={editingTask?.status || "pending"}
                               onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value as any })}
                               className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white"
                             >
-                              <option value="todo">Pending</option>
+                              <option value="pending">Pending</option>
                               <option value="in_progress">In Progress</option>
                               <option value="completed">Completed</option>
                             </select>
@@ -2109,7 +2123,7 @@ export default function NemoAIDashboard() {
                                         : "bg-white/10 text-white/70 border border-white/20"
                                     }`}
                                 >
-                                  {task.status === "todo" ? "Pending" : task.status.replace("_", " ")}
+                                  {task.status === "pending" ? "Pending" : task.status.replace("_", " ")}
                                 </span>
                               </div>
                             </div>
@@ -2175,7 +2189,7 @@ export default function NemoAIDashboard() {
                       <p className="text-white/40">
                         No{" "}
                         {taskStatusFilter !== "all"
-                          ? taskStatusFilter === "todo"
+                          ? taskStatusFilter === "pending"
                             ? "pending"
                             : taskStatusFilter.replace("_", " ")
                           : ""}{" "}
@@ -2203,7 +2217,7 @@ export default function NemoAIDashboard() {
                             user_id: userId || "", // Use dynamic userId
                             title: formData.get("title") as string,
                             description: formData.get("description") as string,
-                            status: (formData.get("status") as any) || "todo",
+                            status: (formData.get("status") as any) || "pending",
                             priority: (formData.get("priority") as any) || "medium",
                             due_date: (formData.get("due_date") as string) || null,
                           })
@@ -2235,7 +2249,7 @@ export default function NemoAIDashboard() {
                               name="status"
                               className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
                             >
-                              <option value="todo">Pending</option>
+                              <option value="pending">Pending</option>
                               <option value="in_progress">In Progress</option>
                               <option value="completed">Completed</option>
                             </select>
@@ -2269,6 +2283,116 @@ export default function NemoAIDashboard() {
                           <Button
                             type="button"
                             onClick={() => setShowNewTaskForm(false)}
+                            variant="outline"
+                            className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Edit Task Modal */}
+                {editingTask && editingTaskId && (
+                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-lg p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold text-white">Edit Task</h2>
+                        <button
+                          onClick={() => {
+                            setEditingTaskId(null)
+                            setEditingTask(null)
+                          }}
+                          className="p-2 hover:bg-white/10 rounded-lg"
+                        >
+                          <X className="w-5 h-5 text-white/70" />
+                        </button>
+                      </div>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault()
+                          const formData = new FormData(e.currentTarget)
+                          updateTask(editingTaskId, {
+                            title: formData.get("title") as string,
+                            description: formData.get("description") as string,
+                            status: formData.get("status") as any,
+                            priority: formData.get("priority") as any,
+                            due_date: (formData.get("due_date") as string) || null,
+                          })
+                          setEditingTaskId(null)
+                          setEditingTask(null)
+                        }}
+                        className="space-y-4"
+                      >
+                        <div>
+                          <label className="text-sm font-medium text-white/70 mb-1 block">Title *</label>
+                          <Input
+                            name="title"
+                            defaultValue={editingTask.title}
+                            required
+                            className="bg-white/[0.1] border-white/[0.2] text-white placeholder:text-white/40"
+                            placeholder="e.g. Design the new landing page"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-white/70 mb-1 block">Description</label>
+                          <textarea
+                            name="description"
+                            defaultValue={editingTask.description || ""}
+                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                            placeholder="Add more details about the task"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Status</label>
+                            <select
+                              name="status"
+                              defaultValue={editingTask.status}
+                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="in_progress">In Progress</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Priority</label>
+                            <select
+                              name="priority"
+                              defaultValue={editingTask.priority}
+                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                            >
+                              <option value="low">Low</option>
+                              <option value="medium">Medium</option>
+                              <option value="high">High</option>
+                              <option value="urgent">Urgent</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-white/70 mb-1 block">Due Date</label>
+                          <Input
+                            name="due_date"
+                            type="datetime-local"
+                            defaultValue={editingTask.due_date ? new Date(editingTask.due_date).toISOString().slice(0, 16) : ""}
+                            className="bg-white/[0.1] border-white/[0.2] text-white"
+                          />
+                        </div>
+                        <div className="flex gap-3 pt-4">
+                          <Button type="submit" className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white">
+                            <Check className="w-4 h-4 mr-2" />
+                            Save Changes
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setEditingTaskId(null)
+                              setEditingTask(null)
+                            }}
                             variant="outline"
                             className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
                           >
@@ -3207,7 +3331,7 @@ export default function NemoAIDashboard() {
                                 : "bg-white/10 text-white/60"
                                 }`}
                             >
-                              {task.status === "in_progress" ? "In Progress" : "To Do"}
+                              {task.status === "in_progress" ? "In Progress" : "Pending"}
                             </span>
                           </div>
                         </div>
@@ -3769,127 +3893,200 @@ export default function NemoAIDashboard() {
               className="w-full max-w-2xl p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header with close and 3-dot menu */}
               <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
-                  <p className="text-sm text-white/60 mt-1">
-                    Due:{" "}
-                    {selectedCalendarTask.due_date
-                      ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                      : "No date"}
-                  </p>
+                <div className="flex-1 mr-4">
+                  {editingTaskId === selectedCalendarTask.id ? (
+                    <div className="space-y-3">
+                      <Input
+                        value={selectedCalendarTask.title}
+                        onChange={(e) =>
+                          setSelectedCalendarTask({ ...selectedCalendarTask, title: e.target.value })
+                        }
+                        className="text-xl font-bold bg-white/10 border-white/20 text-white"
+                        placeholder="Task Title"
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="datetime-local"
+                          value={selectedCalendarTask.due_date ? new Date(selectedCalendarTask.due_date).toISOString().slice(0, 16) : ""}
+                          onChange={(e) =>
+                            setSelectedCalendarTask({ ...selectedCalendarTask, due_date: e.target.value })
+                          }
+                          className="bg-white/10 border-white/20 text-white text-sm"
+                        />
+                        <select
+                          value={selectedCalendarTask.priority}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value })}
+                          className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
+                        >
+                          <option value="low">Low Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="high">High Priority</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                        <select
+                          value={selectedCalendarTask.status}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value })}
+                          className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                      <textarea
+                        value={selectedCalendarTask.description || ""}
+                        onChange={(e) =>
+                          setSelectedCalendarTask({ ...selectedCalendarTask, description: e.target.value })
+                        }
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                        placeholder="Description..."
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            updateTask(selectedCalendarTask.id, selectedCalendarTask)
+                            setEditingTaskId(null)
+                            setShowCalendarTaskModal(false)
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <Check className="w-4 h-4 mr-2" /> Save Changes
+                        </Button>
+                        <Button
+                          onClick={() => setEditingTaskId(null)}
+                          variant="outline"
+                          className="border-white/20 text-white hover:bg-white/10"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
+                      <p className="text-sm text-white/60 mt-1">
+                        Due:{" "}
+                        {selectedCalendarTask.due_date
+                          ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                          : "No date"}
+                      </p>
+                    </>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
+                {!editingTaskId && (
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button
+                        onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <MoreVertical className="w-5 h-5 text-white/70" />
+                      </button>
+                      {taskMenuOpen && (
+                        <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
+                          <button
+                            onClick={() => {
+                              setEditingTaskId(selectedCalendarTask.id)
+                              // setEditingTask(selectedCalendarTask) // No need, we edit directly in selectedCalendarTask
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit Task
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (selectedCalendarTask.id) {
+                                deleteTask(selectedCalendarTask.id)
+                              }
+                              setShowCalendarTaskModal(false)
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Task
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (selectedCalendarTask.id) {
+                                updateTaskStatus(
+                                  selectedCalendarTask.id,
+                                  selectedCalendarTask.status === "completed" ? "pending" : "completed",
+                                )
+                              }
+                              setShowCalendarTaskModal(false)
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
+                          >
+                            <Check className="w-4 h-4" />
+                            {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <button
-                      onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                      onClick={() => setShowCalendarTaskModal(false)}
                       className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     >
-                      <MoreVertical className="w-5 h-5 text-white/70" />
+                      <X className="w-5 h-5 text-white/70" />
                     </button>
-                    {taskMenuOpen && (
-                      <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
-                        <button
-                          onClick={() => {
-                            setEditingTask(selectedCalendarTask)
-                            setEditingTaskId(selectedCalendarTask.id)
-                            setShowCalendarTaskModal(false)
-                            setTaskMenuOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                          Edit Task
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedCalendarTask.id) {
-                              deleteTask(selectedCalendarTask.id)
-                            }
-                            setShowCalendarTaskModal(false)
-                            setTaskMenuOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Task
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedCalendarTask.id) {
-                              updateTaskStatus(
-                                selectedCalendarTask.id,
-                                selectedCalendarTask.status === "completed" ? "todo" : "completed",
-                              )
-                            }
-                            setShowCalendarTaskModal(false)
-                            setTaskMenuOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
-                        >
-                          <Check className="w-4 h-4" />
-                          {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setShowCalendarTaskModal(false)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-white/70" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Task Details */}
-              <div className="space-y-6">
-                {/* Status and Priority */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
-                    <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
-                    <p
-                      className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
-                        ? "text-red-400"
-                        : selectedCalendarTask.priority === "high"
-                          ? "text-orange-400"
-                          : "text-yellow-400"
-                        }`}
-                    >
-                      {selectedCalendarTask.priority}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                {selectedCalendarTask.description && (
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
-                    <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
                   </div>
                 )}
+              </div>
 
-                {/* Dates */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
-                    <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
+              {!editingTaskId && (
+                <div className="space-y-6">
+                  {/* Status and Priority */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
+                      <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
+                      <p
+                        className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
+                          ? "text-red-400"
+                          : selectedCalendarTask.priority === "high"
+                            ? "text-orange-400"
+                            : "text-yellow-400"
+                          }`}
+                      >
+                        {selectedCalendarTask.priority}
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
-                    <p className="text-sm text-white">
-                      {selectedCalendarTask.due_date
-                        ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                        : "No due date"}
-                    </p>
+
+                  {/* Description */}
+                  {selectedCalendarTask.description && (
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
+                      <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
+                      <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
+                      <p className="text-sm text-white">
+                        {selectedCalendarTask.due_date
+                          ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                          : "No due date"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </Card>
           </div>
         )

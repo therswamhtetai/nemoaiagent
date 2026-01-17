@@ -97,7 +97,7 @@ export const FetchQuickPrompts = async (userId: string): Promise<PromptCard[]> =
     }
     const supabase = createBrowserClient()
     const { data, error } = await supabase
-        .from('quick_promots')
+        .from('quick_prompts')
         .select('*')
         .eq('user_id', userId)
         .order('sort_order', { ascending: true })
@@ -112,19 +112,19 @@ export const FetchQuickPrompts = async (userId: string): Promise<PromptCard[]> =
 
 export const AddQuickPrompt = async (userId: string, prompt: any): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_promots').insert({ ...prompt, user_id: userId })
+    const { error } = await supabase.from('quick_prompts').insert({ ...prompt, user_id: userId })
     if (error) throw error
 }
 
 export const DeleteQuickPrompt = async (id: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_promots').delete().eq('id', id)
+    const { error } = await supabase.from('quick_prompts').delete().eq('id', id)
     if (error) throw error
 }
 
 export const UpdateQuickPrompt = async (id: string, updates: any): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_promots').update(updates).eq('id', id)
+    const { error } = await supabase.from('quick_prompts').update(updates).eq('id', id)
     if (error) throw error
 }
 
@@ -141,9 +141,15 @@ export const FetchTasks = async (userId: string): Promise<Task[]> => {
 }
 
 export const CreateTask = async (task: any): Promise<void> => {
+    console.log("[v0-debug] API.CreateTask - Payload:", task)
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('tasks').insert({ ...task })
-    if (error) throw error
+    const { error, data } = await supabase.from('tasks').insert({ ...task }).select()
+
+    if (error) {
+        console.error("[v0-debug] Superbase CreateTask Error:", error)
+        throw error
+    }
+    console.log("[v0-debug] API.CreateTask - Success:", data)
 }
 
 export const UpdateTask = async (id: string, updates: any): Promise<void> => {
@@ -261,7 +267,7 @@ export const UpdateUserSettings = async (userId: string, settings: any): Promise
 // Additional Prompt functions
 export const SaveEditCard = async (id: string, text: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('quick_promots').update({ text }).eq('id', id)
+    const { error } = await supabase.from('quick_prompts').update({ text }).eq('id', id)
     if (error) throw error
 }
 
