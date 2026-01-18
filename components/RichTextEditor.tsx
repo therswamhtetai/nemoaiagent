@@ -1,11 +1,13 @@
 "use client"
 
 import { useEditor, EditorContent } from "@tiptap/react"
+import { useMemo } from "react"
 import StarterKit from "@tiptap/starter-kit"
 import TaskList from "@tiptap/extension-task-list"
 import TaskItem from "@tiptap/extension-task-item"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Bold, Italic, List, ListOrdered, CheckSquare, Strikethrough } from "lucide-react"
+
 
 interface RichTextEditorProps {
     content: string
@@ -15,6 +17,65 @@ interface RichTextEditorProps {
 }
 
 const RichTextEditor = ({ content, onChange, placeholder = "Write something...", editable = true }: RichTextEditorProps) => {
+    // Custom simple markdown parser to handle AI-generated content
+    const editorContent = useMemo(() => {
+        if (!content) return ""
+
+        // If it starts with an HTML tag, assume it's already HTML
+        if (content.trim().startsWith("<")) {
+            return content
+        }
+
+        try {
+            // Simple parser for the specific format the user has
+            let html = content
+
+            // Handle Task Lists: "- [ ] " -> <ul data-type="taskList"><li data-type="taskItem"><label><input type="checkbox"></label><div>...</div></li></ul>
+            // Note: This is a basic implementation. For complex nested lists, a library is better.
+
+            // check if contains task items
+            if (html.includes("- [ ]") || html.includes("- [x]")) {
+                const lines = html.split(/(?=- \[)/) // Split by lookahead
+                let listHtml = '<ul data-type="taskList">'
+                let hasList = false
+
+                for (const line of lines) {
+                    const trimmed = line.trim()
+                    if (trimmed.startsWith("- [ ]") || trimmed.startsWith("- [x]")) {
+                        hasList = true
+                        const isChecked = trimmed.startsWith("- [x]")
+                        const text = trimmed.substring(5).trim() // Remove "- [ ] "
+                        listHtml += `
+                            <li data-type="taskItem" data-checked="${isChecked}">
+                                <label><input type="checkbox" ${isChecked ? "checked" : ""}></label>
+                                <div>${text}</div>
+                            </li>
+                        `
+                    } else if (trimmed) {
+                        // Regular text mixed in?
+                        listHtml += `<li>${trimmed}</li>`
+                    }
+                }
+                listHtml += "</ul>"
+
+                if (hasList) {
+                    html = listHtml
+                }
+            } else {
+                // Convert newlines to breaks if not a list
+                html = html.replace(/\n/g, "<br>")
+            }
+
+            // Handle Bold: **text** -> <strong>text</strong>
+            html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+
+            return html
+        } catch (e) {
+            console.error("Error parsing markdown:", e)
+            return content
+        }
+    }, [content])
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -26,7 +87,7 @@ const RichTextEditor = ({ content, onChange, placeholder = "Write something...",
                 placeholder,
             }),
         ],
-        content: content,
+        content: editorContent, // Use the parsed content
         editable: editable,
         editorProps: {
             attributes: {
@@ -36,6 +97,7 @@ const RichTextEditor = ({ content, onChange, placeholder = "Write something...",
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML())
         },
+        immediatelyRender: false,
     })
 
     if (!editor) {
