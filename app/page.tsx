@@ -383,8 +383,9 @@ export default function NemoAIDashboard() {
 
   // Helper to render message content with markdown-like formatting
   const renderMessageContent = (content: string) => {
-    // Handle Headers (###, ##)
+    // Handle Headers (###, ##, ####)
     let processed = content
+      .replace(/^#### (.*$)/gim, '<h4 class="text-base font-bold mt-2 mb-1 text-white/90">$1</h4>')
       .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-3 mb-1 text-white">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2 text-white border-b border-white/10 pb-1">$1</h2>')
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
@@ -3884,7 +3885,7 @@ export default function NemoAIDashboard() {
                   <p>• Added Sound Effects for Chat and Voice Orb.</p>
                   <p>• Added In-Place Task Editing on Calendar.</p>
                   <p>• Added Due Date editing in Task list.</p>
-                  <p>• Support for Markdown Headings (##, ###).</p>
+                  <p>• Support for Markdown Headings (##, ###, ####).</p>
                   <p>• Fixed Greeting Text glitch ("Boss").</p>
                   <p>• Fixed Create Task database error.</p>
                 </div>
