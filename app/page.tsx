@@ -2719,7 +2719,7 @@ export default function NemoAIDashboard() {
                     }}
                   >
                     <div
-                      className="bg-gradient-to-br from-white/10 to-white/5 border border-white/20 w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 rounded-none md:rounded-2xl"
+                      className="bg-gradient-to-br from-white/10 to-white/5 border-0 md:border md:border-white/20 w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 rounded-none md:rounded-2xl"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="space-y-4">
@@ -2827,7 +2827,7 @@ export default function NemoAIDashboard() {
                 {/* New Idea Form Modal */}
                 {showNewIdeaForm && (
                   <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
-                    <Card className="w-full max-w-lg p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
+                    <Card className="w-full max-w-lg p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold">Create New Idea</h2>
                         <button onClick={() => setShowNewIdeaForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
@@ -3071,7 +3071,7 @@ export default function NemoAIDashboard() {
                     onClick={() => setShowCompetitorModal(false)}
                   >
                     <Card
-                      className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl rounded-none md:rounded-xl"
+                      className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl rounded-none md:rounded-xl"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="p-6 space-y-6">
@@ -3763,7 +3763,7 @@ export default function NemoAIDashboard() {
               }
             }}
           >
-            <Card className="w-full md:max-w-lg h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl">
+            <Card className="w-full md:max-w-lg h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">{selectedContact ? "Edit Contact" : "Add New Contact"}</h2>
                 <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
@@ -3884,7 +3884,7 @@ export default function NemoAIDashboard() {
             onClick={() => setShowSettingsModal(false)}
           >
             <Card
-              className="w-full md:max-w-md h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl"
+              className="w-full md:max-w-md h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
@@ -4008,8 +4008,9 @@ export default function NemoAIDashboard() {
 
               {/* Change Log Section */}
               <div className="pt-4 border-t border-white/10 space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.4)</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.5)</label>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
+                  <p>• Polished Mobile Modals: Removed borders & glossy edges for clean look.</p>
                   <p>• Mobile UI Overhaul: Full-screen modals & optimized touch areas.</p>
                   <p>• Fixed Market Intelligence: Now ensures latest scrape data is shown.</p>
                   <p>• Sidebar Improvements: Better mobile backdrop & smooth transitions.</p>
@@ -4054,7 +4055,7 @@ export default function NemoAIDashboard() {
       {
         activeTaskPopup && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
-            <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-white/10 shadow-2xl rounded-none md:rounded-xl">
+            <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-0 md:border md:border-white/10 shadow-2xl rounded-none md:rounded-xl">
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <h2 className="text-xl font-semibold text-white capitalize">
                   {activeTaskPopup === "today" ? "Tasks due today" : `${activeTaskPopup} Tasks`}
@@ -4163,7 +4164,7 @@ export default function NemoAIDashboard() {
           onClick={() => setShowCalendarTaskModal(false)}
         >
           <Card
-            className="w-full md:max-w-2xl p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto"
+            className="w-full md:max-w-2xl p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-6">
