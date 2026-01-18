@@ -6,48 +6,43 @@ import * as API from "@/lib/services/api"
 
 import { useState, useRef, useEffect } from "react"
 import {
-  Send,
+  Search,
   Sparkles,
   Calendar,
-  Briefcase,
-  Lightbulb,
-  TrendingUp,
-  Users,
   Plus,
-  X,
-  Edit2,
+  Bell,
+  Settings,
+  MoreVertical,
+  CheckCircle2,
+  Circle,
+  Clock,
   MessageSquare,
-  Zap,
   Home,
-  Star,
-  Heart,
-  BookOpen,
-  Video,
-  Code,
-  Music,
-  ImageIcon,
-  Target,
-  Award,
-  Gift,
-  UserCircle,
-  FileText,
-  Mail,
-  Phone,
-  Globe,
-  Trash2,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
+  CheckSquare,
+  Lightbulb,
+  X,
   ChevronRight,
+  Filter,
+  Calendar as CalendarIcon,
+  Mic,
+  Send,
+  Image as ImageIcon,
   Camera,
   Upload,
-  Settings,
-  Mic,
-  MoreVertical,
-  RefreshCw,
+  User,
   LogOut,
+  Edit2,
+  Trash2,
+  FileText,
+  Copy,
+  Users,
+  Briefcase,
+  TrendingUp,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react"
+
+import RichTextEditor from "@/components/RichTextEditor"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -226,11 +221,14 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
 }
 
 // Sound Effects
-const playSound = (type: "reply" | "orb_open" | "orb_close") => {
+// Sound Effects
+const playSound = (type: "reply" | "orb_open" | "orb_close" | "sent" | "received") => {
   const sounds = {
-    reply: "/sounds/reply.mp3",
-    orb_open: "/sounds/orb_open.mp3", // You need to add these files to public/sounds/
-    orb_close: "/sounds/orb_open.mp3", // Reusing open sound or different one
+    reply: "/sounds/received.m4a", // Use received for reply default
+    orb_open: "/sounds/orb_open.mp3",
+    orb_close: "/sounds/orb_open.mp3",
+    sent: "/sounds/sent.m4a",
+    received: "/sounds/received.m4a",
   };
   const audio = new Audio(sounds[type]);
   audio.volume = 0.5; // Soft sound
@@ -815,6 +813,7 @@ export default function NemoAIDashboard() {
     setLoadingStateIndex(0)
 
     console.log("[v0] Sending message:", userMessage)
+    playSound("sent")
     setShowQuickPrompts(false)
 
     let threadId = currentThreadId
@@ -896,6 +895,7 @@ export default function NemoAIDashboard() {
         thread_id: threadId,
       }
       setMessages((prev) => [...prev, tempAssistantMsg])
+      playSound("received")
 
       setTimeout(() => {
         loadConversations(threadId)
@@ -1073,8 +1073,9 @@ export default function NemoAIDashboard() {
         mediaRecorderRef.current.stop()
         setIsPushToTalk(false)
         setIsRecording(false)
+        setIsRecording(false)
         setOrbAnimating(false) // Deactivate orb animation
-        playSound("orb_close")
+        playSound("sent") // Play sent sound when recording stops
 
         // IMMEDIATE UI UPDATE:
         // 1. Ensure we have a thread
@@ -1208,10 +1209,11 @@ export default function NemoAIDashboard() {
         console.log("[v0] Conversations reloaded successfully")
       }
 
-      // Play audio response if provided
       if (data.audio_base64) {
-        playSound("reply")
+        playSound("received")
         playAudioResponse(data.audio_base64)
+      } else {
+        playSound("received")
       }
 
       console.log("[v0] Voice response received - backend handled conversation updates")
@@ -1871,10 +1873,6 @@ export default function NemoAIDashboard() {
                     <h2 className="text-3xl md:text-4xl font-light tracking-wide text-white">
                       {isPushToTalk ? "I'm Listening..." : getTimeBasedGreeting()}
                     </h2>
-                    {/* Increased text sizes throughout for better readability */}
-                    <p className="text-sm md:text-base text-zinc-600 font-light">
-                      {isPushToTalk ? "Tap again to send" : "Tap to speak"}
-                    </p>
                   </div>
 
                   {/* Orb */}
@@ -1882,7 +1880,7 @@ export default function NemoAIDashboard() {
                     onClick={handlePushToTalk}
                     className="relative w-36 h-36 md:w-40 md:h-40 flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
                     style={{ width: "150px", height: "150px" }}
-                    aria-label="Voice assistant - Tap to speak"
+                    aria-label="Voice assistant"
                   >
                     <div className={`${orbAnimating || isPushToTalk ? "animated-orb-active" : "animated-orb-idle"}`}>
                       <div className="orb-circle-wrapper">
@@ -2503,7 +2501,12 @@ export default function NemoAIDashboard() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          navigator.clipboard.writeText(`${idea.title}\n\n${idea.description || ""}`)
+                                          // Strip HTML for clipboard copy or keep it? Keeping raw text is safer for general paste.
+                                          // Simple strip tags:
+                                          const tempDiv = document.createElement("div")
+                                          tempDiv.innerHTML = idea.description || ""
+                                          const textContent = tempDiv.innerText || tempDiv.textContent || ""
+                                          navigator.clipboard.writeText(`${idea.title}\n\n${textContent}`)
                                           setEditingIdeaId(null)
                                         }}
                                         className="w-full px-3 py-2 text-left text-sm hover:bg-white/10 flex items-center gap-2"
@@ -2539,7 +2542,10 @@ export default function NemoAIDashboard() {
                                 </div>
                               </div>
                               {idea.description && (
-                                <p className="text-sm text-white/70 line-clamp-3">{idea.description}</p>
+                                <div
+                                  className="text-sm text-white/70 line-clamp-3 prose prose-invert prose-sm max-w-none [&_p]:m-0 [&_ul]:m-0 [&_li]:m-0"
+                                  dangerouslySetInnerHTML={{ __html: idea.description }}
+                                />
                               )}
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span
@@ -2608,11 +2614,9 @@ export default function NemoAIDashboard() {
                           className="bg-white/5 border-white/10 text-white"
                         />
 
-                        <textarea
-                          placeholder="Description..."
-                          value={viewingIdea.description || ""}
-                          onChange={(e) => setViewingIdea({ ...viewingIdea, description: e.target.value })}
-                          className="w-full min-h-[200px] bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/20"
+                        <RichTextEditor
+                          content={viewingIdea.description || ""}
+                          onChange={(content) => setViewingIdea({ ...viewingIdea, description: content })}
                         />
 
                         <div className="grid grid-cols-2 gap-4">
@@ -2728,13 +2732,9 @@ export default function NemoAIDashboard() {
                         </div>
                         <div>
                           <label className="text-sm text-white/70 mb-1 block">Description</label>
-                          <textarea
-                            name="description"
-                            value={ideaFormData.description}
-                            onChange={(e) => setIdeaFormData({ ...ideaFormData, description: e.target.value })}
-                            placeholder="Describe your idea..."
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-white/40"
-                            rows={3}
+                          <RichTextEditor
+                            content={ideaFormData.description || ""}
+                            onChange={(content) => setIdeaFormData({ ...ideaFormData, description: content })}
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -3590,7 +3590,7 @@ export default function NemoAIDashboard() {
                 ? "bg-red-500/20 text-red-400 animate-pulse"
                 : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
                 }`}
-              title="Tap to speak, tap again to send"
+              title="Voice input"
             >
               <Mic className="w-4 h-4" />
             </button>
@@ -3879,15 +3879,15 @@ export default function NemoAIDashboard() {
 
               {/* Change Log Section */}
               <div className="pt-4 border-t border-white/10 space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.2)</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.3)</label>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
+                  <p>• Added Rich Text Editor for Ideas (Bold, Lists, Checkboxes).</p>
+                  <p>• Fixed Sound Effects (Custom Sent/Received sounds).</p>
+                  <p>• Visual Cleanup: Removed duplicate "Tap to speak".</p>
                   <p>• Added "Archive" task status and filter.</p>
-                  <p>• Added Sound Effects for Chat and Voice Orb.</p>
                   <p>• Added In-Place Task Editing on Calendar.</p>
-                  <p>• Added Due Date editing in Task list.</p>
                   <p>• Support for Markdown Headings (##, ###, ####).</p>
                   <p>• Fixed Greeting Text glitch ("Boss").</p>
-                  <p>• Fixed Create Task database error.</p>
                 </div>
               </div>
 
