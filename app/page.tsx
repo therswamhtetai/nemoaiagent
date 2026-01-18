@@ -225,6 +225,18 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   )
 }
 
+// Sound Effects
+const playSound = (type: "reply" | "orb_open" | "orb_close") => {
+  const sounds = {
+    reply: "/sounds/reply.mp3",
+    orb_open: "/sounds/orb_open.mp3", // You need to add these files to public/sounds/
+    orb_close: "/sounds/orb_open.mp3", // Reusing open sound or different one
+  };
+  const audio = new Audio(sounds[type]);
+  audio.volume = 0.5; // Soft sound
+  audio.play().catch(e => console.log("Audio play failed (user interaction needed likely):", e));
+};
+
 export default function NemoAIDashboard() {
   const router = useRouter()
   const [useFallbackMode, setUseFallbackMode] = useState(false)
@@ -281,6 +293,7 @@ export default function NemoAIDashboard() {
   const [currentTime, setCurrentTime] = useState("")
   // Fix: Declare setWeather state variable
   const [weather, setWeather] = useState({ temp: "", condition: "" })
+  const [isOrbActive, setIsOrbActive] = useState(false)
 
   // CHANGE: Set calendar view default to "week" instead of "month"
   const [calendarView, setCalendarView] = useState<"month" | "week">("week")
@@ -304,7 +317,7 @@ export default function NemoAIDashboard() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null)
   const [showNewTaskForm, setShowNewTaskForm] = useState(false)
-  const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all")
+  const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed" | "archived">("all")
   const [taskMenuOpenId, setTaskMenuOpenId] = useState<string | null>(null)
   const [slidingTaskId, setSlidingTaskId] = useState<string | null>(null)
   const [slideOffset, setSlideOffset] = useState(0)
@@ -368,17 +381,16 @@ export default function NemoAIDashboard() {
   const [currentGreeting, setCurrentGreeting] = useState("")
   const [greetingTimestamp, setGreetingTimestamp] = useState(0)
 
+  // Helper to render message content with markdown-like formatting
   const renderMessageContent = (content: string) => {
-    // Simple regex for **bold** text
-    const parts = content.split(/(\*\*.*?\*\*)/g)
-    return parts.map((part, index) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>
-      }
-      return part
-    })
-  }
+    // Handle Headers (###, ##)
+    let processed = content
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-3 mb-1 text-white">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2 text-white border-b border-white/10 pb-1">$1</h2>')
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
 
+    return <div dangerouslySetInnerHTML={{ __html: processed }} className="whitespace-pre-wrap font-sans" />
+  }
   const getTimeBasedGreeting = () => {
     return currentGreeting || "Good day!"
   }
@@ -1021,6 +1033,7 @@ export default function NemoAIDashboard() {
       // START RECORDING - First tap
       try {
         setIsProcessing(true)
+        playSound("orb_open")
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         const mediaRecorder = new MediaRecorder(stream)
         mediaRecorderRef.current = mediaRecorder
@@ -1060,6 +1073,7 @@ export default function NemoAIDashboard() {
         setIsPushToTalk(false)
         setIsRecording(false)
         setOrbAnimating(false) // Deactivate orb animation
+        playSound("orb_close")
 
         // IMMEDIATE UI UPDATE:
         // 1. Ensure we have a thread
@@ -1091,7 +1105,14 @@ export default function NemoAIDashboard() {
           // The user wants "waiting for reply animation". 
           // The existing code has: `loading && (...)` inside the message list.
           // But if `messages.length === 0`, it shows the Orb!
-          // FIX: Add a temp placeholder message that says "Processing..."
+          // FIX: Add a dummy "Thinking..." message
+          setMessages([{
+            id: "temp-loading-msg",
+            content: "Thinking...",
+            role: "assistant",
+            created_at: new Date().toISOString(),
+            thread_id: targetThreadId || "temp",
+          }])
         }
 
         setLoading(true) // Start loading animation
@@ -1188,6 +1209,7 @@ export default function NemoAIDashboard() {
 
       // Play audio response if provided
       if (data.audio_base64) {
+        playSound("reply")
         playAudioResponse(data.audio_base64)
       }
 
@@ -1532,7 +1554,12 @@ export default function NemoAIDashboard() {
 
   const remainingTasksCount = tasks.filter((t) => t.status === "pending" || t.status === "in_progress").length
 
-  const filteredTasks = taskStatusFilter === "all" ? tasks : tasks.filter((t) => t.status === taskStatusFilter)
+  const filteredTasks =
+    taskStatusFilter === "all"
+      ? tasks.filter((t) => t.status !== "archived")
+      : taskStatusFilter === "archived"
+        ? tasks.filter((t) => t.status === "archived")
+        : tasks.filter((t) => t.status === taskStatusFilter)
 
   const overdueTasks = tasks.filter(
     (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== "completed",
@@ -2007,16 +2034,24 @@ export default function NemoAIDashboard() {
                 {/* Filter and Action Section - Improved visual hierarchy */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-white/[0.05] to-white/[0.02] rounded-xl border border-white/[0.08]">
                   <div className="flex flex-wrap gap-2">
-                    {(["all", "pending", "in_progress", "completed"] as const).map((status) => (
+                    {(["all", "pending", "in_progress", "completed", "archived"] as const).map((status) => (
                       <button
                         key={status}
                         onClick={() => setTaskStatusFilter(status)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${taskStatusFilter === status
-                          ? "bg-white/[0.15] text-white border border-white/[0.3] shadow-lg"
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${taskStatusFilter === status
+                          ? "bg-white text-black shadow-lg shadow-white/10"
                           : "bg-white/[0.05] text-white/70 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white"
                           }`}
                       >
-                        {status === "all" ? "All Tasks" : status === "in_progress" ? "In Progress" : status === "pending" ? "Pending" : "Completed"}
+                        {status === "all"
+                          ? "All Tasks"
+                          : status === "in_progress"
+                            ? "In Progress"
+                            : status === "pending"
+                              ? "Pending"
+                              : status === "archived"
+                                ? "Archive"
+                                : "Completed"}
                       </button>
                     ))}
                   </div>
@@ -2063,6 +2098,7 @@ export default function NemoAIDashboard() {
                               <option value="pending">Pending</option>
                               <option value="in_progress">In Progress</option>
                               <option value="completed">Completed</option>
+                              <option value="archived">Archived</option>
                             </select>
                             <select
                               value={editingTask?.priority || "medium"}
@@ -2252,6 +2288,7 @@ export default function NemoAIDashboard() {
                               <option value="pending">Pending</option>
                               <option value="in_progress">In Progress</option>
                               <option value="completed">Completed</option>
+                              <option value="archived">Archived</option>
                             </select>
                           </div>
                           <div>
@@ -2357,6 +2394,7 @@ export default function NemoAIDashboard() {
                               <option value="pending">Pending</option>
                               <option value="in_progress">In Progress</option>
                               <option value="completed">Completed</option>
+                              <option value="archived">Archived</option>
                             </select>
                           </div>
                           <div>
@@ -3840,15 +3878,15 @@ export default function NemoAIDashboard() {
 
               {/* Change Log Section */}
               <div className="pt-4 border-t border-white/10 space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.1)</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.2)</label>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
-                  <p>• Fixed mobile layout "white block" issue.</p>
-                  <p>• Added "Tasks" slide-to-complete removal.</p>
-                  <p>• Chat input now uses Enter for new line.</p>
-                  <p>• Added "Ideas" module.</p>
-                  <p>• Updated Login Screen hierarchy.</p>
-                  <p>• Added formatting for greetings.</p>
-                  <p>• Improved "In Progress" top bar stats.</p>
+                  <p>• Added "Archive" task status and filter.</p>
+                  <p>• Added Sound Effects for Chat and Voice Orb.</p>
+                  <p>• Added In-Place Task Editing on Calendar.</p>
+                  <p>• Added Due Date editing in Task list.</p>
+                  <p>• Support for Markdown Headings (##, ###).</p>
+                  <p>• Fixed Greeting Text glitch ("Boss").</p>
+                  <p>• Fixed Create Task database error.</p>
                 </div>
               </div>
 
@@ -3916,7 +3954,7 @@ export default function NemoAIDashboard() {
                         />
                         <select
                           value={selectedCalendarTask.priority}
-                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value })}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value as any })}
                           className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
                         >
                           <option value="low">Low Priority</option>
@@ -3926,12 +3964,13 @@ export default function NemoAIDashboard() {
                         </select>
                         <select
                           value={selectedCalendarTask.status}
-                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value })}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value as any })}
                           className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
                         >
                           <option value="pending">Pending</option>
                           <option value="in_progress">In Progress</option>
                           <option value="completed">Completed</option>
+                          <option value="archived">Archived</option>
                         </select>
                       </div>
                       <textarea

@@ -18,7 +18,7 @@ export interface Task {
     user_id: string
     title: string
     description: string | null
-    status: "pending" | "in_progress" | "completed"
+    status: "pending" | "in_progress" | "completed" | "archived"
     priority: "low" | "medium" | "high" | "urgent"
     due_date: string | null
     created_at: string
