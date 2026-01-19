@@ -567,6 +567,8 @@ export default function NemoAIDashboard() {
       loadContacts() // Load contacts when component mounts
       loadUserSettings() // Load user settings on initial mount
       loadTasks() // Load tasks immediately to show counts in topbar
+      loadIdeas() // Load ideas immediately
+      loadMarketData() // Load market data immediately
     } else if (!supabase || useFallbackMode) {
       console.log("[v0] Running in fallback mode without database")
       setIsServerOnline(false)
@@ -4012,7 +4014,6 @@ export default function NemoAIDashboard() {
                 <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.6)</label>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
                   <p>• Fixed Topbar Task Count: Now loads immediately on app start.</p>
-                  <p>• Documentation: Updated project context in Gemini.md.</p>
                   <p>• Polished Mobile Modals: Removed borders & glossy edges for clean look.</p>
                   <p>• Mobile UI Overhaul: Full-screen modals & optimized touch areas.</p>
                   <p>• Fixed Market Intelligence: Now ensures latest scrape data is shown.</p>
