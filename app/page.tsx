@@ -4,7 +4,7 @@ import type React from "react"
 import type { PromptCard } from "@/lib/types"
 import * as API from "@/lib/services/api"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useTransition } from "react"
 import {
   Search,
   Sparkles,
@@ -288,6 +288,9 @@ export default function NemoAIDashboard() {
   const [message, setMessage] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [activeModule, setActiveModule] = useState<string>("home")
+  const [isPending, startTransition] = useTransition()
+  const [loadingModule, setLoadingModule] = useState<string | null>(null)
+  const moduleClickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null)
   const [threads, setThreads] = useState<Thread[]>([])
@@ -645,29 +648,61 @@ export default function NemoAIDashboard() {
     }
   }, [activeModule])
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (moduleClickTimeoutRef.current) {
+        clearTimeout(moduleClickTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const handleModuleClick = (moduleId: string) => {
-    setActiveModule(moduleId)
-    setIsSidebarOpen(false)
+    // Prevent rapid clicks and interruptions during loading
+    if (isPending || loadingModule) return
 
-    if (moduleId === "home") {
-      setMessages([])
-      setShowQuickPrompts(true)
-      const newThreadId = crypto.randomUUID()
-      setCurrentThreadId(newThreadId)
-      window.history.pushState({}, "", `/?thread_id=${newThreadId}`)
-      console.log("[v0] Reset to home, new thread:", newThreadId)
+    // Clear any existing timeout
+    if (moduleClickTimeoutRef.current) {
+      clearTimeout(moduleClickTimeoutRef.current)
     }
 
-    if (moduleId === "tasks") {
-      loadTasks()
-    } else if (moduleId === "ideas") {
-      // Load ideas when the "Ideas" module is clicked
-      loadIdeas()
-    } else if (moduleId === "crm") {
-      loadContacts() // Load contacts when CRM module is clicked
-    } else if (moduleId === "calendar") {
-      loadTasks() // Load tasks for calendar view
-    }
+    // Set loading state immediately for UI feedback
+    setLoadingModule(moduleId)
+
+    // Use transition to prevent UI blocking
+    startTransition(() => {
+      setActiveModule(moduleId)
+      setIsSidebarOpen(false)
+
+      if (moduleId === "home") {
+        setMessages([])
+        setShowQuickPrompts(true)
+        const newThreadId = crypto.randomUUID()
+        setCurrentThreadId(newThreadId)
+        window.history.pushState({}, "", `/?thread_id=${newThreadId}`)
+        console.log("[v0] Reset to home, new thread:", newThreadId)
+        setLoadingModule(null)
+      } else {
+        // Delay data loading slightly to allow UI to update first
+        moduleClickTimeoutRef.current = setTimeout(async () => {
+          try {
+            if (moduleId === "tasks") {
+              await loadTasks()
+            } else if (moduleId === "ideas") {
+              await loadIdeas()
+            } else if (moduleId === "crm") {
+              await loadContacts()
+            } else if (moduleId === "calendar") {
+              await loadTasks()
+            }
+          } catch (error) {
+            console.error("[v0] Error loading module data:", error)
+          } finally {
+            setLoadingModule(null)
+          }
+        }, 50)
+      }
+    })
   }
 
   const loadThreads = async () => {
@@ -1725,12 +1760,20 @@ export default function NemoAIDashboard() {
               <button
                 key={module.id}
                 onClick={() => handleModuleClick(module.id)}
+                disabled={isPending || (loadingModule !== null && loadingModule !== module.id)}
                 className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === module.id
-                  ? "bg-white/[0.1] text-white"
-                  : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                    ? "bg-white/[0.1] text-white"
+                    : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                  } ${isPending || (loadingModule !== null && loadingModule !== module.id)
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                   }`}
               >
-                <IconComponent className="w-4 h-4 shrink-0" />
+                {loadingModule === module.id ? (
+                  <RefreshCw className="w-4 h-4 shrink-0 animate-spin" />
+                ) : (
+                  <IconComponent className="w-4 h-4 shrink-0" />
+                )}
                 <span className="truncate">{module.label}</span>
               </button>
             )

@@ -61,9 +61,9 @@ The dashboard is divided into distinct functional modules:
 *   **Auth:** Custom implementation via Supabase + Webhook fallback (for N8N integration).
 *   **Voice:** Custom "Push to Talk" implementation sending audio blobs to N8N webhook.
 *   **Deployment:** Vercel.
-*   **Version:** v1.0.5 (as of latest push).
+*   **Version:** v1.0.8 (as of latest push).
 
-## Recent Changes (v1.0.5)
-*   **Polished Mobile Modals:** Removed borders and glossy edges to fix visual artifacts on mobile.
-*   **Market Intelligence Fix:** Logic updated to strictly fetch the most recent scrape data.
-*   **Changelog:** Integrated transparent changelog in Settings.
+## Recent Changes (v1.0.8)
+*   **Module Tabs Fix:** Resolved 3-second UI freeze when switching modules. Implemented React `useTransition` and debounced click handlers for smooth navigation.
+*   **Mobile Responsiveness:** Verified and optimized sidebar interaction and module transitions on mobile devices.
+*   **Loading States:** Added visual loading indicators (spinners) to module tabs to prevent blocking UI during data fetches.
