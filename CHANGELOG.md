@@ -2,11 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.13] - 2026-01-22
-
-### Fixed
-- **Calendar**: Fixed timezone-related bug where tasks displayed on the wrong date (1 day lag). Now uses local date formatting.
-
 ## [1.0.12] - 2026-01-22
 
 ### Added
@@ -27,3 +22,10 @@ All notable changes to this project will be documented in this file.
   - Enforced `min-h-screen` and black background on `body` and `html`.
   - Set `viewport-fit=cover` and `theme-color: #000000` to handle safety areas and browser bars.
 - **Layout**: Fixed Login screen height ensuring it covers the full mobile viewport.
+
+### Removed
+- **Unwanted Routes**: Removed `/calendar` route (`app/calendar/page.tsx`).
+
+### Fixed (v1.0.12+)
+- **Calendar Date Lag**: Fixed timezone offset issue where tasks were appearing one day late on the calendar grid.
+- **Login Text**: Updated login greetings.

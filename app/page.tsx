@@ -3458,11 +3458,13 @@ export default function NemoAIDashboard() {
                       }
 
                       const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber)
-                      // Use local date string construction to avoid timezone shifts from toISOString()
+                      // Fix: Use local date string construction instead of toISOString() which converts to UTC and causes lag
+                      // e.g. Jan 23 00:00 Yangon (UTC+6.5) -> Jan 22 17:30 UTC -> "2026-01-22" (Wrong day)
                       const year = cellDate.getFullYear()
                       const month = String(cellDate.getMonth() + 1).padStart(2, "0")
                       const day = String(cellDate.getDate()).padStart(2, "0")
                       const cellDateStr = `${year}-${month}-${day}`
+
                       const dayTasks = tasks.filter(
                         (task) =>
                           task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
