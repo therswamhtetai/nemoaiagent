@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
     return {
         name: 'NemoAI - Your Business Operating System',
         short_name: 'NemoAI',
-        description: 'AI-powered business operating system with intelligent task management, ideas, CRM, and more/n',
+        description: 'AI-powered business operating system with intelligent task management, ideas, CRM, and more',
         start_url: '/',
         display: 'standalone',
         background_color: '#000000',
