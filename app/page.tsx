@@ -3597,16 +3597,20 @@ export default function NemoAIDashboard() {
                   )}
                 </div>
                 {showQuickPrompts && (
-                  <div className="relative overflow-x-auto scrollbar-autohide pb-2">
-                    <div className="flex gap-2 min-w-max px-1">
+                  <div className="relative overflow-x-auto scrollbar-hide py-3">
+                    <div className="flex gap-3 min-w-max px-2">
                       {promptCards.map((card) => {
                         return (
                           <Card
                             key={card.id}
-                            className="relative group bg-transparent border-white/[0.2] hover:border-white/[0.4] transition-all duration-300 backdrop-blur rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] w-auto px-3 py-1.5 cursor-pointer"
+                            className={`relative group transition-all duration-300 backdrop-blur-md rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] w-auto border
+                              ${isEditingPrompts
+                                ? "bg-white/[0.08] border-white/20 px-4 py-3"
+                                : "bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.1] hover:border-white/[0.2] px-5 py-2.5"
+                              } cursor-pointer select-none`}
                           >
                             {editingCardId === card.id ? (
-                              <div className="flex items-center gap-1.5 px-2 py-1">
+                              <div className="flex items-center gap-2">
                                 <Input
                                   value={editText}
                                   onChange={(e) => setEditText(e.target.value)}
@@ -3616,47 +3620,46 @@ export default function NemoAIDashboard() {
                                       saveEditCard(card.id)
                                     }
                                   }}
-                                  className="h-6 text-xs bg-white/10 border-white/20 text-white"
+                                  className="h-7 text-sm bg-white/10 border-white/20 text-white min-w-[120px]"
                                   autoFocus
                                 />
                                 <Button
                                   size="sm"
                                   onClick={() => saveEditCard(card.id)}
-                                  className="h-6 px-2 bg-white/20 hover:bg-white/30 text-white text-xs"
+                                  className="h-7 w-7 p-0 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30"
                                 >
-                                  <Check className="w-3 h-3" />
+                                  <Check className="w-4 h-4" />
                                 </Button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => !isEditingPrompts && handlePromptCardClick(card.text)}
-                                className="w-full flex items-center px-2 py-1 text-xs text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
+                                className={`w-full flex items-center text-sm font-medium transition-colors whitespace-nowrap
+                                  ${isEditingPrompts ? "text-white/50 pr-8" : "text-zinc-200 hover:text-white"}`}
                               >
-                                <span className="font-medium">{card.text}</span>
+                                {card.text}
                               </button>
                             )}
                             {isEditingPrompts && editingCardId !== card.id && (
-                              <div className="absolute -top-1.5 -right-1.5 flex gap-1">
+                              <div className="absolute -top-2 -right-2 flex gap-1 z-10 scale-90">
+                                {/* Only show Sparkles/Icon picker if really needed to save space, otherwise keeping consistent */}
                                 <button
-                                  onClick={() => {
-                                    setIconPickerCardId(card.id)
-                                    setShowIconPicker(true)
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    startEditCard(card)
                                   }}
-                                  className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
+                                  className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center hover:bg-zinc-700 border border-white/20 shadow-lg transition-transform hover:scale-110"
                                 >
-                                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                                  <Edit2 className="w-3 h-3 text-blue-300" />
                                 </button>
                                 <button
-                                  onClick={() => startEditCard(card)}
-                                  className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    removePromptCard(card.id)
+                                  }}
+                                  className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center hover:bg-red-900/50 border border-white/20 shadow-lg transition-transform hover:scale-110"
                                 >
-                                  <Edit2 className="w-2.5 h-2.5 text-white" />
-                                </button>
-                                <button
-                                  onClick={() => removePromptCard(card.id)}
-                                  className="w-5 h-5 bg-red-500/80 backdrop-blur rounded-full flex items-center justify-center hover:bg-red-500 border border-red-500/40 shadow-lg transition-all"
-                                >
-                                  <X className="w-2.5 h-2.5 text-white" />
+                                  <X className="w-3 h-3 text-red-400" />
                                 </button>
                               </div>
                             )}
@@ -3667,10 +3670,10 @@ export default function NemoAIDashboard() {
                         <Button
                           onClick={addPromptCard}
                           variant="outline"
-                          className="h-auto min-h-[24px] border-dashed border border-white/15 hover:border-white/30 bg-transparent hover:bg-white/[0.05] text-zinc-400 hover:text-white backdrop-blur rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 px-2 py-1"
+                          className="h-auto min-h-[44px] min-w-[80px] border-dashed border-white/20 hover:border-white/40 bg-white/[0.02] hover:bg-white/[0.05] text-zinc-400 hover:text-white rounded-xl transition-all duration-300 flex items-center justify-center gap-2 px-4"
                         >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span className="text-xs font-semibold">Add</span>
+                          <Plus className="w-4 h-4" />
+                          <span className="text-sm font-medium">Add</span>
                         </Button>
                       )}
                     </div>

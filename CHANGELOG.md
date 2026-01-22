@@ -28,5 +28,5 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed (v1.0.12+)
 - **Calendar Date Lag**: Fixed timezone offset issue where tasks were appearing one day late on the calendar grid.
-- **iOS PWA Overlap**: Added Safe Area insets to top navigation bar and ALL modals to prevent overlap with iOS status bar.
+- **iOS PWA Overlap**: Added Safe Area insets to top navigation bar, Sidebar, and ALL modals to prevent overlap with iOS status bar.
 - **Login Text**: Updated login greetings.
