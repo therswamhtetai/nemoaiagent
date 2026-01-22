@@ -2413,7 +2413,7 @@ export default function NemoAIDashboard() {
 
                 {/* New Task Form Modal */}
                 {showNewTaskForm && (
-                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
                     <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl md:text-2xl font-bold text-white">Create New Task</h2>
@@ -2509,7 +2509,7 @@ export default function NemoAIDashboard() {
 
                 {/* Edit Task Modal */}
                 {editingTask && editingTaskId && (
-                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
                     <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl md:text-2xl font-bold text-white">Edit Task</h2>
@@ -2760,7 +2760,7 @@ export default function NemoAIDashboard() {
 
                 {viewingIdeaId && viewingIdea && (
                   <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
                     onClick={() => {
                       setViewingIdeaId(null)
                       setViewingIdea(null)
@@ -2874,7 +2874,7 @@ export default function NemoAIDashboard() {
 
                 {/* New Idea Form Modal */}
                 {showNewIdeaForm && (
-                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
                     <Card className="w-full max-w-lg p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold">Create New Idea</h2>
@@ -3115,7 +3115,7 @@ export default function NemoAIDashboard() {
                 {/* Competitor Detail Modal */}
                 {showCompetitorModal && selectedCompetitor && (
                   <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
                     onClick={() => setShowCompetitorModal(false)}
                   >
                     <Card
@@ -3801,7 +3801,7 @@ export default function NemoAIDashboard() {
       {
         showContactModal && (
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowContactModal(false)
@@ -3934,7 +3934,7 @@ export default function NemoAIDashboard() {
       {
         showSettingsModal && (
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
             onClick={() => setShowSettingsModal(false)}
           >
             <Card
@@ -4107,7 +4107,7 @@ export default function NemoAIDashboard() {
 
       {
         activeTaskPopup && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
             <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-0 md:border md:border-white/10 shadow-2xl rounded-none md:rounded-xl">
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <h2 className="text-xl font-semibold text-white capitalize">
@@ -4213,7 +4213,7 @@ export default function NemoAIDashboard() {
 
       {showCalendarTaskModal && selectedCalendarTask && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
           onClick={() => setShowCalendarTaskModal(false)}
         >
           <Card
