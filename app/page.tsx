@@ -176,8 +176,8 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
     <div className="flex min-h-screen items-center justify-center bg-black text-white p-4 font-sans">
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4">Welcome Back</h2>
-          <p className="text-white/40 text-base font-light">Sign in to your AI Dashboard</p>
+          <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4">Greetings from Nemo</h2>
+          <p className="text-white/40 text-base font-light">Your Personal AI Assistant</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
