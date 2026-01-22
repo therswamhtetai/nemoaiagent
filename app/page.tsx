@@ -1733,7 +1733,7 @@ export default function NemoAIDashboard() {
       {/* Sidebar - Updated with gradient black and grey glassmorphism */}
       <div
         className={`${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } fixed md:translate-x-0 md:relative w-[280px] md:w-56 h-full bg-gradient-to-b from-zinc-900 to-black/90 backdrop-blur-xl border-r border-white/[0.08] transition-transform duration-300 ease-out z-40 flex flex-col custom-scrollbar-dark shadow-2xl md:shadow-none`}
+          } fixed md:translate-x-0 md:relative w-[280px] md:w-56 h-full bg-gradient-to-b from-zinc-900 to-black/90 backdrop-blur-xl border-r border-white/[0.08] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out z-40 flex flex-col custom-scrollbar-dark shadow-2xl md:shadow-none`}
       >
         {/* Logo Area - Updated with white/grey gradient */}
         <div className="p-4 border-b border-white/[0.08] flex items-center justify-between">
