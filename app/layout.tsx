@@ -15,6 +15,11 @@ export const metadata: Metadata = {
     icon: "/icon.png?v=3",
     apple: "/apple-icon.png?v=3",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NemoAI",
+  },
 }
 
 export const viewport = {
@@ -22,6 +27,8 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#000000",
 }
 
 export default function RootLayout({

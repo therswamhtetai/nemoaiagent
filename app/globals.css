@@ -139,11 +139,17 @@
     --font-scale: 1.15;
   }
 
+  html {
+    background-color: black;
+    overscroll-behavior-y: none;
+  }
+
   body {
     @apply bg-black text-foreground;
     background: linear-gradient(180deg, #000000 0%, #0a0a0a 50%, #000000 100%);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    overscroll-behavior-y: none;
     /* Removed conflicting font-size calculation - let Tailwind utilities handle sizing */
   }
 
