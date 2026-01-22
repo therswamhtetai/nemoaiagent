@@ -3458,7 +3458,11 @@ export default function NemoAIDashboard() {
                       }
 
                       const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber)
-                      const cellDateStr = cellDate.toISOString().split("T")[0]
+                      // Use local date string construction to avoid timezone shifts from toISOString()
+                      const year = cellDate.getFullYear()
+                      const month = String(cellDate.getMonth() + 1).padStart(2, "0")
+                      const day = String(cellDate.getDate()).padStart(2, "0")
+                      const cellDateStr = `${year}-${month}-${day}`
                       const dayTasks = tasks.filter(
                         (task) =>
                           task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
