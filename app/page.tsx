@@ -4060,17 +4060,15 @@ export default function NemoAIDashboard() {
 
               {/* Change Log Section */}
               <div className="pt-4 border-t border-white/10 space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.6)</label>
+                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.12)</label>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
+                  <p>• Fixed Calendar Date Lag: Tasks now show on correct dates.</p>
+                  <p>• Removed Unwanted Routes: Cleaned up /calendar path.</p>
+                  <p>• Updated Login Screen: New greeting text & design.</p>
+                  <p>• PWA Support: Installable App with offline capabilities.</p>
+                  <p>• Fixed UI Glitches: Background scrolling & floating issues resolved.</p>
+                  <p>• Deployment Fixes: Switched to stable npm configuration.</p>
                   <p>• Fixed Topbar Task Count: Now loads immediately on app start.</p>
-                  <p>• Polished Mobile Modals: Removed borders & glossy edges for clean look.</p>
-                  <p>• Mobile UI Overhaul: Full-screen modals & optimized touch areas.</p>
-                  <p>• Fixed Market Intelligence: Now ensures latest scrape data is shown.</p>
-                  <p>• Sidebar Improvements: Better mobile backdrop & smooth transitions.</p>
-                  <p>• Added "Archive" task status and filter.</p>
-                  <p>• Added In-Place Task Editing on Calendar.</p>
-                  <p>• Support for Markdown Headings (##, ###, ####).</p>
-                  <p>• Fixed Greeting Text glitch ("Boss").</p>
                 </div>
               </div>
 
