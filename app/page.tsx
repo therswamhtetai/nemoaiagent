@@ -1902,2523 +1902,2522 @@ export default function NemoAIDashboard() {
           </div>
         </div>
       </div>
-    </div>
 
-      {/* Main Content */ }
-  <div className="flex-1 flex flex-col overflow-hidden">
-    {/* Top Bar - Updated with hamburger menu for mobile and Task Remaining */}
-    <div className="flex flex-col border-b border-white/5 bg-gradient-to-r from-black/20 via-transparent to-black/20 backdrop-blur-sm pt-[env(safe-area-inset-top)] transition-all">
-      <div className="h-14 flex items-center justify-between px-4 md:px-6 w-full">
-        {/* Left: Hamburger menu (mobile/tablet) + Logo */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
-            aria-label="Toggle menu"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-
-          <div className="hidden md:flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
-              <img src="/icon.png" alt="NemoAI" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-              NemoAI
-            </span>
-          </div>
-        </div>
-
-        {/* Center: Status info */}
-        <div className="flex items-center gap-3 md:gap-6 text-xs md:text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-soft shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-            <span className="text-white/90 font-medium hidden sm:inline">Stable Sync</span>
-            <span className="text-white/90 font-medium sm:hidden">Sync</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.2)] transition-all hover:bg-blue-500/20">
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
-              <div className="relative w-2 h-2 rounded-full bg-blue-400"></div>
-            </div>
-            <span className="text-blue-200 font-medium text-xs tracking-wide">
-              In Progress: {tasks.filter((t) => t.status === "in_progress").length}
-            </span>
-          </div>
-          <div className="text-white/70 font-mono text-xs md:text-sm">{currentTime}</div>
-        </div>
-
-        {/* Right: Settings - Visible on all devices */}
-        <div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-8 h-8 hover:bg-white/10 text-white/70 hover:text-white"
-            onClick={() => {
-              loadUserSettings()
-              setShowSettingsModal(true)
-            }}
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Chat Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {activeModule === "home" ? (
-          messages.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center p-3 md:p-4 overflow-y-auto">
-              <div className="w-full max-w-xl mx-auto flex flex-col items-center justify-center space-y-8">
-                {/* Text above orb - Updated typography */}
-                <div className="text-center space-y-2 animate-fade-in">
-                  {/* Increased text sizes throughout for better readability */}
-                  <h2 className="text-3xl md:text-4xl font-light tracking-wide text-white">
-                    {isPushToTalk ? "I'm Listening..." : getTimeBasedGreeting()}
-                  </h2>
+        {/* Top Bar - Updated with hamburger menu for mobile and Task Remaining */}
+        <div className="flex flex-col border-b border-white/5 bg-gradient-to-r from-black/20 via-transparent to-black/20 backdrop-blur-sm pt-[env(safe-area-inset-top)] transition-all">
+          <div className="h-14 flex items-center justify-between px-4 md:px-6 w-full">
+            {/* Left: Hamburger menu (mobile/tablet) + Logo */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
+                aria-label="Toggle menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              <div className="hidden md:flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+                  <img src="/icon.png" alt="NemoAI" className="w-full h-full object-contain" />
                 </div>
-
-                {/* Orb */}
-                <button
-                  onClick={handlePushToTalk}
-                  className="relative w-36 h-36 md:w-40 md:h-40 flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
-                  style={{ width: "150px", height: "150px" }}
-                  aria-label="Voice assistant"
-                >
-                  <div className={`${orbAnimating || isPushToTalk ? "animated-orb-active" : "animated-orb-idle"}`}>
-                    <div className="orb-circle-wrapper">
-                      <div
-                        className={`orb-circle c1 ${orbAnimating || isPushToTalk ? "animate-fast-1" : "animate-idle-1"}`}
-                      ></div>
-                      <div
-                        className={`orb-circle c2 ${orbAnimating || isPushToTalk ? "animate-fast-2" : "animate-idle-2"}`}
-                      ></div>
-                      <div
-                        className={`orb-circle c3 ${orbAnimating || isPushToTalk ? "animate-fast-3" : "animate-idle-3"}`}
-                      ></div>
-                      <div
-                        className={`orb-circle c4 ${orbAnimating || isPushToTalk ? "animate-fast-4" : "animate-idle-4"}`}
-                      ></div>
-                      <div
-                        className={`orb-circle c5 ${orbAnimating || isPushToTalk ? "animate-fast-5" : "animate-idle-5"}`}
-                      ></div>
-                      <div
-                        className={`orb-circle c6 ${orbAnimating || isPushToTalk ? "animate-fast-6" : "animate-idle-6"}`}
-                      ></div>
-                      <div
-                        className={`orb-circle c7 ${orbAnimating || isPushToTalk ? "animate-fast-7" : "animate-idle-7"}`}
-                      ></div>
-                    </div>
-                  </div>
-                </button>
-
-                <p className="text-sm text-white/50 text-center">
-                  {isPushToTalk ? "Tap again to send" : "Tap to speak"}
-                </p>
+                <span className="text-lg font-semibold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                  NemoAI
+                </span>
               </div>
             </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar-dark">
-              {messages.map((msg, index) => (
-                <div
-                  key={msg.id || index}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slide-up`}
-                >
-                  <div
-                    className={`max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none ${msg.role === "user"
-                      ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30"
-                      : "bg-gradient-to-br from-white/[0.06] to-white/[0.02] text-zinc-300 border border-white/[0.08]"
-                      } px-3.5 py-2.5 text-xs backdrop-blur-xl `}
-                  >
-                    <p className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
-                  </div>
+
+            {/* Center: Status info */}
+            <div className="flex items-center gap-3 md:gap-6 text-xs md:text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-soft shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                <span className="text-white/90 font-medium hidden sm:inline">Stable Sync</span>
+                <span className="text-white/90 font-medium sm:hidden">Sync</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.2)] transition-all hover:bg-blue-500/20">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
+                  <div className="relative w-2 h-2 rounded-full bg-blue-400"></div>
                 </div>
-              ))}
-              {loading && (
-                <div className="flex justify-start animate-slide-up">
-                  <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] px-4 py-4 backdrop-blur-xl">
-                    <div className="space-y-2.5 mb-3">
-                      <div className="h-2 w-24 bg-white/20 rounded animate-pulse" />
-                      <div className="h-2 w-full max-w-[200px] bg-white/10 rounded animate-pulse" />
-                      <div className="h-2 w-full max-w-[160px] bg-white/10 rounded animate-pulse" />
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <Sparkles className="w-3 h-3 text-blue-400 animate-pulse" />
-                      <span className="text-[10px] text-zinc-400 font-medium animate-pulse transition-opacity duration-500 uppercase tracking-wider">
-                        {loadingStates[loadingStateIndex]}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+                <span className="text-blue-200 font-medium text-xs tracking-wide">
+                  In Progress: {tasks.filter((t) => t.status === "in_progress").length}
+                </span>
+              </div>
+              <div className="text-white/70 font-mono text-xs md:text-sm">{currentTime}</div>
             </div>
-          )
-        ) : activeModule === "tasks" ? (
-          // Tasks View - Revised layout with improved spacing and typography
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar-dark bg-gradient-to-b from-black/20 to-transparent">
-            <div className="max-w-7xl mx-auto space-y-8">
-              {/* Header Section - Improved typography hierarchy */}
-              <div className="space-y-2 mb-8">
-                <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Task Management</h1>
-                <p className="text-base text-zinc-400">Organize and track your work efficiently</p>
-              </div>
 
-              {/* Task Stats - Enhanced cards with better spacing */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card
-                  className="p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] backdrop-blur-xl hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group cursor-pointer"
-                  onClick={() => setActiveTaskPopup("pending")}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-white/70 uppercase tracking-wide">In Progress</p>
-                      <p className="text-4xl font-bold text-white">
-                        {remainingTasksCount}
-                      </p>
-                      <p className="text-xs text-white/50 mt-2">Active tasks</p>
-                    </div>
-                    <div className="p-3 bg-white/[0.08] rounded-lg group-hover:bg-white/[0.12] transition-colors">
-                      <Target className="w-6 h-6 text-white/60" />
-                    </div>
-                  </div>
-                </Card>
+            {/* Right: Settings - Visible on all devices */}
+            <div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 hover:bg-white/10 text-white/70 hover:text-white"
+                onClick={() => {
+                  loadUserSettings()
+                  setShowSettingsModal(true)
+                }}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
 
-                <Card
-                  className="p-6 bg-gradient-to-br from-emerald-500/[0.15] to-emerald-500/[0.05] border-emerald-500/[0.2] backdrop-blur-xl hover:from-emerald-500/[0.2] hover:to-emerald-500/[0.1] transition-all duration-300 group cursor-pointer"
-                  onClick={() => setActiveTaskPopup("completed")}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-emerald-300/80 uppercase tracking-wide">Completed</p>
-                      <p className="text-4xl font-bold text-emerald-300">
-                        {tasks.filter((t) => t.status === "completed").length}
-                      </p>
-                      <p className="text-xs text-emerald-300/50 mt-2">Finished tasks</p>
+          {/* Chat Area */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {activeModule === "home" ? (
+              messages.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center p-3 md:p-4 overflow-y-auto">
+                  <div className="w-full max-w-xl mx-auto flex flex-col items-center justify-center space-y-8">
+                    {/* Text above orb - Updated typography */}
+                    <div className="text-center space-y-2 animate-fade-in">
+                      {/* Increased text sizes throughout for better readability */}
+                      <h2 className="text-3xl md:text-4xl font-light tracking-wide text-white">
+                        {isPushToTalk ? "I'm Listening..." : getTimeBasedGreeting()}
+                      </h2>
                     </div>
-                    <div className="p-3 bg-emerald-500/[0.15] rounded-lg group-hover:bg-emerald-500/[0.25] transition-colors">
-                      <Check className="w-6 h-6 text-emerald-400" />
-                    </div>
-                  </div>
-                </Card>
 
-                <Card
-                  className="p-6 bg-gradient-to-br from-red-500/[0.15] to-red-500/[0.05] border-red-500/[0.2] backdrop-blur-xl hover:from-red-500/[0.2] hover:to-red-500/[0.1] transition-all duration-300 group cursor-pointer"
-                  onClick={() => setActiveTaskPopup("overdue")}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-red-300/80 uppercase tracking-wide">Overdue</p>
-                      <p className="text-4xl font-bold text-red-300">
-                        {overdueTasks}
-                      </p>
-                      <p className="text-xs text-red-300/50 mt-2">Past due tasks</p>
-                    </div>
-                    <div className="p-3 bg-red-500/[0.15] rounded-lg group-hover:bg-red-500/[0.25] transition-colors">
-                      <Calendar className="w-6 h-6 text-red-400" />
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Urgent Tasks Card */}
-                <Card
-                  className="p-6 bg-gradient-to-br from-orange-500/[0.15] to-orange-500/[0.05] border-orange-500/[0.2] backdrop-blur-xl hover:from-orange-500/[0.2] hover:to-orange-500/[0.1] transition-all duration-300 group cursor-pointer"
-                  onClick={() => setActiveTaskPopup("urgent")}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-orange-300/80 uppercase tracking-wide">Urgent Tasks</p>
-                      <p className="text-4xl font-bold text-orange-300">
-                        {tasks.filter((t) => t.priority === "urgent" && t.status !== "archived" && t.status !== "completed").length}
-                      </p>
-                      <p className="text-xs text-orange-300/50 mt-2">High priority items</p>
-                    </div>
-                    <div className="p-3 bg-orange-500/[0.15] rounded-lg group-hover:bg-orange-500/[0.25] transition-colors">
-                      <Zap className="w-6 h-6 text-orange-400" />
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Today's Tasks Card */}
-                <Card
-                  className="p-6 bg-gradient-to-br from-blue-500/[0.15] to-blue-500/[0.05] border-blue-500/[0.2] backdrop-blur-xl hover:from-blue-500/[0.2] hover:to-blue-500/[0.1] transition-all duration-300 group cursor-pointer"
-                  onClick={() => setActiveTaskPopup("today")}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-blue-300/80 uppercase tracking-wide">Today</p>
-                      <p className="text-4xl font-bold text-blue-300">
-                        {todayTasksCount}
-                      </p>
-                      <p className="text-xs text-blue-300/50 mt-2">Due today</p>
-                    </div>
-                    <div className="p-3 bg-blue-500/[0.15] rounded-lg group-hover:bg-blue-500/[0.25] transition-colors">
-                      <Clock className="w-6 h-6 text-blue-400" />
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Archived Tasks Card */}
-                <Card
-                  className="p-6 bg-gradient-to-br from-purple-500/[0.15] to-purple-500/[0.05] border-purple-500/[0.2] backdrop-blur-xl hover:from-purple-500/[0.2] hover:to-purple-500/[0.1] transition-all duration-300 group cursor-pointer"
-                  onClick={() => setActiveTaskPopup("archived")}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-purple-300/80 uppercase tracking-wide">Archived</p>
-                      <p className="text-4xl font-bold text-purple-300">
-                        {archivedTasksCount}
-                      </p>
-                      <p className="text-xs text-purple-300/50 mt-2">Hidden from lists</p>
-                    </div>
-                    <div className="p-3 bg-purple-500/[0.15] rounded-lg group-hover:bg-purple-500/[0.25] transition-colors">
-                      <CheckSquare className="w-6 h-6 text-purple-400" />
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Filter and Action Section - Improved visual hierarchy */}
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-white/[0.05] to-white/[0.02] rounded-xl border border-white/[0.08]">
-                <div className="flex flex-wrap gap-2">
-                  {(["all", "pending", "in_progress", "completed", "archived"] as const).map((status) => (
+                    {/* Orb */}
                     <button
-                      key={status}
-                      onClick={() => setTaskStatusFilter(status)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${taskStatusFilter === status
-                        ? "bg-white text-black shadow-lg shadow-white/10"
-                        : "bg-white/[0.05] text-white/70 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white"
-                        }`}
+                      onClick={handlePushToTalk}
+                      className="relative w-36 h-36 md:w-40 md:h-40 flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
+                      style={{ width: "150px", height: "150px" }}
+                      aria-label="Voice assistant"
                     >
-                      {status === "all"
-                        ? "All Tasks"
-                        : status === "in_progress"
-                          ? "In Progress"
-                          : status === "pending"
-                            ? "Pending"
-                            : status === "archived"
-                              ? "Archive"
-                              : "Completed"}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => setShowNewTaskForm(!showNewTaskForm)}
-                  className="px-4 py-2 bg-white/[0.12] hover:bg-white/[0.18] border border-white/[0.2] rounded-lg text-white font-medium text-sm transition-all duration-200 flex items-center gap-2 justify-center md:justify-start"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Task
-                </button>
-              </div>
-
-              {/* Task List - Improved card styling and layout */}
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold text-white">Your Tasks</h2>
-
-                {filteredTasks.map((task) => (
-                  <Card
-                    key={task.id}
-                    className="relative p-4 md:p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group"
-                  >
-
-                    {editingTaskId === task.id ? (
-                      <div className="space-y-4">
-                        <Input
-                          value={editingTask?.title || ""}
-                          onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
-                          className="bg-white/[0.1] border-white/[0.2] text-white"
-                          placeholder="Task title"
-                        />
-                        <textarea
-                          value={editingTask?.description || ""}
-                          onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
-                          className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
-                          placeholder="Description"
-                          rows={3}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <select
-                            value={editingTask?.status || "pending"}
-                            onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value as any })}
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="archived">Archived</option>
-                          </select>
-                          <select
-                            value={editingTask?.priority || "medium"}
-                            onChange={(e) => setEditingTask({ ...editingTask, priority: e.target.value as any })}
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white"
-                          >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="urgent">Urgent</option>
-                          </select>
-                        </div>
-                        <div className="flex gap-3 pt-3">
-                          <Button
-                            onClick={() => updateTask(task.id, editingTask!)}
-                            className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white"
-                          >
-                            <Check className="w-4 h-4 mr-2" />
-                            Save Changes
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setEditingTaskId(null)
-                              setEditingTask(null)
-                            }}
-                            variant="outline"
-                            className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
-                          >
-                            Cancel
-                          </Button>
+                      <div className={`${orbAnimating || isPushToTalk ? "animated-orb-active" : "animated-orb-idle"}`}>
+                        <div className="orb-circle-wrapper">
+                          <div
+                            className={`orb-circle c1 ${orbAnimating || isPushToTalk ? "animate-fast-1" : "animate-idle-1"}`}
+                          ></div>
+                          <div
+                            className={`orb-circle c2 ${orbAnimating || isPushToTalk ? "animate-fast-2" : "animate-idle-2"}`}
+                          ></div>
+                          <div
+                            className={`orb-circle c3 ${orbAnimating || isPushToTalk ? "animate-fast-3" : "animate-idle-3"}`}
+                          ></div>
+                          <div
+                            className={`orb-circle c4 ${orbAnimating || isPushToTalk ? "animate-fast-4" : "animate-idle-4"}`}
+                          ></div>
+                          <div
+                            className={`orb-circle c5 ${orbAnimating || isPushToTalk ? "animate-fast-5" : "animate-idle-5"}`}
+                          ></div>
+                          <div
+                            className={`orb-circle c6 ${orbAnimating || isPushToTalk ? "animate-fast-6" : "animate-idle-6"}`}
+                          ></div>
+                          <div
+                            className={`orb-circle c7 ${orbAnimating || isPushToTalk ? "animate-fast-7" : "animate-idle-7"}`}
+                          ></div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-xl text-white leading-tight line-clamp-2">{task.title}</h3>
-                            <div className="mt-2 flex items-center gap-2 flex-wrap">
-                              <span
-                                className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
-                                    ${task.priority === "urgent"
-                                    ? "bg-red-500/20 text-red-300 border border-red-500/30"
-                                    : task.priority === "high"
-                                      ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
-                                      : task.priority === "medium"
-                                        ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                                        : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                  }`}
+                    </button>
+
+                    <p className="text-sm text-white/50 text-center">
+                      {isPushToTalk ? "Tap again to send" : "Tap to speak"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar-dark">
+                  {messages.map((msg, index) => (
+                    <div
+                      key={msg.id || index}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slide-up`}
+                    >
+                      <div
+                        className={`max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none ${msg.role === "user"
+                          ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30"
+                          : "bg-gradient-to-br from-white/[0.06] to-white/[0.02] text-zinc-300 border border-white/[0.08]"
+                          } px-3.5 py-2.5 text-xs backdrop-blur-xl `}
+                      >
+                        <p className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {loading && (
+                    <div className="flex justify-start animate-slide-up">
+                      <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] px-4 py-4 backdrop-blur-xl">
+                        <div className="space-y-2.5 mb-3">
+                          <div className="h-2 w-24 bg-white/20 rounded animate-pulse" />
+                          <div className="h-2 w-full max-w-[200px] bg-white/10 rounded animate-pulse" />
+                          <div className="h-2 w-full max-w-[160px] bg-white/10 rounded animate-pulse" />
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          <Sparkles className="w-3 h-3 text-blue-400 animate-pulse" />
+                          <span className="text-[10px] text-zinc-400 font-medium animate-pulse transition-opacity duration-500 uppercase tracking-wider">
+                            {loadingStates[loadingStateIndex]}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              )
+            ) : activeModule === "tasks" ? (
+              // Tasks View - Revised layout with improved spacing and typography
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar-dark bg-gradient-to-b from-black/20 to-transparent">
+                <div className="max-w-7xl mx-auto space-y-8">
+                  {/* Header Section - Improved typography hierarchy */}
+                  <div className="space-y-2 mb-8">
+                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Task Management</h1>
+                    <p className="text-base text-zinc-400">Organize and track your work efficiently</p>
+                  </div>
+
+                  {/* Task Stats - Enhanced cards with better spacing */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card
+                      className="p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] backdrop-blur-xl hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group cursor-pointer"
+                      onClick={() => setActiveTaskPopup("pending")}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-white/70 uppercase tracking-wide">In Progress</p>
+                          <p className="text-4xl font-bold text-white">
+                            {remainingTasksCount}
+                          </p>
+                          <p className="text-xs text-white/50 mt-2">Active tasks</p>
+                        </div>
+                        <div className="p-3 bg-white/[0.08] rounded-lg group-hover:bg-white/[0.12] transition-colors">
+                          <Target className="w-6 h-6 text-white/60" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card
+                      className="p-6 bg-gradient-to-br from-emerald-500/[0.15] to-emerald-500/[0.05] border-emerald-500/[0.2] backdrop-blur-xl hover:from-emerald-500/[0.2] hover:to-emerald-500/[0.1] transition-all duration-300 group cursor-pointer"
+                      onClick={() => setActiveTaskPopup("completed")}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-emerald-300/80 uppercase tracking-wide">Completed</p>
+                          <p className="text-4xl font-bold text-emerald-300">
+                            {tasks.filter((t) => t.status === "completed").length}
+                          </p>
+                          <p className="text-xs text-emerald-300/50 mt-2">Finished tasks</p>
+                        </div>
+                        <div className="p-3 bg-emerald-500/[0.15] rounded-lg group-hover:bg-emerald-500/[0.25] transition-colors">
+                          <Check className="w-6 h-6 text-emerald-400" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card
+                      className="p-6 bg-gradient-to-br from-red-500/[0.15] to-red-500/[0.05] border-red-500/[0.2] backdrop-blur-xl hover:from-red-500/[0.2] hover:to-red-500/[0.1] transition-all duration-300 group cursor-pointer"
+                      onClick={() => setActiveTaskPopup("overdue")}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-red-300/80 uppercase tracking-wide">Overdue</p>
+                          <p className="text-4xl font-bold text-red-300">
+                            {overdueTasks}
+                          </p>
+                          <p className="text-xs text-red-300/50 mt-2">Past due tasks</p>
+                        </div>
+                        <div className="p-3 bg-red-500/[0.15] rounded-lg group-hover:bg-red-500/[0.25] transition-colors">
+                          <Calendar className="w-6 h-6 text-red-400" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Urgent Tasks Card */}
+                    <Card
+                      className="p-6 bg-gradient-to-br from-orange-500/[0.15] to-orange-500/[0.05] border-orange-500/[0.2] backdrop-blur-xl hover:from-orange-500/[0.2] hover:to-orange-500/[0.1] transition-all duration-300 group cursor-pointer"
+                      onClick={() => setActiveTaskPopup("urgent")}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-orange-300/80 uppercase tracking-wide">Urgent Tasks</p>
+                          <p className="text-4xl font-bold text-orange-300">
+                            {tasks.filter((t) => t.priority === "urgent" && t.status !== "archived" && t.status !== "completed").length}
+                          </p>
+                          <p className="text-xs text-orange-300/50 mt-2">High priority items</p>
+                        </div>
+                        <div className="p-3 bg-orange-500/[0.15] rounded-lg group-hover:bg-orange-500/[0.25] transition-colors">
+                          <Zap className="w-6 h-6 text-orange-400" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Today's Tasks Card */}
+                    <Card
+                      className="p-6 bg-gradient-to-br from-blue-500/[0.15] to-blue-500/[0.05] border-blue-500/[0.2] backdrop-blur-xl hover:from-blue-500/[0.2] hover:to-blue-500/[0.1] transition-all duration-300 group cursor-pointer"
+                      onClick={() => setActiveTaskPopup("today")}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-blue-300/80 uppercase tracking-wide">Today</p>
+                          <p className="text-4xl font-bold text-blue-300">
+                            {todayTasksCount}
+                          </p>
+                          <p className="text-xs text-blue-300/50 mt-2">Due today</p>
+                        </div>
+                        <div className="p-3 bg-blue-500/[0.15] rounded-lg group-hover:bg-blue-500/[0.25] transition-colors">
+                          <Clock className="w-6 h-6 text-blue-400" />
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Archived Tasks Card */}
+                    <Card
+                      className="p-6 bg-gradient-to-br from-purple-500/[0.15] to-purple-500/[0.05] border-purple-500/[0.2] backdrop-blur-xl hover:from-purple-500/[0.2] hover:to-purple-500/[0.1] transition-all duration-300 group cursor-pointer"
+                      onClick={() => setActiveTaskPopup("archived")}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-purple-300/80 uppercase tracking-wide">Archived</p>
+                          <p className="text-4xl font-bold text-purple-300">
+                            {archivedTasksCount}
+                          </p>
+                          <p className="text-xs text-purple-300/50 mt-2">Hidden from lists</p>
+                        </div>
+                        <div className="p-3 bg-purple-500/[0.15] rounded-lg group-hover:bg-purple-500/[0.25] transition-colors">
+                          <CheckSquare className="w-6 h-6 text-purple-400" />
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Filter and Action Section - Improved visual hierarchy */}
+                  <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-white/[0.05] to-white/[0.02] rounded-xl border border-white/[0.08]">
+                    <div className="flex flex-wrap gap-2">
+                      {(["all", "pending", "in_progress", "completed", "archived"] as const).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => setTaskStatusFilter(status)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${taskStatusFilter === status
+                            ? "bg-white text-black shadow-lg shadow-white/10"
+                            : "bg-white/[0.05] text-white/70 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white"
+                            }`}
+                        >
+                          {status === "all"
+                            ? "All Tasks"
+                            : status === "in_progress"
+                              ? "In Progress"
+                              : status === "pending"
+                                ? "Pending"
+                                : status === "archived"
+                                  ? "Archive"
+                                  : "Completed"}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setShowNewTaskForm(!showNewTaskForm)}
+                      className="px-4 py-2 bg-white/[0.12] hover:bg-white/[0.18] border border-white/[0.2] rounded-lg text-white font-medium text-sm transition-all duration-200 flex items-center gap-2 justify-center md:justify-start"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Task
+                    </button>
+                  </div>
+
+                  {/* Task List - Improved card styling and layout */}
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-semibold text-white">Your Tasks</h2>
+
+                    {filteredTasks.map((task) => (
+                      <Card
+                        key={task.id}
+                        className="relative p-4 md:p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group"
+                      >
+
+                        {editingTaskId === task.id ? (
+                          <div className="space-y-4">
+                            <Input
+                              value={editingTask?.title || ""}
+                              onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
+                              className="bg-white/[0.1] border-white/[0.2] text-white"
+                              placeholder="Task title"
+                            />
+                            <textarea
+                              value={editingTask?.description || ""}
+                              onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
+                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-4 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
+                              placeholder="Description"
+                              rows={3}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                              <select
+                                value={editingTask?.status || "pending"}
+                                onChange={(e) => setEditingTask({ ...editingTask, status: e.target.value as any })}
+                                className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white"
                               >
-                                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
-                              </span>
-                              <span
-                                className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
-                                    ${task.status === "completed"
-                                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                                    : task.status === "in_progress"
-                                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                      : "bg-white/10 text-white/70 border border-white/20"
-                                  }`}
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="archived">Archived</option>
+                              </select>
+                              <select
+                                value={editingTask?.priority || "medium"}
+                                onChange={(e) => setEditingTask({ ...editingTask, priority: e.target.value as any })}
+                                className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white"
                               >
-                                {task.status === "pending" ? "Pending" : task.status.replace("_", " ")}
-                              </span>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
+                            </div>
+                            <div className="flex gap-3 pt-3">
+                              <Button
+                                onClick={() => updateTask(task.id, editingTask!)}
+                                className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white"
+                              >
+                                <Check className="w-4 h-4 mr-2" />
+                                Save Changes
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setEditingTaskId(null)
+                                  setEditingTask(null)
+                                }}
+                                variant="outline"
+                                className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
+                              >
+                                Cancel
+                              </Button>
                             </div>
                           </div>
-                          <div className="relative flex items-center gap-2">
-                            {task.status !== "completed" && (
-                              <button
-                                onClick={() => completeTask(task.id)}
-                                className="p-2.5 hover:bg-white/[0.1] rounded-lg transition-colors group"
-                                title="Mark as complete"
-                              >
-                                <Check className="w-5 h-5 text-green-400 group-hover:text-green-300" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setTaskMenuOpenId(taskMenuOpenId === task.id ? null : task.id)}
-                              className="p-2.5 hover:bg-white/[0.1] rounded-lg transition-colors"
-                            >
-                              <MoreVertical className="w-4 h-4 text-white/60 group-hover:text-white" />
-                            </button>
-                            {taskMenuOpenId === task.id && (
-                              <div className="absolute right-0 top-12 bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px] backdrop-blur-xl">
-                                <button
-                                  onClick={() => {
-                                    setEditingTaskId(task.id)
-                                    setEditingTask(task)
-                                    setTaskMenuOpenId(null)
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 flex items-center gap-2 text-white/80"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                  Edit Task
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    updateTaskStatus(task.id, "archived")
-                                    setTaskMenuOpenId(null)
-                                  }}
-                                  className="w-full text-left px-4 py-2.5 text-sm text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center gap-2"
-                                >
-                                  <CheckSquare className="w-4 h-4" />
-                                  Archive
-                                </button>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <h3 className="font-bold text-xl text-white leading-tight line-clamp-2">{task.title}</h3>
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                  <span
+                                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
+                                    ${task.priority === "urgent"
+                                        ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                                        : task.priority === "high"
+                                          ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                                          : task.priority === "medium"
+                                            ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                                            : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                      }`}
+                                  >
+                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                                  </span>
+                                  <span
+                                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
+                                    ${task.status === "completed"
+                                        ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                                        : task.status === "in_progress"
+                                          ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                          : "bg-white/10 text-white/70 border border-white/20"
+                                      }`}
+                                  >
+                                    {task.status === "pending" ? "Pending" : task.status.replace("_", " ")}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="relative flex items-center gap-2">
                                 {task.status !== "completed" && (
                                   <button
-                                    onClick={() => {
-                                      completeTask(task.id)
-                                      setTaskMenuOpenId(null)
-                                    }}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-2"
+                                    onClick={() => completeTask(task.id)}
+                                    className="p-2.5 hover:bg-white/[0.1] rounded-lg transition-colors group"
+                                    title="Mark as complete"
                                   >
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Mark Complete
+                                    <Check className="w-5 h-5 text-green-400 group-hover:text-green-300" />
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => {
-                                    deleteTask(task.id)
-                                    setTaskMenuOpenId(null)
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-500/20 text-red-400 flex items-center gap-2"
+                                  onClick={() => setTaskMenuOpenId(taskMenuOpenId === task.id ? null : task.id)}
+                                  className="p-2.5 hover:bg-white/[0.1] rounded-lg transition-colors"
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete Task
+                                  <MoreVertical className="w-4 h-4 text-white/60 group-hover:text-white" />
                                 </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {task.description && (
-                          <div
-                            className="text-sm text-white/60 line-clamp-3 prose prose-invert prose-p:my-0 prose-ul:my-0 prose-li:my-0"
-                            dangerouslySetInnerHTML={{ __html: task.description }}
-                          />
-                        )}
-                        {task.due_date && (
-                          <p
-                            className={`text-xs ${new Date(task.due_date) < new Date() && task.status !== "completed" ? "text-red-400" : "text-white/50"}`}
-                          >
-                            Due: {new Date(task.due_date).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </Card>
-                ))}
-
-                {filteredTasks.length === 0 && (
-                  <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
-                    <Briefcase className="w-12 h-12 mx-auto mb-4 text-white/20" />
-                    <p className="text-white/40">
-                      No{" "}
-                      {taskStatusFilter !== "all"
-                        ? taskStatusFilter === "pending"
-                          ? "pending"
-                          : taskStatusFilter.replace("_", " ")
-                        : ""}{" "}
-                      tasks found. All clear!
-                    </p>
-                  </Card>
-                )}
-              </div>
-
-              {/* New Task Form Modal */}
-              {showNewTaskForm && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
-                  <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl md:text-2xl font-bold text-white">Create New Task</h2>
-                      <button onClick={() => setShowNewTaskForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                        <X className="w-5 h-5 text-white/70" />
-                      </button>
-                    </div>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault()
-                        const formData = new FormData(e.currentTarget)
-                        createTask({
-                          user_id: userId || "", // Use dynamic userId
-                          title: formData.get("title") as string,
-                          description: formData.get("description") as string,
-                          status: (formData.get("status") as any) || "pending",
-                          priority: (formData.get("priority") as any) || "medium",
-                          due_date: (formData.get("due_date") as string) || null,
-                        })
-                      }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <label className="text-sm font-medium text-white/70 mb-1 block">Title *</label>
-                        <Input
-                          name="title"
-                          required
-                          className="bg-white/[0.1] border-white/[0.2] text-white placeholder:text-white/40"
-                          placeholder="e.g. Design the new landing page"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-white/70 mb-1 block">Description</label>
-                        <textarea
-                          name="description"
-                          className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
-                          placeholder="Add more details about the task"
-                          rows={3}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Status</label>
-                          <select
-                            name="status"
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="archived">Archived</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Priority</label>
-                          <select
-                            name="priority"
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
-                          >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="urgent">Urgent</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-white/70 mb-1 block">Due Date</label>
-                        <Input
-                          name="due_date"
-                          type="datetime-local"
-                          className="bg-white/[0.1] border-white/[0.2] text-white"
-                        />
-                      </div>
-                      <div className="flex gap-3 pt-4">
-                        <Button type="submit" className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create Task
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => setShowNewTaskForm(false)}
-                          variant="outline"
-                          className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
-                  </Card>
-                </div>
-              )}
-
-              {/* Edit Task Modal */}
-              {editingTask && editingTaskId && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
-                  <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl md:text-2xl font-bold text-white">Edit Task</h2>
-                      <button
-                        onClick={() => {
-                          setEditingTaskId(null)
-                          setEditingTask(null)
-                        }}
-                        className="p-2 hover:bg-white/10 rounded-lg"
-                      >
-                        <X className="w-5 h-5 text-white/70" />
-                      </button>
-                    </div>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault()
-                        const formData = new FormData(e.currentTarget)
-                        updateTask(editingTaskId, {
-                          title: formData.get("title") as string,
-                          description: formData.get("description") as string,
-                          status: formData.get("status") as any,
-                          priority: formData.get("priority") as any,
-                          due_date: (formData.get("due_date") as string) || null,
-                        })
-                        setEditingTaskId(null)
-                        setEditingTask(null)
-                      }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <label className="text-sm font-medium text-white/70 mb-1 block">Title *</label>
-                        <Input
-                          name="title"
-                          defaultValue={editingTask.title}
-                          required
-                          className="bg-white/[0.1] border-white/[0.2] text-white placeholder:text-white/40"
-                          placeholder="e.g. Design the new landing page"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-white/70 mb-1 block">Description</label>
-                        <textarea
-                          name="description"
-                          defaultValue={editingTask.description || ""}
-                          className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
-                          placeholder="Add more details about the task"
-                          rows={3}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Status</label>
-                          <select
-                            name="status"
-                            defaultValue={editingTask.status}
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="archived">Archived</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Priority</label>
-                          <select
-                            name="priority"
-                            defaultValue={editingTask.priority}
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
-                          >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="urgent">Urgent</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-white/70 mb-1 block">Due Date</label>
-                        <Input
-                          name="due_date"
-                          type="datetime-local"
-                          defaultValue={editingTask.due_date ? new Date(editingTask.due_date).toISOString().slice(0, 16) : ""}
-                          className="bg-white/[0.1] border-white/[0.2] text-white"
-                        />
-                      </div>
-                      <div className="flex gap-3 pt-4">
-                        <Button type="submit" className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white">
-                          <Check className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            setEditingTaskId(null)
-                            setEditingTask(null)
-                          }}
-                          variant="outline"
-                          className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
-                  </Card>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : activeModule === "ideas" ? ( // Added Ideas view
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ideas Collection</h1>
-                <Button
-                  onClick={() => setShowNewIdeaForm(true)}
-                  className="bg-gradient-to-br from-white/10 to-white/5 hover:from-white/15 hover:to-white/10 border border-white/10 backdrop-blur-xl"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Idea
-                </Button>
-              </div>
-
-              {/* Ideas by Type */}
-              {["product", "feature", "business", "content", "design"].map((type) => {
-                const typeIdeas = ideas.filter((i) => i.type === type)
-                if (typeIdeas.length === 0) return null
-
-                return (
-                  <div key={type} className="space-y-3">
-                    <h2 className="text-lg font-semibold capitalize flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5" />
-                      {type} Ideas ({typeIdeas.length})
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {typeIdeas.map((idea) => (
-                        <Card
-                          key={idea.id}
-                          onClick={() => {
-                            setViewingIdeaId(idea.id)
-                            setViewingIdea(idea)
-                          }}
-                          className="p-4 bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-xl hover:from-white/15 hover:to-white/8 transition-all group cursor-pointer"
-                        >
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-bold text-base line-clamp-2 flex-1">{idea.title}</h3>
-                              <div className="relative flex-shrink-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setEditingIdeaId(editingIdeaId === idea.id ? null : idea.id)
-                                  }}
-                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="5" r="1.5" fill="currentColor" />
-                                    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                                    <circle cx="12" cy="19" r="1.5" fill="currentColor" />
-                                  </svg>
-                                </button>
-
-                                {/* Action menu dropdown */}
-                                {editingIdeaId === idea.id && (
-                                  <div className="absolute right-0 top-full mt-1 bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg shadow-xl z-50 min-w-[140px]">
+                                {taskMenuOpenId === task.id && (
+                                  <div className="absolute right-0 top-12 bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px] backdrop-blur-xl">
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        // Strip HTML for clipboard copy or keep it? Keeping raw text is safer for general paste.
-                                        // Simple strip tags:
-                                        const tempDiv = document.createElement("div")
-                                        tempDiv.innerHTML = idea.description || ""
-                                        const textContent = tempDiv.innerText || tempDiv.textContent || ""
-                                        navigator.clipboard.writeText(`${idea.title}\n\n${textContent}`)
-                                        setEditingIdeaId(null)
+                                      onClick={() => {
+                                        setEditingTaskId(task.id)
+                                        setEditingTask(task)
+                                        setTaskMenuOpenId(null)
                                       }}
-                                      className="w-full px-3 py-2 text-left text-sm hover:bg-white/10 flex items-center gap-2"
+                                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 flex items-center gap-2 text-white/80"
                                     >
-                                      <FileText className="w-3.5 h-3.5" />
-                                      Copy
+                                      <Edit2 className="w-4 h-4" />
+                                      Edit Task
                                     </button>
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setViewingIdeaId(idea.id)
-                                        setViewingIdea(idea)
-                                        setEditingIdeaId(null)
+                                      onClick={() => {
+                                        updateTaskStatus(task.id, "archived")
+                                        setTaskMenuOpenId(null)
                                       }}
-                                      className="w-full px-3 py-2 text-left text-sm hover:bg-white/10 flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2.5 text-sm text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center gap-2"
                                     >
-                                      <Edit2 className="w-3.5 h-3.5" />
-                                      Edit
+                                      <CheckSquare className="w-4 h-4" />
+                                      Archive
                                     </button>
+                                    {task.status !== "completed" && (
+                                      <button
+                                        onClick={() => {
+                                          completeTask(task.id)
+                                          setTaskMenuOpenId(null)
+                                        }}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-2"
+                                      >
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Mark Complete
+                                      </button>
+                                    )}
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        deleteIdea(idea.id)
-                                        setEditingIdeaId(null)
+                                      onClick={() => {
+                                        deleteTask(task.id)
+                                        setTaskMenuOpenId(null)
                                       }}
-                                      className="w-full px-3 py-2 text-left text-sm hover:bg-red-500/20 text-red-400 flex items-center gap-2"
+                                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-500/20 text-red-400 flex items-center gap-2"
                                     >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                      Delete
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete Task
                                     </button>
                                   </div>
                                 )}
                               </div>
                             </div>
-                            {idea.description && (
+                            {task.description && (
                               <div
-                                className="text-sm text-white/70 line-clamp-3 prose prose-invert prose-sm max-w-none [&_p]:m-0 [&_ul]:m-0 [&_li]:m-0"
-                                dangerouslySetInnerHTML={{ __html: idea.description }}
+                                className="text-sm text-white/60 line-clamp-3 prose prose-invert prose-p:my-0 prose-ul:my-0 prose-li:my-0"
+                                dangerouslySetInnerHTML={{ __html: task.description }}
                               />
                             )}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span
-                                className={`px-2 py-1 rounded text-[10px] font-medium ${idea.status === "draft"
-                                  ? "bg-zinc-500/20 text-zinc-300"
-                                  : idea.status === "in_review"
-                                    ? "bg-blue-500/20 text-blue-300"
-                                    : idea.status === "approved"
-                                      ? "bg-green-500/20 text-green-300"
-                                      : "bg-red-500/20 text-red-300"
-                                  }`}
+                            {task.due_date && (
+                              <p
+                                className={`text-xs ${new Date(task.due_date) < new Date() && task.status !== "completed" ? "text-red-400" : "text-white/50"}`}
                               >
-                                {idea.status.replace("_", " ")}
-                              </span>
-                              {idea.tags && idea.tags.length > 0 && (
-                                <div className="flex gap-1 flex-wrap">
-                                  {idea.tags.slice(0, 3).map((tag, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-1.5 py-0.5 rounded text-[9px] bg-white/10 text-white/60"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-
-              {viewingIdeaId && viewingIdea && (
-                <div
-                  className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
-                  onClick={() => {
-                    setViewingIdeaId(null)
-                    setViewingIdea(null)
-                  }}
-                >
-                  <div
-                    className="bg-gradient-to-br from-white/10 to-white/5 border-0 md:border md:border-white/20 w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 rounded-none md:rounded-2xl"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <h2 className="text-2xl font-bold">View / Edit Idea</h2>
-                        <button
-                          onClick={() => {
-                            setViewingIdeaId(null)
-                            setViewingIdea(null)
-                          }}
-                          className="p-2 rounded-lg hover:bg-white/10"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      <Input
-                        placeholder="Idea title"
-                        value={viewingIdea.title || ""}
-                        onChange={(e) => setViewingIdea({ ...viewingIdea, title: e.target.value })}
-                        className="bg-white/5 border-white/10 text-white"
-                      />
-
-                      <RichTextEditor
-                        content={viewingIdea.description || ""}
-                        onChange={(content) => setViewingIdea({ ...viewingIdea, description: content })}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-xs text-white/60 mb-1.5 block">Type</label>
-                          <select
-                            value={viewingIdea.type || "product"}
-                            onChange={(e) =>
-                              setViewingIdea({
-                                ...viewingIdea,
-                                type: e.target.value as Idea["type"],
-                              })
-                            }
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-                          >
-                            <option value="product">Product</option>
-                            <option value="feature">Feature</option>
-                            <option value="business">Business</option>
-                            <option value="content">Content</option>
-                            <option value="design">Design</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs text-white/60 mb-1.5 block">Status</label>
-                          <select
-                            value={viewingIdea.status || "draft"}
-                            onChange={(e) =>
-                              setViewingIdea({
-                                ...viewingIdea,
-                                status: e.target.value as Idea["status"],
-                              })
-                            }
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-                          >
-                            <option value="draft">Draft</option>
-                            <option value="in_review">In Review</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 pt-4">
-                        <Button
-                          onClick={() => {
-                            if (viewingIdeaId) {
-                              updateIdea(viewingIdeaId, viewingIdea)
-                              setViewingIdeaId(null)
-                              setViewingIdea(null)
-                            }
-                          }}
-                          className="flex-1 bg-white/15 hover:bg-white/20 border border-white/20"
-                        >
-                          Save Changes
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setViewingIdeaId(null)
-                            setViewingIdea(null)
-                          }}
-                          variant="ghost"
-                          className="border border-white/10"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {ideas.length === 0 && !showNewIdeaForm && (
-                <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
-                  <Lightbulb className="w-12 h-12 mx-auto mb-4 text-white/20" />
-                  <p className="text-white/40">No ideas yet. Create your first idea to get started!</p>
-                </Card>
-              )}
-
-              {/* New Idea Form Modal */}
-              {showNewIdeaForm && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
-                  <Card className="w-full max-w-lg p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-bold">Create New Idea</h2>
-                      <button onClick={() => setShowNewIdeaForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault()
-                        createIdea({
-                          user_id: userId || "", // Use dynamic userId
-                          title: ideaFormData.title,
-                          description: ideaFormData.description || null,
-                          type: ideaFormData.type,
-                          status: ideaFormData.status,
-                          tags: ideaFormData.tags ? ideaFormData.tags.split(",").map((tag) => tag.trim()) : null,
-                        })
-                      }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <label className="text-sm text-white/70 mb-1 block">Title *</label>
-                        <Input
-                          name="title"
-                          required
-                          value={ideaFormData.title}
-                          onChange={(e) => setIdeaFormData({ ...ideaFormData, title: e.target.value })}
-                          placeholder="Enter idea title"
-                          className="bg-white/5 border-white/10"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-white/70 mb-1 block">Description</label>
-                        <RichTextEditor
-                          content={ideaFormData.description || ""}
-                          onChange={(content) => setIdeaFormData({ ...ideaFormData, description: content })}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm text-white/70 mb-1 block">Type</label>
-                          <select
-                            name="type"
-                            value={ideaFormData.type}
-                            onChange={(e) =>
-                              setIdeaFormData({
-                                ...ideaFormData,
-                                type: e.target.value as Idea["type"],
-                              })
-                            }
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white"
-                          >
-                            <option value="product">Product</option>
-                            <option value="feature">Feature</option>
-                            <option value="business">Business</option>
-                            <option value="content">Content</option>
-                            <option value="design">Design</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-sm text-white/70 mb-1 block">Status</label>
-                          <select
-                            name="status"
-                            value={ideaFormData.status}
-                            onChange={(e) =>
-                              setIdeaFormData({
-                                ...ideaFormData,
-                                status: e.target.value as Idea["status"],
-                              })
-                            }
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white"
-                          >
-                            <option value="draft">Draft</option>
-                            <option value="in_review">In Review</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm text-white/70 mb-1 block">Tags (comma-separated)</label>
-                        <Input
-                          name="tags"
-                          value={ideaFormData.tags}
-                          onChange={(e) => setIdeaFormData({ ...ideaFormData, tags: e.target.value })}
-                          placeholder="e.g. ai, product, urgent"
-                          className="bg-white/5 border-white/10"
-                        />
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          type="submit"
-                          disabled={!ideaFormData.title.trim()}
-                          className="flex-1 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create Idea
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => setShowNewIdeaForm(false)}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
-                  </Card>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : activeModule === "market" ? (
-          <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar-dark">
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl md:text-3xl font-bold">Market Intelligence</h1>
-                {/* Refresh Button Moved to Modal */}
-              </div>
-
-              {/* Competitor Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {competitors.map((competitor) => {
-                  const latestStats = getLatestStats(competitor.id)
-
-                  return (
-                    <Card
-                      key={competitor.id}
-                      onClick={() => {
-                        setSelectedCompetitor({ ...competitor, stats: latestStats })
-                        setShowCompetitorModal(true)
-                      }}
-                      className="p-5 bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-xl hover:from-white/15 hover:to-white/8 transition-all cursor-pointer"
-                    >
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg">{competitor.name}</h3>
-                            <p className="text-sm text-white/60">{competitor.platform}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {latestStats?.is_running_ads ? (
-                              <div className="flex flex-col items-end gap-1">
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/25 text-green-300 border border-green-500/50">
-                                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                                  <span className="text-xs font-semibold">Ads ON</span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">
-                                <span className="w-2 h-2 bg-zinc-500 rounded-full" />
-                                <span className="text-xs font-semibold">No Ads</span>
-                              </div>
+                                Due: {new Date(task.due_date).toLocaleDateString()}
+                              </p>
                             )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                deleteCompetitor(competitor.id)
-                              }}
-                              className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
-                              title="Delete competitor"
-                            >
-                              <Trash2 className="w-4 h-4 text-white/40 group-hover:text-red-400" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {latestStats ? (
-                          <>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-white/70">📉 Followers</span>
-                                <span className="font-semibold">
-                                  {latestStats.follower_count >= 1000
-                                    ? `${(latestStats.follower_count / 1000).toFixed(1)}k`
-                                    : latestStats.follower_count}
-                                </span>
-                              </div>
-
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-white/70">🔥 Viral Score</span>
-                                  <span className="font-semibold">{latestStats.viral_score || 0}/10</span>
-                                </div>
-                                <div className="w-full bg-white/10 rounded-full h-2">
-                                  <div
-                                    className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all"
-                                    style={{ width: `${((latestStats.viral_score || 0) / 10) * 100}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {latestStats.summary_analysis && (
-                              <div className="pt-2 border-t border-white/10">
-                                <p className="text-xs text-white/60 line-clamp-2">
-                                  📝 {latestStats.summary_analysis}
-                                </p>
-                                <p className="text-xs text-white/40 mt-2 italic">Click to view full analysis →</p>
-                              </div>
-                            )}
-
-                            {latestStats.scraped_at && (
-                              <div className="pt-2 text-xs text-white/40 border-t border-white/10">
-                                <p>🕐 Last scraped: {new Date(latestStats.scraped_at).toLocaleString()}</p>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-center py-4">
-                            <p className="text-sm text-white/40">No data available</p>
                           </div>
                         )}
-                      </div>
-                    </Card>
-                  )
-                })}
-              </div>
+                      </Card>
+                    ))}
 
-              {competitors.length === 0 && !loadingMarketData && (
-                <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
-                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-white/20" />
-                  <p className="text-white/40 mb-4">No competitor data available yet.</p>
-                  <Button
-                    onClick={refreshMarketData}
-                    disabled={loadingMarketData}
-                    variant="outline"
-                    className="border-white/10 text-white hover:bg-white/10"
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
-                    Refresh Data
-                  </Button>
-                </Card>
-              )}
+                    {filteredTasks.length === 0 && (
+                      <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
+                        <Briefcase className="w-12 h-12 mx-auto mb-4 text-white/20" />
+                        <p className="text-white/40">
+                          No{" "}
+                          {taskStatusFilter !== "all"
+                            ? taskStatusFilter === "pending"
+                              ? "pending"
+                              : taskStatusFilter.replace("_", " ")
+                            : ""}{" "}
+                          tasks found. All clear!
+                        </p>
+                      </Card>
+                    )}
+                  </div>
 
-              {/* Competitor Detail Modal */}
-              {showCompetitorModal && selectedCompetitor && (
-                <div
-                  className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
-                  onClick={() => setShowCompetitorModal(false)}
-                >
-                  <Card
-                    className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl rounded-none md:rounded-xl"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="p-6 space-y-6">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h2 className="text-2xl font-bold">{selectedCompetitor.name}</h2>
-                          <p className="text-white/60">{selectedCompetitor.platform}</p>
-                          {selectedCompetitor.stats?.scraped_at && (
-                            <p className="text-xs text-white/40 mt-1">
-                              Last updated: {new Date(selectedCompetitor.stats.scraped_at).toLocaleDateString()} at{" "}
-                              {new Date(selectedCompetitor.stats.scraped_at).toLocaleTimeString()}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            onClick={refreshMarketData}
-                            disabled={loadingMarketData}
-                            size="sm"
-                            className="bg-white/10 hover:bg-white/20 border border-white/10"
-                          >
-                            <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
-                            Refresh Analysis
-                          </Button>
-                          <button
-                            onClick={() => setShowCompetitorModal(false)}
-                            className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white"
-                          >
-                            <X className="w-5 h-5" />
+                  {/* New Task Form Modal */}
+                  {showNewTaskForm && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+                      <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-xl md:text-2xl font-bold text-white">Create New Task</h2>
+                          <button onClick={() => setShowNewTaskForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                            <X className="w-5 h-5 text-white/70" />
                           </button>
                         </div>
-                      </div>
-
-                      {selectedCompetitor.stats && (
-                        <>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 rounded-lg border border-blue-500/30">
-                              <p className="text-xs text-blue-300 font-semibold mb-2">👥 Followers</p>
-                              <p className="text-xl md:text-2xl font-bold text-white">
-                                {(selectedCompetitor.stats.follower_count / 1000).toFixed(1)}K
-                              </p>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            const formData = new FormData(e.currentTarget)
+                            createTask({
+                              user_id: userId || "", // Use dynamic userId
+                              title: formData.get("title") as string,
+                              description: formData.get("description") as string,
+                              status: (formData.get("status") as any) || "pending",
+                              priority: (formData.get("priority") as any) || "medium",
+                              due_date: (formData.get("due_date") as string) || null,
+                            })
+                          }}
+                          className="space-y-4"
+                        >
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Title *</label>
+                            <Input
+                              name="title"
+                              required
+                              className="bg-white/[0.1] border-white/[0.2] text-white placeholder:text-white/40"
+                              placeholder="e.g. Design the new landing page"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Description</label>
+                            <textarea
+                              name="description"
+                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                              placeholder="Add more details about the task"
+                              rows={3}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-white/70 mb-1 block">Status</label>
+                              <select
+                                name="status"
+                                className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="archived">Archived</option>
+                              </select>
                             </div>
-                            <div className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 rounded-lg border border-purple-500/30">
-                              <p className="text-xs text-purple-300 font-semibold mb-2">🔥 Viral Score</p>
-                              <div className="flex items-baseline gap-2">
-                                <p className="text-xl md:text-2xl font-bold text-white">
-                                  {selectedCompetitor.stats.viral_score || 0}
-                                </p>
-                                <p className="text-xs text-white/50">/10</p>
-                              </div>
-                              <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
-                                <div
-                                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-1.5 rounded-full"
-                                  style={{
-                                    width: `${((selectedCompetitor.stats.viral_score || 0) / 10) * 100}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <div
-                              className={`p-4 rounded-lg border ${selectedCompetitor.stats.is_running_ads
-                                ? "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/30"
-                                : "bg-gradient-to-br from-gray-500/20 to-gray-500/5 border-gray-500/30"
-                                }`}
-                            >
-                              <p className="text-xs font-semibold mb-2">📢 Ads Running</p>
-                              <p className="text-xl font-bold">
-                                {selectedCompetitor.stats.is_running_ads ? (
-                                  <span className="text-green-400">Active</span>
-                                ) : (
-                                  <span className="text-gray-400">Inactive</span>
-                                )}
-                              </p>
-                            </div>
-                            <div className="p-4 bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-lg border border-amber-500/30">
-                              <p className="text-xs text-amber-300 font-semibold mb-2">📅 Data Age</p>
-                              <p className="text-sm text-white">
-                                {Math.floor(
-                                  (Date.now() - new Date(selectedCompetitor.stats.scraped_at).getTime()) /
-                                  (1000 * 60 * 60),
-                                )}
-                                h ago
-                              </p>
+                            <div>
+                              <label className="text-sm font-medium text-white/70 mb-1 block">Priority</label>
+                              <select
+                                name="priority"
+                                className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                              >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
                             </div>
                           </div>
-
-                          {selectedCompetitor.stats.summary_analysis && (
-                            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                <span>📊</span>
-                                <span>AI Analysis</span>
-                              </h3>
-                              <p className="text-sm text-white/80 leading-relaxed">
-                                {selectedCompetitor.stats.summary_analysis}
-                              </p>
-                            </div>
-                          )}
-
-                          {selectedCompetitor.stats.content_strategy && (
-                            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                <span>📋</span>
-                                <span>Content Strategy</span>
-                              </h3>
-                              <div className="space-y-2 text-sm">
-                                {typeof selectedCompetitor.stats.content_strategy === "object" ? (
-                                  Object.entries(selectedCompetitor.stats.content_strategy).map(([key, value]) => (
-                                    <div key={key} className="flex justify-between items-start gap-2">
-                                      <span className="text-white/60 capitalize">{key}:</span>
-                                      <span className="text-white/80 text-right">
-                                        {typeof value === "string" ? value : JSON.stringify(value)}
-                                      </span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <p className="text-white/70">{selectedCompetitor.stats.content_strategy}</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {selectedCompetitor.stats.top_post && (
-                            <div className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-lg border border-amber-500/20">
-                              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                <span>🏆</span>
-                                <span>Top Performing Post</span>
-                              </h3>
-                              <div className="space-y-2 text-sm">
-                                {typeof selectedCompetitor.stats.top_post === "object" ? (
-                                  Object.entries(selectedCompetitor.stats.top_post).map(([key, value]) => (
-                                    <div key={key} className="flex justify-between items-start gap-2">
-                                      <span className="text-amber-300/70 capitalize">{key}:</span>
-                                      <span className="text-white/80 text-right max-w-xs line-clamp-2">
-                                        {typeof value === "string" ? value : JSON.stringify(value)}
-                                      </span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <p className="text-white/70">{selectedCompetitor.stats.top_post}</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Due Date</label>
+                            <Input
+                              name="due_date"
+                              type="datetime-local"
+                              className="bg-white/[0.1] border-white/[0.2] text-white"
+                            />
+                          </div>
+                          <div className="flex gap-3 pt-4">
+                            <Button type="submit" className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Create Task
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => setShowNewTaskForm(false)}
+                              variant="outline"
+                              className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </Card>
                     </div>
-                  </Card>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : activeModule === "crm" ? ( // Implementing CRM view with contacts table data
-          <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar-dark">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white">Contacts</h1>
-                  <p className="text-sm text-white/50 mt-1">Manage your business contacts and relationships</p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setSelectedContact(null)
-                    setShowContactModal(true)
-                  }}
-                  className="w-full sm:w-auto bg-gradient-to-br from-white/[0.15] to-white/[0.08] hover:from-white/[0.2] hover:to-white/[0.12] text-white border border-white/[0.15]"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Contact
-                </Button>
-              </div>
+                  )}
 
-              <div className="mb-6">
-                <Input
-                  type="text"
-                  placeholder="Search by name, email, company, or role..."
-                  value={contactSearchQuery}
-                  onChange={(e) => setContactSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                />
-              </div>
-
-              <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.1] overflow-hidden">
-                {contacts.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Users className="w-12 h-12 text-white/20 mx-auto mb-4" />
-                    <p className="text-white/50">No contacts yet. Add your first contact!</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-white/[0.05]">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-white/70">Name</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-white/70 hidden sm:table-cell">
-                            Email
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-white/70 hidden md:table-cell">
-                            Company
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-white/70 hidden lg:table-cell">
-                            Role
-                          </th>
-                          <th className="px-4 py-3 text-right text-sm font-semibold text-white/70">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.05]">
-                        {filteredContacts.map((contact) => (
-                          <tr key={contact.id} className="hover:bg-white/[0.03] transition-colors">
-                            <td className="px-4 py-3 text-sm text-white font-medium">{contact.name}</td>
-                            <td className="px-4 py-3 text-sm text-zinc-300 hidden sm:table-cell">
-                              {contact.email || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-zinc-300 hidden md:table-cell">
-                              {contact.company || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-zinc-300 hidden lg:table-cell">
-                              {contact.role || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <button
-                                onClick={() => {
-                                  setSelectedContact(contact)
-                                  setShowContactModal(true)
-                                }}
-                                className="text-zinc-400 hover:text-white transition-colors p-2"
+                  {/* Edit Task Modal */}
+                  {editingTask && editingTaskId && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+                      <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-xl md:text-2xl font-bold text-white">Edit Task</h2>
+                          <button
+                            onClick={() => {
+                              setEditingTaskId(null)
+                              setEditingTask(null)
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-lg"
+                          >
+                            <X className="w-5 h-5 text-white/70" />
+                          </button>
+                        </div>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            const formData = new FormData(e.currentTarget)
+                            updateTask(editingTaskId, {
+                              title: formData.get("title") as string,
+                              description: formData.get("description") as string,
+                              status: formData.get("status") as any,
+                              priority: formData.get("priority") as any,
+                              due_date: (formData.get("due_date") as string) || null,
+                            })
+                            setEditingTaskId(null)
+                            setEditingTask(null)
+                          }}
+                          className="space-y-4"
+                        >
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Title *</label>
+                            <Input
+                              name="title"
+                              defaultValue={editingTask.title}
+                              required
+                              className="bg-white/[0.1] border-white/[0.2] text-white placeholder:text-white/40"
+                              placeholder="e.g. Design the new landing page"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Description</label>
+                            <textarea
+                              name="description"
+                              defaultValue={editingTask.description || ""}
+                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                              placeholder="Add more details about the task"
+                              rows={3}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-white/70 mb-1 block">Status</label>
+                              <select
+                                name="status"
+                                defaultValue={editingTask.status}
+                                className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
                               >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeModule === "calendar" ? (
-          <div className="flex-1 p-2 md:p-6 overflow-y-auto custom-scrollbar-dark">
-            <div className="max-w-7xl mx-auto w-full">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-3xl font-light text-white tracking-wide">
-                    {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-white/40">{currentDate.getFullYear()}</span>
-                  </h2>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => {
-                      const newDate = new Date(currentDate)
-                      newDate.setMonth(currentDate.getMonth() - 1)
-                      setCurrentDate(newDate)
-                    }}
-                    variant="outline"
-                    size="icon"
-                    className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-white" />
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setCurrentDate(new Date())
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white/5 border-white/10 hover:bg-white/10 text-xs px-3 h-9 rounded-full transition-colors text-white"
-                  >
-                    Today
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const newDate = new Date(currentDate)
-                      newDate.setMonth(currentDate.getMonth() + 1)
-                      setCurrentDate(newDate)
-                    }}
-                    // Actually, let's fix the logic right now.
-                    // onClick={() => {
-                    //   const newDate = new Date(currentDate)
-                    //   newDate.setMonth(currentDate.getMonth() + 1)
-                    //   setCurrentDate(newDate)
-                    // }}
-                    // But I cannot easily inject complex logic change in a simple replace. 
-                    // I'll stick to button UI update first. 
-                    // Retaining original onClick but updating UI.
-                    variant="outline"
-                    size="icon"
-                    className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4 text-white" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Calendar Grid - Month Only */}
-              <div className="space-y-4">
-                {/* Weekday Headers */}
-                <div className="grid grid-cols-7 gap-3 mb-2">
-                  {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
-                    <div
-                      key={index}
-                      className="text-left px-2 text-xs font-medium text-white/40"
-                    >
-                      {day}
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="archived">Archived</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-white/70 mb-1 block">Priority</label>
+                              <select
+                                name="priority"
+                                defaultValue={editingTask.priority}
+                                className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                              >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-white/70 mb-1 block">Due Date</label>
+                            <Input
+                              name="due_date"
+                              type="datetime-local"
+                              defaultValue={editingTask.due_date ? new Date(editingTask.due_date).toISOString().slice(0, 16) : ""}
+                              className="bg-white/[0.1] border-white/[0.2] text-white"
+                            />
+                          </div>
+                          <div className="flex gap-3 pt-4">
+                            <Button type="submit" className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white">
+                              <Check className="w-4 h-4 mr-2" />
+                              Save Changes
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                setEditingTaskId(null)
+                                setEditingTask(null)
+                              }}
+                              variant="outline"
+                              className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </Card>
                     </div>
-                  ))}
+                  )}
                 </div>
+              </div>
+            ) : activeModule === "ideas" ? ( // Added Ideas view
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark">
+                <div className="max-w-7xl mx-auto space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ideas Collection</h1>
+                    <Button
+                      onClick={() => setShowNewIdeaForm(true)}
+                      className="bg-gradient-to-br from-white/10 to-white/5 hover:from-white/15 hover:to-white/10 border border-white/10 backdrop-blur-xl"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Idea
+                    </Button>
+                  </div>
 
-                <div className="grid grid-cols-7 gap-3">
-                  {Array.from({ length: 42 }).map((_, index) => {
-                    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
-                    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-                    const dayNumber = index - firstDay + 1
-
-                    // Previous month logic for empty cells
-                    if (dayNumber < 1) {
-                      // Optional: Show previous month dates faded? For now empty matching reference style which shows empty slots or faded.
-                      // Reference shows explicit dates for prev/next month. Let's start with just empty for simplicity or calculate prev dates.
-                      // Actually reference image shows "30" for Sunday when month starts on Monday. So yes, show prev dates.
-                      const prevMonthLastDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate()
-                      const prevDate = prevMonthLastDate + dayNumber
-                      return (
-                        <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
-                          <div className="text-lg font-medium text-white/50">{prevDate}</div>
-                        </div>
-                      )
-                    }
-
-                    // Next month logic
-                    if (dayNumber > daysInMonth) {
-                      const nextDate = dayNumber - daysInMonth
-                      return (
-                        <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
-                          <div className="text-lg font-medium text-white/50">{nextDate}</div>
-                        </div>
-                      )
-                    }
-
-                    const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber)
-                    // Fix: Use local date string construction instead of toISOString() which converts to UTC and causes lag
-                    // e.g. Jan 23 00:00 Yangon (UTC+6.5) -> Jan 22 17:30 UTC -> "2026-01-22" (Wrong day)
-                    const year = cellDate.getFullYear()
-                    const month = String(cellDate.getMonth() + 1).padStart(2, "0")
-                    const day = String(cellDate.getDate()).padStart(2, "0")
-                    const cellDateStr = `${year}-${month}-${day}`
-
-                    const dayTasks = tasks.filter(
-                      (task) =>
-                        task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
-                    )
-
-                    const isToday = cellDate.toDateString() === new Date().toDateString()
-                    // Selected date state? For now just use isToday for highlighting, or click to select styling.
-                    // Reference shows distinct highlight for "4" (Blue bg). Let's use isToday for that.
+                  {/* Ideas by Type */}
+                  {["product", "feature", "business", "content", "design"].map((type) => {
+                    const typeIdeas = ideas.filter((i) => i.type === type)
+                    if (typeIdeas.length === 0) return null
 
                     return (
-                      <div
-                        key={index}
-                        className={`min-h-[120px] p-3 rounded-3xl border transition-all relative group flex flex-col items-start justify-start gap-2 ${isToday
-                          ? "bg-blue-600 border-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-                          : "bg-white/[0.05] border-white/[0.08] hover:border-white/20 hover:bg-white/[0.08]"
-                          }`}
-                      >
-                        <div
-                          className={`text-xl font-medium ${isToday ? "text-white" : "text-white/90"}`}
-                        >
-                          {dayNumber}
-                        </div>
-
-                        <div className="w-full space-y-1.5 overflow-hidden">
-                          {dayTasks.slice(0, 3).map((task) => (
-                            <div
-                              key={task.id}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedCalendarTask(task)
-                                setShowCalendarTaskModal(true)
+                      <div key={type} className="space-y-3">
+                        <h2 className="text-lg font-semibold capitalize flex items-center gap-2">
+                          <Lightbulb className="w-5 h-5" />
+                          {type} Ideas ({typeIdeas.length})
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {typeIdeas.map((idea) => (
+                            <Card
+                              key={idea.id}
+                              onClick={() => {
+                                setViewingIdeaId(idea.id)
+                                setViewingIdea(idea)
                               }}
-                              className="flex items-center gap-1.5 group/task cursor-pointer"
+                              className="p-4 bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-xl hover:from-white/15 hover:to-white/8 transition-all group cursor-pointer"
                             >
-                              {/* Colored bar/dot */}
-                              <div className={`w-0.5 h-3 rounded-full flex-shrink-0 ${task.priority === "high" ? "bg-red-400" :
-                                task.priority === "medium" ? "bg-amber-400" :
-                                  "bg-sky-400"
-                                }`} />
-                              <span className={`text-[10px] truncate ${isToday ? "text-blue-100" : "text-white/70 group-hover/task:text-white"}`}>
-                                {task.title}
-                              </span>
-                            </div>
+                              <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <h3 className="font-bold text-base line-clamp-2 flex-1">{idea.title}</h3>
+                                  <div className="relative flex-shrink-0">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setEditingIdeaId(editingIdeaId === idea.id ? null : idea.id)
+                                      }}
+                                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="5" r="1.5" fill="currentColor" />
+                                        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                                        <circle cx="12" cy="19" r="1.5" fill="currentColor" />
+                                      </svg>
+                                    </button>
+
+                                    {/* Action menu dropdown */}
+                                    {editingIdeaId === idea.id && (
+                                      <div className="absolute right-0 top-full mt-1 bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg shadow-xl z-50 min-w-[140px]">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            // Strip HTML for clipboard copy or keep it? Keeping raw text is safer for general paste.
+                                            // Simple strip tags:
+                                            const tempDiv = document.createElement("div")
+                                            tempDiv.innerHTML = idea.description || ""
+                                            const textContent = tempDiv.innerText || tempDiv.textContent || ""
+                                            navigator.clipboard.writeText(`${idea.title}\n\n${textContent}`)
+                                            setEditingIdeaId(null)
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm hover:bg-white/10 flex items-center gap-2"
+                                        >
+                                          <FileText className="w-3.5 h-3.5" />
+                                          Copy
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setViewingIdeaId(idea.id)
+                                            setViewingIdea(idea)
+                                            setEditingIdeaId(null)
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm hover:bg-white/10 flex items-center gap-2"
+                                        >
+                                          <Edit2 className="w-3.5 h-3.5" />
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            deleteIdea(idea.id)
+                                            setEditingIdeaId(null)
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm hover:bg-red-500/20 text-red-400 flex items-center gap-2"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                          Delete
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {idea.description && (
+                                  <div
+                                    className="text-sm text-white/70 line-clamp-3 prose prose-invert prose-sm max-w-none [&_p]:m-0 [&_ul]:m-0 [&_li]:m-0"
+                                    dangerouslySetInnerHTML={{ __html: idea.description }}
+                                  />
+                                )}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span
+                                    className={`px-2 py-1 rounded text-[10px] font-medium ${idea.status === "draft"
+                                      ? "bg-zinc-500/20 text-zinc-300"
+                                      : idea.status === "in_review"
+                                        ? "bg-blue-500/20 text-blue-300"
+                                        : idea.status === "approved"
+                                          ? "bg-green-500/20 text-green-300"
+                                          : "bg-red-500/20 text-red-300"
+                                      }`}
+                                  >
+                                    {idea.status.replace("_", " ")}
+                                  </span>
+                                  {idea.tags && idea.tags.length > 0 && (
+                                    <div className="flex gap-1 flex-wrap">
+                                      {idea.tags.slice(0, 3).map((tag, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="px-1.5 py-0.5 rounded text-[9px] bg-white/10 text-white/60"
+                                        >
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </Card>
                           ))}
-                          {dayTasks.length > 3 && (
-                            <div className={`text-[10px] pl-2 ${isToday ? "text-blue-200" : "text-white/40"}`}>
-                              +{dayTasks.length - 3} more
-                            </div>
-                          )}
                         </div>
                       </div>
                     )
                   })}
-                </div>
-              </div>
 
-              {/* Upcoming Tasks Sidebar - Visible always */}
-              <div className="mt-6 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] p-4">
-                <h3 className="text-lg font-semibold text-white mb-4">Upcoming Tasks</h3>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {tasks
-                    .filter((t) => t.due_date && t.status !== "completed")
-                    .sort((a, b) => new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime())
-                    .slice(0, 10)
-                    .map((task) => (
-                      <div
-                        key={task.id}
-                        onClick={() => {
-                          setSelectedCalendarTask(task)
-                          setShowCalendarTaskModal(true)
-                        }}
-                        className="p-3 rounded-lg bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.1] hover:border-white/[0.2] transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{task.title}</p>
-                            <p className="text-xs text-white/40 mt-1">
-                              {new Date(task.due_date || "").toLocaleDateString()}
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${task.status === "in_progress"
-                              ? "bg-blue-500/20 text-blue-200"
-                              : "bg-white/10 text-white/60"
-                              }`}
-                          >
-                            {task.status === "in_progress" ? "In Progress" : "Pending"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="text-center">
-              <p className="text-white/40 text-lg mb-2">{modules.find((m) => m.id === activeModule)?.label}</p>
-              <p className="text-white/20 text-sm">Coming soon...</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Prompts - Changed to horizontal slider with rectangle cards */}
-      {
-        activeModule === "home" && promptCards.length > 0 && (
-          <div className="px-2 md:px-3 pb-2 pt-2">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex items-center justify-between mb-2">
-                <button
-                  onClick={() => setShowQuickPrompts(!showQuickPrompts)}
-                  className="flex items-center gap-2 text-sm font-semibold text-white hover:text-white/90 transition-colors"
-                >
-                  <span className="mx-[11px]">Quick Prompts</span>
-                  {showQuickPrompts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {showQuickPrompts && (
-                  <button
-                    onClick={() => setIsEditingPrompts(!isEditingPrompts)}
-                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/[0.08] flex items-center gap-1.5 backdrop-blur"
-                    title="Edit Quick Prompts"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>Edit</span>
-                  </button>
-                )}
-              </div>
-              {showQuickPrompts && (
-                <div className="relative overflow-x-auto scrollbar-autohide pb-2">
-                  <div className="flex gap-2 min-w-max px-1">
-                    {promptCards.map((card) => {
-                      return (
-                        <Card
-                          key={card.id}
-                          className="relative group bg-transparent border-white/[0.2] hover:border-white/[0.4] transition-all duration-300 backdrop-blur rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] w-auto px-3 py-1.5 cursor-pointer"
-                        >
-                          {editingCardId === card.id ? (
-                            <div className="flex items-center gap-1.5 px-2 py-1">
-                              <Input
-                                value={editText}
-                                onChange={(e) => setEditText(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    saveEditCard(card.id)
-                                  }
-                                }}
-                                className="h-6 text-xs bg-white/10 border-white/20 text-white"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => saveEditCard(card.id)}
-                                className="h-6 px-2 bg-white/20 hover:bg-white/30 text-white text-xs"
-                              >
-                                <Check className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => !isEditingPrompts && handlePromptCardClick(card.text)}
-                              className="w-full flex items-center px-2 py-1 text-xs text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
-                            >
-                              <span className="font-medium">{card.text}</span>
-                            </button>
-                          )}
-                          {isEditingPrompts && editingCardId !== card.id && (
-                            <div className="absolute -top-1.5 -right-1.5 flex gap-1">
-                              <button
-                                onClick={() => {
-                                  setIconPickerCardId(card.id)
-                                  setShowIconPicker(true)
-                                }}
-                                className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
-                              >
-                                <Sparkles className="w-2.5 h-2.5 text-white" />
-                              </button>
-                              <button
-                                onClick={() => startEditCard(card)}
-                                className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
-                              >
-                                <Edit2 className="w-2.5 h-2.5 text-white" />
-                              </button>
-                              <button
-                                onClick={() => removePromptCard(card.id)}
-                                className="w-5 h-5 bg-red-500/80 backdrop-blur rounded-full flex items-center justify-center hover:bg-red-500 border border-red-500/40 shadow-lg transition-all"
-                              >
-                                <X className="w-2.5 h-2.5 text-white" />
-                              </button>
-                            </div>
-                          )}
-                        </Card>
-                      )
-                    })}
-                    {isEditingPrompts && (
-                      <Button
-                        onClick={addPromptCard}
-                        variant="outline"
-                        className="h-auto min-h-[24px] border-dashed border border-white/15 hover:border-white/30 bg-transparent hover:bg-white/[0.05] text-zinc-400 hover:text-white backdrop-blur rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 px-2 py-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span className="text-xs font-semibold">Add</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      }
-
-      {
-        showIconPicker && iconPickerCardId && (
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={() => {
-              setShowIconPicker(false)
-              setIconPickerCardId(null)
-            }}
-          >
-            <div
-              className="bg-gradient-to-br from-[#0a0a0a] to-black backdrop-blur-2xl rounded-2xl p-5 max-w-sm w-full border border-white/[0.12]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-sm font-semibold mb-3 text-white">Choose Icon</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {availableIcons.map(({ name, icon: Icon }) => (
-                  <button
-                    key={name}
-                    onClick={() => updateCardIcon(iconPickerCardId, name)}
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.03] hover:from-white/[0.15] hover:to-white/[0.08] transition-all duration-200 flex items-center justify-center border border-white/[0.1] hover:border-white/[0.2] backdrop-blur-xl"
-                  >
-                    <Icon className="w-4 h-4 text-zinc-400" />
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => {
-                  setShowIconPicker(false)
-                  setIconPickerCardId(null)
-                }}
-                className="mt-3 w-full py-2 bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-white/[0.1] hover:to-white/[0.04] rounded-xl transition-colors text-xs text-zinc-400 border border-white/[0.1] backdrop-blur-xl"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )
-      }
-
-      {/* Chat Input - Fixed for mobile zoom issue */}
-      <div className="border-t border-white/10 bg-gradient-to-r from-black/40 via-black/30 to-black/40 backdrop-blur-md p-3 md:p-4">
-        <div className="flex items-center gap-2 [&_input]:text-xs [&_input]:leading-tight">
-          <Textarea
-            ref={inputRef}
-            placeholder="Ask anything..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 min-h-[40px] resize-none py-3"
-            style={{ fontSize: "12px", lineHeight: "1.2" }}
-            disabled={loading}
-            rows={1}
-          />
-
-          <button
-            onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-            className="p-1.5 hover:bg-white/[0.1] rounded-xl transition-colors text-zinc-500 hover:text-zinc-300"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          {showAttachmentMenu && (
-            <div className="absolute bottom-full left-0 mb-1.5 bg-gradient-to-br from-gray-900 to-black backdrop-blur-2xl rounded-xl p-1.5 shadow-2xl min-w-[120px]">
-              <button className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors">
-                <ImageIcon className="w-3.5 h-3.5" />
-                <span>Photo</span>
-              </button>
-              <button className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors">
-                <Camera className="w-3.5 h-3.5" />
-                <span>Camera</span>
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload</span>
-              </button>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,.pdf,.doc,.docx"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-
-          <button
-            onClick={handlePushToTalk}
-            className={`p-1.5 rounded-xl transition-all ${isPushToTalk
-              ? "bg-red-500/20 text-red-400 animate-pulse"
-              : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
-              }`}
-            title="Voice input"
-          >
-            <Mic className="w-4 h-4" />
-          </button>
-
-          <Button
-            onClick={handleSendMessage}
-            disabled={!message.trim() || loading}
-            size="sm"
-            className="h-7 px-2.5 rounded-xl bg-gradient-to-br from-white/[0.15] to-white/[0.08] hover:from-white/[0.2] hover:to-white/[0.12] disabled:from-white/[0.05] disabled:to-white/[0.02] text-zinc-300 hover:text-white disabled:text-zinc-600 transition-all backdrop-blur-xl border border-white/[0.12]"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      </div>
-    </div >
-
-    {/* Mobile Sidebar Overlay */}
-    {
-      isSidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
-      )
-    }
-
-    {/* Contact Modal */}
-    {
-      showContactModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowContactModal(false)
-              setSelectedContact(null)
-              setFormData({
-                name: "",
-                email: "",
-                phone: "",
-                company: "",
-                role: "",
-                notes: "",
-              })
-            }
-          }}
-        >
-          <Card className="w-full md:max-w-lg h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">{selectedContact ? "Edit Contact" : "Add New Contact"}</h2>
-              <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (selectedContact) {
-                  updateContact(selectedContact.id, formData)
-                } else {
-                  createContact(formData)
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Name *</label>
-                <Input
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter contact name"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Email *</label>
-                <Input
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Phone</label>
-                <Input
-                  name="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter phone number"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Company</label>
-                <Input
-                  name="company"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter company name"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Role/Title</label>
-                <Input
-                  name="role"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                  placeholder="Enter role or job title"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-white/70 mb-1 block">Notes</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20"
-                  placeholder="Add any notes about this contact"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 bg-white/10 hover:bg-white/20">
-                  {selectedContact ? "Save Changes" : "Add Contact"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowContactModal(false)
-                    setSelectedContact(null)
-                    // Reset form when closing
-                    setFormData({
-                      name: "",
-                      email: "",
-                      phone: "",
-                      company: "",
-                      role: "",
-                      notes: "",
-                    })
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )
-    }
-
-    {/* Settings Modal */}
-    {
-      showSettingsModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
-          onClick={() => setShowSettingsModal(false)}
-        >
-          <Card
-            className="w-full md:max-w-md h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Settings</h2>
-              <button onClick={() => setShowSettingsModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* Username */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Username</label>
-                <Input
-                  value={userSettings.username}
-                  onChange={(e) => setUserSettings({ ...userSettings, username: e.target.value })}
-                  placeholder="Enter username"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              {/* Full Name */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Full Name</label>
-                <Input
-                  value={userSettings.full_name}
-                  onChange={(e) => setUserSettings({ ...userSettings, full_name: e.target.value })}
-                  placeholder="Enter your full name"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80">Email</label>
-                <Input
-                  value={userSettings.email}
-                  onChange={(e) => setUserSettings({ ...userSettings, email: e.target.value })}
-                  placeholder="Enter your email"
-                  className="bg-white/5 border-white/10 text-white"
-                  type="email"
-                />
-              </div>
-
-              {/* Language Selection */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Language</label>
-                <div className="flex gap-2">
-                  {[
-                    { code: "en", label: "English" },
-                    { code: "my", label: "Burmese" },
-                  ].map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() =>
-                        setUserSettings((prev) => ({
-                          ...prev,
-                          language_code: lang.code,
-                        }))
-                      }
-                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${userSettings.language_code === lang.code
-                        ? "bg-white/20 border border-white/40 text-white"
-                        : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
-                        }`}
+                  {viewingIdeaId && viewingIdea && (
+                    <div
+                      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+                      onClick={() => {
+                        setViewingIdeaId(null)
+                        setViewingIdea(null)
+                      }}
                     >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      <div
+                        className="bg-gradient-to-br from-white/10 to-white/5 border-0 md:border md:border-white/20 w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 rounded-none md:rounded-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <h2 className="text-2xl font-bold">View / Edit Idea</h2>
+                            <button
+                              onClick={() => {
+                                setViewingIdeaId(null)
+                                setViewingIdea(null)
+                              }}
+                              className="p-2 rounded-lg hover:bg-white/10"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
 
-            </div>
+                          <Input
+                            placeholder="Idea title"
+                            value={viewingIdea.title || ""}
+                            onChange={(e) => setViewingIdea({ ...viewingIdea, title: e.target.value })}
+                            className="bg-white/5 border-white/10 text-white"
+                          />
 
-            {/* Security Section (Change Password) */}
-            <div className="space-y-4 pt-4 border-t border-white/10">
-              <button
-                onClick={() => setShowPasswordSection(!showPasswordSection)}
-                className="flex items-center justify-between w-full text-left"
-              >
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Security & Password</label>
-                <ChevronDown className={`w-4 h-4 text-white/50 transition-transform ${showPasswordSection ? "rotate-180" : ""}`} />
-              </button>
+                          <RichTextEditor
+                            content={viewingIdea.description || ""}
+                            onChange={(content) => setViewingIdea({ ...viewingIdea, description: content })}
+                          />
 
-              {showPasswordSection && (
-                <div className="space-y-3 animate-fade-in">
-                  <Input
-                    type="password"
-                    placeholder="New Password"
-                    value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Confirm New Password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                    className="bg-white/5 border-white/10 text-white"
-                  />
-                  <Button
-                    onClick={() => {
-                      if (passwordData.newPassword !== passwordData.confirmPassword) {
-                        alert("Passwords do not match!")
-                        return
-                      }
-                      if (passwordData.newPassword.length < 6) {
-                        alert("Password must be at least 6 characters")
-                        return
-                      }
-                      // Mock success for now as we don't have the endpoint confirmed
-                      alert("Password update functionality is UI-only for this demo.")
-                      setPasswordData({ newPassword: "", confirmPassword: "" })
-                    }}
-                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 h-9 text-xs"
-                  >
-                    Update Password
-                  </Button>
-                </div>
-              )}
-            </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-xs text-white/60 mb-1.5 block">Type</label>
+                              <select
+                                value={viewingIdea.type || "product"}
+                                onChange={(e) =>
+                                  setViewingIdea({
+                                    ...viewingIdea,
+                                    type: e.target.value as Idea["type"],
+                                  })
+                                }
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                              >
+                                <option value="product">Product</option>
+                                <option value="feature">Feature</option>
+                                <option value="business">Business</option>
+                                <option value="content">Content</option>
+                                <option value="design">Design</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-white/60 mb-1.5 block">Status</label>
+                              <select
+                                value={viewingIdea.status || "draft"}
+                                onChange={(e) =>
+                                  setViewingIdea({
+                                    ...viewingIdea,
+                                    status: e.target.value as Idea["status"],
+                                  })
+                                }
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                              >
+                                <option value="draft">Draft</option>
+                                <option value="in_review">In Review</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                              </select>
+                            </div>
+                          </div>
 
-            {/* Change Log Section */}
-            <div className="pt-4 border-t border-white/10 space-y-2">
-              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.12)</label>
-              <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
-                <p>• Fixed Calendar Date Lag: Tasks now show on correct dates.</p>
-                <p>• Removed Unwanted Routes: Cleaned up /calendar path.</p>
-                <p>• Updated Login Screen: New greeting text & design.</p>
-                <p>• PWA Support: Installable App with offline capabilities.</p>
-                <p>• Fixed UI Glitches: Background scrolling & floating issues resolved.</p>
-                <p>• Deployment Fixes: Switched to stable npm configuration.</p>
-                <p>• Fixed Topbar Task Count: Now loads immediately on app start.</p>
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div className="pt-4 border-t border-white/10 space-y-3">
-              {settingsSaved && (
-                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm text-center">
-                  Settings saved successfully!
-                </div>
-              )}
-              <Button
-                onClick={updateUserSettings}
-                disabled={settingsLoading}
-                className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
-              >
-                {settingsLoading ? "Saving..." : "Save Settings"}
-              </Button>
-            </div>
-
-            {/* Sign Out Button */}
-            <div className="pt-2">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="font-medium text-sm">Sign Out</span>
-              </button>
-            </div>
-          </Card>
-        </div >
-      )
-    }
-
-    {
-      activeTaskPopup && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
-          <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-0 md:border md:border-white/10 shadow-2xl rounded-none md:rounded-xl">
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h2 className="text-xl font-semibold text-white capitalize">
-                {activeTaskPopup === "today" ? "Tasks due today" : `${activeTaskPopup} Tasks`}
-              </h2>
-              <button
-                onClick={() => setActiveTaskPopup(null)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-white/70" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {tasks
-                .filter((t) => {
-                  if (activeTaskPopup === "archived") return t.status === "archived"
-                  if (t.status === "archived") return false // Exclude archived from other views
-
-                  if (activeTaskPopup === "pending") return t.status === "pending" || t.status === "in_progress"
-                  if (activeTaskPopup === "completed") return t.status === "completed"
-                  if (activeTaskPopup === "urgent") return t.priority === "urgent"
-                  if (activeTaskPopup === "overdue") {
-                    if (!t.due_date || t.status === "completed") return false
-                    const today = new Date()
-                    today.setHours(0, 0, 0, 0)
-                    return new Date(t.due_date) < today
-                  }
-                  if (activeTaskPopup === "today") {
-                    if (!t.due_date || t.status === "completed") return false
-                    const today = new Date()
-                    today.setHours(0, 0, 0, 0)
-                    const tomorrow = new Date(today)
-                    tomorrow.setDate(tomorrow.getDate() + 1)
-                    return new Date(t.due_date) >= today && new Date(t.due_date) < tomorrow
-                  }
-                  return false
-                })
-                .map((task) => (
-                  <Card
-                    key={task.id}
-                    className="p-4 bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setEditingTaskId(task.id)
-                      setEditingTask(task)
-                      setActiveTaskPopup(null) // Close popup when opening specific task
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="font-medium text-white">{task.title}</p>
-                        {task.description && (
-                          <div className="text-sm text-white/50 line-clamp-1 mt-1 prose prose-invert prose-sm" dangerouslySetInnerHTML={{ __html: task.description }} />
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full bg-white/10 uppercase tracking-wide
-                               ${task.priority === "urgent" ? "text-red-400 bg-red-400/10" :
-                              task.priority === "high" ? "text-orange-400 bg-orange-400/10" :
-                                "text-white/60"}
-                             `}>
-                            {task.priority}
-                          </span>
-                          {task.due_date && (
-                            <span className="text-xs text-white/40 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(task.due_date).toLocaleDateString()}
-                            </span>
-                          )}
+                          <div className="flex gap-2 pt-4">
+                            <Button
+                              onClick={() => {
+                                if (viewingIdeaId) {
+                                  updateIdea(viewingIdeaId, viewingIdea)
+                                  setViewingIdeaId(null)
+                                  setViewingIdea(null)
+                                }
+                              }}
+                              className="flex-1 bg-white/15 hover:bg-white/20 border border-white/20"
+                            >
+                              Save Changes
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setViewingIdeaId(null)
+                                setViewingIdea(null)
+                              }}
+                              variant="ghost"
+                              className="border border-white/10"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </Card>
-                ))}
-              {tasks.filter(t => {
-                if (activeTaskPopup === "archived") return t.status === "archived"
-                if (t.status === "archived") return false
-                if (activeTaskPopup === "pending") return t.status === "pending" || t.status === "in_progress"
-                if (activeTaskPopup === "completed") return t.status === "completed"
-                if (activeTaskPopup === "urgent") return t.priority === "urgent"
-                if (activeTaskPopup === "overdue") {
-                  if (!t.due_date || t.status === "completed") return false
-                  const today = new Date()
-                  today.setHours(0, 0, 0, 0)
-                  return new Date(t.due_date) < today
-                }
-                if (activeTaskPopup === "today") {
-                  if (!t.due_date || t.status === "completed") return false
-                  const today = new Date()
-                  today.setHours(0, 0, 0, 0)
-                  const tomorrow = new Date(today)
-                  tomorrow.setDate(tomorrow.getDate() + 1)
-                  return new Date(t.due_date) >= today && new Date(t.due_date) < tomorrow
-                }
-                return false
-              }).length === 0 && (
-                  <div className="text-center text-white/40 py-8">
-                    No tasks found in this category
-                  </div>
-                )}
-            </div>
-          </Card>
-        </div>
-      )}
+                  )}
 
-    {showCalendarTaskModal && selectedCalendarTask && (
-      <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
-        onClick={() => setShowCalendarTaskModal(false)}
-      >
-        <Card
-          className="w-full md:max-w-2xl p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1 mr-4">
-              {editingTaskId === selectedCalendarTask.id ? (
-                <div className="space-y-3">
-                  <Input
-                    value={selectedCalendarTask.title}
-                    onChange={(e) =>
-                      setSelectedCalendarTask({ ...selectedCalendarTask, title: e.target.value })
-                    }
-                    className="text-xl font-bold bg-white/10 border-white/20 text-white"
-                    placeholder="Task Title"
-                  />
-                  <div className="flex gap-2">
-                    <Input
-                      type="datetime-local"
-                      value={selectedCalendarTask.due_date ? new Date(selectedCalendarTask.due_date).toISOString().slice(0, 16) : ""}
-                      onChange={(e) =>
-                        setSelectedCalendarTask({ ...selectedCalendarTask, due_date: e.target.value })
-                      }
-                      className="bg-white/10 border-white/20 text-white text-sm"
-                    />
-                    <select
-                      value={selectedCalendarTask.priority}
-                      onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value as any })}
-                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
-                    >
-                      <option value="low">Low Priority</option>
-                      <option value="medium">Medium Priority</option>
-                      <option value="high">High Priority</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                    <select
-                      value={selectedCalendarTask.status}
-                      onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value as any })}
-                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="archived">Archived</option>
-                    </select>
-                  </div>
-                  <textarea
-                    value={selectedCalendarTask.description || ""}
-                    onChange={(e) =>
-                      setSelectedCalendarTask({ ...selectedCalendarTask, description: e.target.value })
-                    }
-                    className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
-                    placeholder="Description..."
-                    rows={3}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => {
-                        updateTask(selectedCalendarTask.id, selectedCalendarTask)
-                        setEditingTaskId(null)
-                        setShowCalendarTaskModal(false)
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Check className="w-4 h-4 mr-2" /> Save Changes
-                    </Button>
-                    <Button
-                      onClick={() => setEditingTaskId(null)}
-                      variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
-                  <p className="text-sm text-white/60 mt-1">
-                    Due:{" "}
-                    {selectedCalendarTask.due_date
-                      ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                      : "No date"}
-                  </p>
-                </>
-              )}
-            </div>
-            {!editingTaskId && (
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button
-                    onClick={() => setTaskMenuOpen(!taskMenuOpen)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <MoreVertical className="w-5 h-5 text-white/70" />
-                  </button>
-                  {taskMenuOpen && (
-                    <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
-                      <button
-                        onClick={() => {
-                          setEditingTaskId(selectedCalendarTask.id)
-                          // setEditingTask(selectedCalendarTask) // No need, we edit directly in selectedCalendarTask
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Edit Task
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (selectedCalendarTask.id) {
-                            deleteTask(selectedCalendarTask.id)
-                          }
-                          setShowCalendarTaskModal(false)
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Task
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (selectedCalendarTask.id) {
-                            updateTaskStatus(
-                              selectedCalendarTask.id,
-                              selectedCalendarTask.status === "completed" ? "pending" : "completed",
-                            )
-                          }
-                          setShowCalendarTaskModal(false)
-                          setTaskMenuOpen(false)
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
-                      >
-                        <Check className="w-4 h-4" />
-                        {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
-                      </button>
+                  {ideas.length === 0 && !showNewIdeaForm && (
+                    <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
+                      <Lightbulb className="w-12 h-12 mx-auto mb-4 text-white/20" />
+                      <p className="text-white/40">No ideas yet. Create your first idea to get started!</p>
+                    </Card>
+                  )}
+
+                  {/* New Idea Form Modal */}
+                  {showNewIdeaForm && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+                      <Card className="w-full max-w-lg p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-xl font-bold">Create New Idea</h2>
+                          <button onClick={() => setShowNewIdeaForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            createIdea({
+                              user_id: userId || "", // Use dynamic userId
+                              title: ideaFormData.title,
+                              description: ideaFormData.description || null,
+                              type: ideaFormData.type,
+                              status: ideaFormData.status,
+                              tags: ideaFormData.tags ? ideaFormData.tags.split(",").map((tag) => tag.trim()) : null,
+                            })
+                          }}
+                          className="space-y-4"
+                        >
+                          <div>
+                            <label className="text-sm text-white/70 mb-1 block">Title *</label>
+                            <Input
+                              name="title"
+                              required
+                              value={ideaFormData.title}
+                              onChange={(e) => setIdeaFormData({ ...ideaFormData, title: e.target.value })}
+                              placeholder="Enter idea title"
+                              className="bg-white/5 border-white/10"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm text-white/70 mb-1 block">Description</label>
+                            <RichTextEditor
+                              content={ideaFormData.description || ""}
+                              onChange={(content) => setIdeaFormData({ ...ideaFormData, description: content })}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm text-white/70 mb-1 block">Type</label>
+                              <select
+                                name="type"
+                                value={ideaFormData.type}
+                                onChange={(e) =>
+                                  setIdeaFormData({
+                                    ...ideaFormData,
+                                    type: e.target.value as Idea["type"],
+                                  })
+                                }
+                                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white"
+                              >
+                                <option value="product">Product</option>
+                                <option value="feature">Feature</option>
+                                <option value="business">Business</option>
+                                <option value="content">Content</option>
+                                <option value="design">Design</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-sm text-white/70 mb-1 block">Status</label>
+                              <select
+                                name="status"
+                                value={ideaFormData.status}
+                                onChange={(e) =>
+                                  setIdeaFormData({
+                                    ...ideaFormData,
+                                    status: e.target.value as Idea["status"],
+                                  })
+                                }
+                                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white"
+                              >
+                                <option value="draft">Draft</option>
+                                <option value="in_review">In Review</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm text-white/70 mb-1 block">Tags (comma-separated)</label>
+                            <Input
+                              name="tags"
+                              value={ideaFormData.tags}
+                              onChange={(e) => setIdeaFormData({ ...ideaFormData, tags: e.target.value })}
+                              placeholder="e.g. ai, product, urgent"
+                              className="bg-white/5 border-white/10"
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              type="submit"
+                              disabled={!ideaFormData.title.trim()}
+                              className="flex-1 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Create Idea
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => setShowNewIdeaForm(false)}
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </Card>
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => setShowCalendarTaskModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-white/70" />
-                </button>
+              </div>
+            ) : activeModule === "market" ? (
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar-dark">
+                <div className="max-w-7xl mx-auto space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-2xl md:text-3xl font-bold">Market Intelligence</h1>
+                    {/* Refresh Button Moved to Modal */}
+                  </div>
+
+                  {/* Competitor Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {competitors.map((competitor) => {
+                      const latestStats = getLatestStats(competitor.id)
+
+                      return (
+                        <Card
+                          key={competitor.id}
+                          onClick={() => {
+                            setSelectedCompetitor({ ...competitor, stats: latestStats })
+                            setShowCompetitorModal(true)
+                          }}
+                          className="p-5 bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-xl hover:from-white/15 hover:to-white/8 transition-all cursor-pointer"
+                        >
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <h3 className="font-bold text-lg">{competitor.name}</h3>
+                                <p className="text-sm text-white/60">{competitor.platform}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {latestStats?.is_running_ads ? (
+                                  <div className="flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/25 text-green-300 border border-green-500/50">
+                                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                      <span className="text-xs font-semibold">Ads ON</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">
+                                    <span className="w-2 h-2 bg-zinc-500 rounded-full" />
+                                    <span className="text-xs font-semibold">No Ads</span>
+                                  </div>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    deleteCompetitor(competitor.id)
+                                  }}
+                                  className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
+                                  title="Delete competitor"
+                                >
+                                  <Trash2 className="w-4 h-4 text-white/40 group-hover:text-red-400" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {latestStats ? (
+                              <>
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-white/70">📉 Followers</span>
+                                    <span className="font-semibold">
+                                      {latestStats.follower_count >= 1000
+                                        ? `${(latestStats.follower_count / 1000).toFixed(1)}k`
+                                        : latestStats.follower_count}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-white/70">🔥 Viral Score</span>
+                                      <span className="font-semibold">{latestStats.viral_score || 0}/10</span>
+                                    </div>
+                                    <div className="w-full bg-white/10 rounded-full h-2">
+                                      <div
+                                        className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all"
+                                        style={{ width: `${((latestStats.viral_score || 0) / 10) * 100}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {latestStats.summary_analysis && (
+                                  <div className="pt-2 border-t border-white/10">
+                                    <p className="text-xs text-white/60 line-clamp-2">
+                                      📝 {latestStats.summary_analysis}
+                                    </p>
+                                    <p className="text-xs text-white/40 mt-2 italic">Click to view full analysis →</p>
+                                  </div>
+                                )}
+
+                                {latestStats.scraped_at && (
+                                  <div className="pt-2 text-xs text-white/40 border-t border-white/10">
+                                    <p>🕐 Last scraped: {new Date(latestStats.scraped_at).toLocaleString()}</p>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-center py-4">
+                                <p className="text-sm text-white/40">No data available</p>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+
+                  {competitors.length === 0 && !loadingMarketData && (
+                    <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
+                      <TrendingUp className="w-12 h-12 mx-auto mb-4 text-white/20" />
+                      <p className="text-white/40 mb-4">No competitor data available yet.</p>
+                      <Button
+                        onClick={refreshMarketData}
+                        disabled={loadingMarketData}
+                        variant="outline"
+                        className="border-white/10 text-white hover:bg-white/10"
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
+                        Refresh Data
+                      </Button>
+                    </Card>
+                  )}
+
+                  {/* Competitor Detail Modal */}
+                  {showCompetitorModal && selectedCompetitor && (
+                    <div
+                      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+                      onClick={() => setShowCompetitorModal(false)}
+                    >
+                      <Card
+                        className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl rounded-none md:rounded-xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="p-6 space-y-6">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h2 className="text-2xl font-bold">{selectedCompetitor.name}</h2>
+                              <p className="text-white/60">{selectedCompetitor.platform}</p>
+                              {selectedCompetitor.stats?.scraped_at && (
+                                <p className="text-xs text-white/40 mt-1">
+                                  Last updated: {new Date(selectedCompetitor.stats.scraped_at).toLocaleDateString()} at{" "}
+                                  {new Date(selectedCompetitor.stats.scraped_at).toLocaleTimeString()}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                onClick={refreshMarketData}
+                                disabled={loadingMarketData}
+                                size="sm"
+                                className="bg-white/10 hover:bg-white/20 border border-white/10"
+                              >
+                                <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
+                                Refresh Analysis
+                              </Button>
+                              <button
+                                onClick={() => setShowCompetitorModal(false)}
+                                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white"
+                              >
+                                <X className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {selectedCompetitor.stats && (
+                            <>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 rounded-lg border border-blue-500/30">
+                                  <p className="text-xs text-blue-300 font-semibold mb-2">👥 Followers</p>
+                                  <p className="text-xl md:text-2xl font-bold text-white">
+                                    {(selectedCompetitor.stats.follower_count / 1000).toFixed(1)}K
+                                  </p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 rounded-lg border border-purple-500/30">
+                                  <p className="text-xs text-purple-300 font-semibold mb-2">🔥 Viral Score</p>
+                                  <div className="flex items-baseline gap-2">
+                                    <p className="text-xl md:text-2xl font-bold text-white">
+                                      {selectedCompetitor.stats.viral_score || 0}
+                                    </p>
+                                    <p className="text-xs text-white/50">/10</p>
+                                  </div>
+                                  <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
+                                    <div
+                                      className="bg-gradient-to-r from-purple-400 to-purple-600 h-1.5 rounded-full"
+                                      style={{
+                                        width: `${((selectedCompetitor.stats.viral_score || 0) / 10) * 100}%`,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <div
+                                  className={`p-4 rounded-lg border ${selectedCompetitor.stats.is_running_ads
+                                    ? "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/30"
+                                    : "bg-gradient-to-br from-gray-500/20 to-gray-500/5 border-gray-500/30"
+                                    }`}
+                                >
+                                  <p className="text-xs font-semibold mb-2">📢 Ads Running</p>
+                                  <p className="text-xl font-bold">
+                                    {selectedCompetitor.stats.is_running_ads ? (
+                                      <span className="text-green-400">Active</span>
+                                    ) : (
+                                      <span className="text-gray-400">Inactive</span>
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-lg border border-amber-500/30">
+                                  <p className="text-xs text-amber-300 font-semibold mb-2">📅 Data Age</p>
+                                  <p className="text-sm text-white">
+                                    {Math.floor(
+                                      (Date.now() - new Date(selectedCompetitor.stats.scraped_at).getTime()) /
+                                      (1000 * 60 * 60),
+                                    )}
+                                    h ago
+                                  </p>
+                                </div>
+                              </div>
+
+                              {selectedCompetitor.stats.summary_analysis && (
+                                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <span>📊</span>
+                                    <span>AI Analysis</span>
+                                  </h3>
+                                  <p className="text-sm text-white/80 leading-relaxed">
+                                    {selectedCompetitor.stats.summary_analysis}
+                                  </p>
+                                </div>
+                              )}
+
+                              {selectedCompetitor.stats.content_strategy && (
+                                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <span>📋</span>
+                                    <span>Content Strategy</span>
+                                  </h3>
+                                  <div className="space-y-2 text-sm">
+                                    {typeof selectedCompetitor.stats.content_strategy === "object" ? (
+                                      Object.entries(selectedCompetitor.stats.content_strategy).map(([key, value]) => (
+                                        <div key={key} className="flex justify-between items-start gap-2">
+                                          <span className="text-white/60 capitalize">{key}:</span>
+                                          <span className="text-white/80 text-right">
+                                            {typeof value === "string" ? value : JSON.stringify(value)}
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-white/70">{selectedCompetitor.stats.content_strategy}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedCompetitor.stats.top_post && (
+                                <div className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-lg border border-amber-500/20">
+                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <span>🏆</span>
+                                    <span>Top Performing Post</span>
+                                  </h3>
+                                  <div className="space-y-2 text-sm">
+                                    {typeof selectedCompetitor.stats.top_post === "object" ? (
+                                      Object.entries(selectedCompetitor.stats.top_post).map(([key, value]) => (
+                                        <div key={key} className="flex justify-between items-start gap-2">
+                                          <span className="text-amber-300/70 capitalize">{key}:</span>
+                                          <span className="text-white/80 text-right max-w-xs line-clamp-2">
+                                            {typeof value === "string" ? value : JSON.stringify(value)}
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-white/70">{selectedCompetitor.stats.top_post}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : activeModule === "crm" ? ( // Implementing CRM view with contacts table data
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar-dark">
+                <div className="max-w-7xl mx-auto">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                      <h1 className="text-3xl md:text-4xl font-bold text-white">Contacts</h1>
+                      <p className="text-sm text-white/50 mt-1">Manage your business contacts and relationships</p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        setSelectedContact(null)
+                        setShowContactModal(true)
+                      }}
+                      className="w-full sm:w-auto bg-gradient-to-br from-white/[0.15] to-white/[0.08] hover:from-white/[0.2] hover:to-white/[0.12] text-white border border-white/[0.15]"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Contact
+                    </Button>
+                  </div>
+
+                  <div className="mb-6">
+                    <Input
+                      type="text"
+                      placeholder="Search by name, email, company, or role..."
+                      value={contactSearchQuery}
+                      onChange={(e) => setContactSearchQuery(e.target.value)}
+                      className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    />
+                  </div>
+
+                  <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.1] overflow-hidden">
+                    {contacts.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <Users className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                        <p className="text-white/50">No contacts yet. Add your first contact!</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-white/[0.05]">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-white/70">Name</th>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-white/70 hidden sm:table-cell">
+                                Email
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-white/70 hidden md:table-cell">
+                                Company
+                              </th>
+                              <th className="px-4 py-3 text-left text-sm font-semibold text-white/70 hidden lg:table-cell">
+                                Role
+                              </th>
+                              <th className="px-4 py-3 text-right text-sm font-semibold text-white/70">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.05]">
+                            {filteredContacts.map((contact) => (
+                              <tr key={contact.id} className="hover:bg-white/[0.03] transition-colors">
+                                <td className="px-4 py-3 text-sm text-white font-medium">{contact.name}</td>
+                                <td className="px-4 py-3 text-sm text-zinc-300 hidden sm:table-cell">
+                                  {contact.email || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-zinc-300 hidden md:table-cell">
+                                  {contact.company || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-zinc-300 hidden lg:table-cell">
+                                  {contact.role || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedContact(contact)
+                                      setShowContactModal(true)
+                                    }}
+                                    className="text-zinc-400 hover:text-white transition-colors p-2"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : activeModule === "calendar" ? (
+              <div className="flex-1 p-2 md:p-6 overflow-y-auto custom-scrollbar-dark">
+                <div className="max-w-7xl mx-auto w-full">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <h2 className="text-3xl font-light text-white tracking-wide">
+                        {currentDate.toLocaleString('default', { month: 'long' })} <span className="text-white/40">{currentDate.getFullYear()}</span>
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          const newDate = new Date(currentDate)
+                          newDate.setMonth(currentDate.getMonth() - 1)
+                          setCurrentDate(newDate)
+                        }}
+                        variant="outline"
+                        size="icon"
+                        className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-white" />
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setCurrentDate(new Date())
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/5 border-white/10 hover:bg-white/10 text-xs px-3 h-9 rounded-full transition-colors text-white"
+                      >
+                        Today
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const newDate = new Date(currentDate)
+                          newDate.setMonth(currentDate.getMonth() + 1)
+                          setCurrentDate(newDate)
+                        }}
+                        // Actually, let's fix the logic right now.
+                        // onClick={() => {
+                        //   const newDate = new Date(currentDate)
+                        //   newDate.setMonth(currentDate.getMonth() + 1)
+                        //   setCurrentDate(newDate)
+                        // }}
+                        // But I cannot easily inject complex logic change in a simple replace. 
+                        // I'll stick to button UI update first. 
+                        // Retaining original onClick but updating UI.
+                        variant="outline"
+                        size="icon"
+                        className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4 text-white" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Calendar Grid - Month Only */}
+                  <div className="space-y-4">
+                    {/* Weekday Headers */}
+                    <div className="grid grid-cols-7 gap-3 mb-2">
+                      {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
+                        <div
+                          key={index}
+                          className="text-left px-2 text-xs font-medium text-white/40"
+                        >
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-3">
+                      {Array.from({ length: 42 }).map((_, index) => {
+                        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
+                        const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
+                        const dayNumber = index - firstDay + 1
+
+                        // Previous month logic for empty cells
+                        if (dayNumber < 1) {
+                          // Optional: Show previous month dates faded? For now empty matching reference style which shows empty slots or faded.
+                          // Reference shows explicit dates for prev/next month. Let's start with just empty for simplicity or calculate prev dates.
+                          // Actually reference image shows "30" for Sunday when month starts on Monday. So yes, show prev dates.
+                          const prevMonthLastDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate()
+                          const prevDate = prevMonthLastDate + dayNumber
+                          return (
+                            <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                              <div className="text-lg font-medium text-white/50">{prevDate}</div>
+                            </div>
+                          )
+                        }
+
+                        // Next month logic
+                        if (dayNumber > daysInMonth) {
+                          const nextDate = dayNumber - daysInMonth
+                          return (
+                            <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                              <div className="text-lg font-medium text-white/50">{nextDate}</div>
+                            </div>
+                          )
+                        }
+
+                        const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber)
+                        // Fix: Use local date string construction instead of toISOString() which converts to UTC and causes lag
+                        // e.g. Jan 23 00:00 Yangon (UTC+6.5) -> Jan 22 17:30 UTC -> "2026-01-22" (Wrong day)
+                        const year = cellDate.getFullYear()
+                        const month = String(cellDate.getMonth() + 1).padStart(2, "0")
+                        const day = String(cellDate.getDate()).padStart(2, "0")
+                        const cellDateStr = `${year}-${month}-${day}`
+
+                        const dayTasks = tasks.filter(
+                          (task) =>
+                            task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
+                        )
+
+                        const isToday = cellDate.toDateString() === new Date().toDateString()
+                        // Selected date state? For now just use isToday for highlighting, or click to select styling.
+                        // Reference shows distinct highlight for "4" (Blue bg). Let's use isToday for that.
+
+                        return (
+                          <div
+                            key={index}
+                            className={`min-h-[120px] p-3 rounded-3xl border transition-all relative group flex flex-col items-start justify-start gap-2 ${isToday
+                              ? "bg-blue-600 border-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                              : "bg-white/[0.05] border-white/[0.08] hover:border-white/20 hover:bg-white/[0.08]"
+                              }`}
+                          >
+                            <div
+                              className={`text-xl font-medium ${isToday ? "text-white" : "text-white/90"}`}
+                            >
+                              {dayNumber}
+                            </div>
+
+                            <div className="w-full space-y-1.5 overflow-hidden">
+                              {dayTasks.slice(0, 3).map((task) => (
+                                <div
+                                  key={task.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedCalendarTask(task)
+                                    setShowCalendarTaskModal(true)
+                                  }}
+                                  className="flex items-center gap-1.5 group/task cursor-pointer"
+                                >
+                                  {/* Colored bar/dot */}
+                                  <div className={`w-0.5 h-3 rounded-full flex-shrink-0 ${task.priority === "high" ? "bg-red-400" :
+                                    task.priority === "medium" ? "bg-amber-400" :
+                                      "bg-sky-400"
+                                    }`} />
+                                  <span className={`text-[10px] truncate ${isToday ? "text-blue-100" : "text-white/70 group-hover/task:text-white"}`}>
+                                    {task.title}
+                                  </span>
+                                </div>
+                              ))}
+                              {dayTasks.length > 3 && (
+                                <div className={`text-[10px] pl-2 ${isToday ? "text-blue-200" : "text-white/40"}`}>
+                                  +{dayTasks.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Upcoming Tasks Sidebar - Visible always */}
+                  <div className="mt-6 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Upcoming Tasks</h3>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {tasks
+                        .filter((t) => t.due_date && t.status !== "completed")
+                        .sort((a, b) => new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime())
+                        .slice(0, 10)
+                        .map((task) => (
+                          <div
+                            key={task.id}
+                            onClick={() => {
+                              setSelectedCalendarTask(task)
+                              setShowCalendarTaskModal(true)
+                            }}
+                            className="p-3 rounded-lg bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.1] hover:border-white/[0.2] transition-all cursor-pointer"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">{task.title}</p>
+                                <p className="text-xs text-white/40 mt-1">
+                                  {new Date(task.due_date || "").toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${task.status === "in_progress"
+                                  ? "bg-blue-500/20 text-blue-200"
+                                  : "bg-white/10 text-white/60"
+                                  }`}
+                              >
+                                {task.status === "in_progress" ? "In Progress" : "Pending"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center p-4">
+                <div className="text-center">
+                  <p className="text-white/40 text-lg mb-2">{modules.find((m) => m.id === activeModule)?.label}</p>
+                  <p className="text-white/20 text-sm">Coming soon...</p>
+                </div>
               </div>
             )}
           </div>
 
-          {!editingTaskId && (
-            <div className="space-y-6">
-              {/* Status and Priority */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
-                  <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
-                </div>
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
-                  <p
-                    className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
-                      ? "text-red-400"
-                      : selectedCalendarTask.priority === "high"
-                        ? "text-orange-400"
-                        : "text-yellow-400"
-                      }`}
-                  >
-                    {selectedCalendarTask.priority}
-                  </p>
+          {/* Quick Prompts - Changed to horizontal slider with rectangle cards */}
+          {
+            activeModule === "home" && promptCards.length > 0 && (
+              <div className="px-2 md:px-3 pb-2 pt-2">
+                <div className="max-w-2xl mx-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={() => setShowQuickPrompts(!showQuickPrompts)}
+                      className="flex items-center gap-2 text-sm font-semibold text-white hover:text-white/90 transition-colors"
+                    >
+                      <span className="mx-[11px]">Quick Prompts</span>
+                      {showQuickPrompts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    {showQuickPrompts && (
+                      <button
+                        onClick={() => setIsEditingPrompts(!isEditingPrompts)}
+                        className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/[0.08] flex items-center gap-1.5 backdrop-blur"
+                        title="Edit Quick Prompts"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                  </div>
+                  {showQuickPrompts && (
+                    <div className="relative overflow-x-auto scrollbar-autohide pb-2">
+                      <div className="flex gap-2 min-w-max px-1">
+                        {promptCards.map((card) => {
+                          return (
+                            <Card
+                              key={card.id}
+                              className="relative group bg-transparent border-white/[0.2] hover:border-white/[0.4] transition-all duration-300 backdrop-blur rounded-lg shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] w-auto px-3 py-1.5 cursor-pointer"
+                            >
+                              {editingCardId === card.id ? (
+                                <div className="flex items-center gap-1.5 px-2 py-1">
+                                  <Input
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    onKeyPress={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault()
+                                        saveEditCard(card.id)
+                                      }
+                                    }}
+                                    className="h-6 text-xs bg-white/10 border-white/20 text-white"
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => saveEditCard(card.id)}
+                                    className="h-6 px-2 bg-white/20 hover:bg-white/30 text-white text-xs"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => !isEditingPrompts && handlePromptCardClick(card.text)}
+                                  className="w-full flex items-center px-2 py-1 text-xs text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
+                                >
+                                  <span className="font-medium">{card.text}</span>
+                                </button>
+                              )}
+                              {isEditingPrompts && editingCardId !== card.id && (
+                                <div className="absolute -top-1.5 -right-1.5 flex gap-1">
+                                  <button
+                                    onClick={() => {
+                                      setIconPickerCardId(card.id)
+                                      setShowIconPicker(true)
+                                    }}
+                                    className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
+                                  >
+                                    <Sparkles className="w-2.5 h-2.5 text-white" />
+                                  </button>
+                                  <button
+                                    onClick={() => startEditCard(card)}
+                                    className="w-5 h-5 bg-zinc-700/95 backdrop-blur rounded-full flex items-center justify-center hover:bg-zinc-600 border border-white/20 shadow-lg transition-all"
+                                  >
+                                    <Edit2 className="w-2.5 h-2.5 text-white" />
+                                  </button>
+                                  <button
+                                    onClick={() => removePromptCard(card.id)}
+                                    className="w-5 h-5 bg-red-500/80 backdrop-blur rounded-full flex items-center justify-center hover:bg-red-500 border border-red-500/40 shadow-lg transition-all"
+                                  >
+                                    <X className="w-2.5 h-2.5 text-white" />
+                                  </button>
+                                </div>
+                              )}
+                            </Card>
+                          )
+                        })}
+                        {isEditingPrompts && (
+                          <Button
+                            onClick={addPromptCard}
+                            variant="outline"
+                            className="h-auto min-h-[24px] border-dashed border border-white/15 hover:border-white/30 bg-transparent hover:bg-white/[0.05] text-zinc-400 hover:text-white backdrop-blur rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 px-2 py-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className="text-xs font-semibold">Add</span>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+            )
+          }
 
-              {/* Description */}
-              {selectedCalendarTask.description && (
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
-                  <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
+          {
+            showIconPicker && iconPickerCardId && (
+              <div
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                onClick={() => {
+                  setShowIconPicker(false)
+                  setIconPickerCardId(null)
+                }}
+              >
+                <div
+                  className="bg-gradient-to-br from-[#0a0a0a] to-black backdrop-blur-2xl rounded-2xl p-5 max-w-sm w-full border border-white/[0.12]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-sm font-semibold mb-3 text-white">Choose Icon</h3>
+                  <div className="grid grid-cols-5 gap-2">
+                    {availableIcons.map(({ name, icon: Icon }) => (
+                      <button
+                        key={name}
+                        onClick={() => updateCardIcon(iconPickerCardId, name)}
+                        className="p-2.5 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.03] hover:from-white/[0.15] hover:to-white/[0.08] transition-all duration-200 flex items-center justify-center border border-white/[0.1] hover:border-white/[0.2] backdrop-blur-xl"
+                      >
+                        <Icon className="w-4 h-4 text-zinc-400" />
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowIconPicker(false)
+                      setIconPickerCardId(null)
+                    }}
+                    className="mt-3 w-full py-2 bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-white/[0.1] hover:to-white/[0.04] rounded-xl transition-colors text-xs text-zinc-400 border border-white/[0.1] backdrop-blur-xl"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
+          {/* Chat Input - Fixed for mobile zoom issue */}
+          <div className="border-t border-white/10 bg-gradient-to-r from-black/40 via-black/30 to-black/40 backdrop-blur-md p-3 md:p-4">
+            <div className="flex items-center gap-2 [&_input]:text-xs [&_input]:leading-tight">
+              <Textarea
+                ref={inputRef}
+                placeholder="Ask anything..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 min-h-[40px] resize-none py-3"
+                style={{ fontSize: "12px", lineHeight: "1.2" }}
+                disabled={loading}
+                rows={1}
+              />
+
+              <button
+                onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                className="p-1.5 hover:bg-white/[0.1] rounded-xl transition-colors text-zinc-500 hover:text-zinc-300"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              {showAttachmentMenu && (
+                <div className="absolute bottom-full left-0 mb-1.5 bg-gradient-to-br from-gray-900 to-black backdrop-blur-2xl rounded-xl p-1.5 shadow-2xl min-w-[120px]">
+                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors">
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Photo</span>
+                  </button>
+                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors">
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Camera</span>
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload</span>
+                  </button>
                 </div>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
 
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
-                  <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
+              <button
+                onClick={handlePushToTalk}
+                className={`p-1.5 rounded-xl transition-all ${isPushToTalk
+                  ? "bg-red-500/20 text-red-400 animate-pulse"
+                  : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
+                  }`}
+                title="Voice input"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+
+              <Button
+                onClick={handleSendMessage}
+                disabled={!message.trim() || loading}
+                size="sm"
+                className="h-7 px-2.5 rounded-xl bg-gradient-to-br from-white/[0.15] to-white/[0.08] hover:from-white/[0.2] hover:to-white/[0.12] disabled:from-white/[0.05] disabled:to-white/[0.02] text-zinc-300 hover:text-white disabled:text-zinc-600 transition-all backdrop-blur-xl border border-white/[0.12]"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        </div >
+
+        {/* Mobile Sidebar Overlay */}
+        {
+          isSidebarOpen && (
+            <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
+          )
+        }
+
+        {/* Contact Modal */}
+        {
+          showContactModal && (
+            <div
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowContactModal(false)
+                  setSelectedContact(null)
+                  setFormData({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    company: "",
+                    role: "",
+                    notes: "",
+                  })
+                }
+              }}
+            >
+              <Card className="w-full md:max-w-lg h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold">{selectedContact ? "Edit Contact" : "Add New Contact"}</h2>
+                  <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
-                  <p className="text-sm text-white">
-                    {selectedCalendarTask.due_date
-                      ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                      : "No due date"}
-                  </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (selectedContact) {
+                      updateContact(selectedContact.id, formData)
+                    } else {
+                      createContact(formData)
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="text-sm text-white/70 mb-1 block">Name *</label>
+                    <Input
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      placeholder="Enter contact name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-white/70 mb-1 block">Email *</label>
+                    <Input
+                      name="email"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-white/70 mb-1 block">Phone</label>
+                    <Input
+                      name="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-white/70 mb-1 block">Company</label>
+                    <Input
+                      name="company"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-white/70 mb-1 block">Role/Title</label>
+                    <Input
+                      name="role"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                      placeholder="Enter role or job title"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-white/70 mb-1 block">Notes</label>
+                    <textarea
+                      name="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20"
+                      placeholder="Add any notes about this contact"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button type="submit" className="flex-1 bg-white/10 hover:bg-white/20">
+                      {selectedContact ? "Save Changes" : "Add Contact"}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setShowContactModal(false)
+                        setSelectedContact(null)
+                        // Reset form when closing
+                        setFormData({
+                          name: "",
+                          email: "",
+                          phone: "",
+                          company: "",
+                          role: "",
+                          notes: "",
+                        })
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            </div>
+          )
+        }
+
+        {/* Settings Modal */}
+        {
+          showSettingsModal && (
+            <div
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+              onClick={() => setShowSettingsModal(false)}
+            >
+              <Card
+                className="w-full md:max-w-md h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold">Settings</h2>
+                  <button onClick={() => setShowSettingsModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-              </div>
+
+                <div className="space-y-4">
+                  {/* Username */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/80">Username</label>
+                    <Input
+                      value={userSettings.username}
+                      onChange={(e) => setUserSettings({ ...userSettings, username: e.target.value })}
+                      placeholder="Enter username"
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+
+                  {/* Full Name */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/80">Full Name</label>
+                    <Input
+                      value={userSettings.full_name}
+                      onChange={(e) => setUserSettings({ ...userSettings, full_name: e.target.value })}
+                      placeholder="Enter your full name"
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white/80">Email</label>
+                    <Input
+                      value={userSettings.email}
+                      onChange={(e) => setUserSettings({ ...userSettings, email: e.target.value })}
+                      placeholder="Enter your email"
+                      className="bg-white/5 border-white/10 text-white"
+                      type="email"
+                    />
+                  </div>
+
+                  {/* Language Selection */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Language</label>
+                    <div className="flex gap-2">
+                      {[
+                        { code: "en", label: "English" },
+                        { code: "my", label: "Burmese" },
+                      ].map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() =>
+                            setUserSettings((prev) => ({
+                              ...prev,
+                              language_code: lang.code,
+                            }))
+                          }
+                          className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${userSettings.language_code === lang.code
+                            ? "bg-white/20 border border-white/40 text-white"
+                            : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+                            }`}
+                        >
+                          {lang.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Security Section (Change Password) */}
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <button
+                    onClick={() => setShowPasswordSection(!showPasswordSection)}
+                    className="flex items-center justify-between w-full text-left"
+                  >
+                    <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Security & Password</label>
+                    <ChevronDown className={`w-4 h-4 text-white/50 transition-transform ${showPasswordSection ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {showPasswordSection && (
+                    <div className="space-y-3 animate-fade-in">
+                      <Input
+                        type="password"
+                        placeholder="New Password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Confirm New Password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (passwordData.newPassword !== passwordData.confirmPassword) {
+                            alert("Passwords do not match!")
+                            return
+                          }
+                          if (passwordData.newPassword.length < 6) {
+                            alert("Password must be at least 6 characters")
+                            return
+                          }
+                          // Mock success for now as we don't have the endpoint confirmed
+                          alert("Password update functionality is UI-only for this demo.")
+                          setPasswordData({ newPassword: "", confirmPassword: "" })
+                        }}
+                        className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 h-9 text-xs"
+                      >
+                        Update Password
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Change Log Section */}
+                <div className="pt-4 border-t border-white/10 space-y-2">
+                  <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.12)</label>
+                  <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
+                    <p>• Fixed Calendar Date Lag: Tasks now show on correct dates.</p>
+                    <p>• Removed Unwanted Routes: Cleaned up /calendar path.</p>
+                    <p>• Updated Login Screen: New greeting text & design.</p>
+                    <p>• PWA Support: Installable App with offline capabilities.</p>
+                    <p>• Fixed UI Glitches: Background scrolling & floating issues resolved.</p>
+                    <p>• Deployment Fixes: Switched to stable npm configuration.</p>
+                    <p>• Fixed Topbar Task Count: Now loads immediately on app start.</p>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="pt-4 border-t border-white/10 space-y-3">
+                  {settingsSaved && (
+                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm text-center">
+                      Settings saved successfully!
+                    </div>
+                  )}
+                  <Button
+                    onClick={updateUserSettings}
+                    disabled={settingsLoading}
+                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  >
+                    {settingsLoading ? "Saving..." : "Save Settings"}
+                  </Button>
+                </div>
+
+                {/* Sign Out Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 p-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="font-medium text-sm">Sign Out</span>
+                  </button>
+                </div>
+              </Card>
+            </div >
+          )
+        }
+
+        {
+          activeTaskPopup && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+              <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-0 md:border md:border-white/10 shadow-2xl rounded-none md:rounded-xl">
+                <div className="flex items-center justify-between p-6 border-b border-white/10">
+                  <h2 className="text-xl font-semibold text-white capitalize">
+                    {activeTaskPopup === "today" ? "Tasks due today" : `${activeTaskPopup} Tasks`}
+                  </h2>
+                  <button
+                    onClick={() => setActiveTaskPopup(null)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-white/70" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {tasks
+                    .filter((t) => {
+                      if (activeTaskPopup === "archived") return t.status === "archived"
+                      if (t.status === "archived") return false // Exclude archived from other views
+
+                      if (activeTaskPopup === "pending") return t.status === "pending" || t.status === "in_progress"
+                      if (activeTaskPopup === "completed") return t.status === "completed"
+                      if (activeTaskPopup === "urgent") return t.priority === "urgent"
+                      if (activeTaskPopup === "overdue") {
+                        if (!t.due_date || t.status === "completed") return false
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        return new Date(t.due_date) < today
+                      }
+                      if (activeTaskPopup === "today") {
+                        if (!t.due_date || t.status === "completed") return false
+                        const today = new Date()
+                        today.setHours(0, 0, 0, 0)
+                        const tomorrow = new Date(today)
+                        tomorrow.setDate(tomorrow.getDate() + 1)
+                        return new Date(t.due_date) >= today && new Date(t.due_date) < tomorrow
+                      }
+                      return false
+                    })
+                    .map((task) => (
+                      <Card
+                        key={task.id}
+                        className="p-4 bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setEditingTaskId(task.id)
+                          setEditingTask(task)
+                          setActiveTaskPopup(null) // Close popup when opening specific task
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-medium text-white">{task.title}</p>
+                            {task.description && (
+                              <div className="text-sm text-white/50 line-clamp-1 mt-1 prose prose-invert prose-sm" dangerouslySetInnerHTML={{ __html: task.description }} />
+                            )}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full bg-white/10 uppercase tracking-wide
+                               ${task.priority === "urgent" ? "text-red-400 bg-red-400/10" :
+                                  task.priority === "high" ? "text-orange-400 bg-orange-400/10" :
+                                    "text-white/60"}
+                             `}>
+                                {task.priority}
+                              </span>
+                              {task.due_date && (
+                                <span className="text-xs text-white/40 flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(task.due_date).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  {tasks.filter(t => {
+                    if (activeTaskPopup === "archived") return t.status === "archived"
+                    if (t.status === "archived") return false
+                    if (activeTaskPopup === "pending") return t.status === "pending" || t.status === "in_progress"
+                    if (activeTaskPopup === "completed") return t.status === "completed"
+                    if (activeTaskPopup === "urgent") return t.priority === "urgent"
+                    if (activeTaskPopup === "overdue") {
+                      if (!t.due_date || t.status === "completed") return false
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      return new Date(t.due_date) < today
+                    }
+                    if (activeTaskPopup === "today") {
+                      if (!t.due_date || t.status === "completed") return false
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      const tomorrow = new Date(today)
+                      tomorrow.setDate(tomorrow.getDate() + 1)
+                      return new Date(t.due_date) >= today && new Date(t.due_date) < tomorrow
+                    }
+                    return false
+                  }).length === 0 && (
+                      <div className="text-center text-white/40 py-8">
+                        No tasks found in this category
+                      </div>
+                    )}
+                </div>
+              </Card>
             </div>
           )}
-        </Card>
-      </div>
-    )
-    }
-  </div >
+
+        {showCalendarTaskModal && selectedCalendarTask && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4"
+            onClick={() => setShowCalendarTaskModal(false)}
+          >
+            <Card
+              className="w-full md:max-w-2xl p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex-1 mr-4">
+                  {editingTaskId === selectedCalendarTask.id ? (
+                    <div className="space-y-3">
+                      <Input
+                        value={selectedCalendarTask.title}
+                        onChange={(e) =>
+                          setSelectedCalendarTask({ ...selectedCalendarTask, title: e.target.value })
+                        }
+                        className="text-xl font-bold bg-white/10 border-white/20 text-white"
+                        placeholder="Task Title"
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          type="datetime-local"
+                          value={selectedCalendarTask.due_date ? new Date(selectedCalendarTask.due_date).toISOString().slice(0, 16) : ""}
+                          onChange={(e) =>
+                            setSelectedCalendarTask({ ...selectedCalendarTask, due_date: e.target.value })
+                          }
+                          className="bg-white/10 border-white/20 text-white text-sm"
+                        />
+                        <select
+                          value={selectedCalendarTask.priority}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value as any })}
+                          className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
+                        >
+                          <option value="low">Low Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="high">High Priority</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                        <select
+                          value={selectedCalendarTask.status}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value as any })}
+                          className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      </div>
+                      <textarea
+                        value={selectedCalendarTask.description || ""}
+                        onChange={(e) =>
+                          setSelectedCalendarTask({ ...selectedCalendarTask, description: e.target.value })
+                        }
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                        placeholder="Description..."
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            updateTask(selectedCalendarTask.id, selectedCalendarTask)
+                            setEditingTaskId(null)
+                            setShowCalendarTaskModal(false)
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <Check className="w-4 h-4 mr-2" /> Save Changes
+                        </Button>
+                        <Button
+                          onClick={() => setEditingTaskId(null)}
+                          variant="outline"
+                          className="border-white/20 text-white hover:bg-white/10"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
+                      <p className="text-sm text-white/60 mt-1">
+                        Due:{" "}
+                        {selectedCalendarTask.due_date
+                          ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                          : "No date"}
+                      </p>
+                    </>
+                  )}
+                </div>
+                {!editingTaskId && (
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button
+                        onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <MoreVertical className="w-5 h-5 text-white/70" />
+                      </button>
+                      {taskMenuOpen && (
+                        <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
+                          <button
+                            onClick={() => {
+                              setEditingTaskId(selectedCalendarTask.id)
+                              // setEditingTask(selectedCalendarTask) // No need, we edit directly in selectedCalendarTask
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit Task
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (selectedCalendarTask.id) {
+                                deleteTask(selectedCalendarTask.id)
+                              }
+                              setShowCalendarTaskModal(false)
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Task
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (selectedCalendarTask.id) {
+                                updateTaskStatus(
+                                  selectedCalendarTask.id,
+                                  selectedCalendarTask.status === "completed" ? "pending" : "completed",
+                                )
+                              }
+                              setShowCalendarTaskModal(false)
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
+                          >
+                            <Check className="w-4 h-4" />
+                            {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setShowCalendarTaskModal(false)}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-white/70" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {!editingTaskId && (
+                <div className="space-y-6">
+                  {/* Status and Priority */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
+                      <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
+                      <p
+                        className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
+                          ? "text-red-400"
+                          : selectedCalendarTask.priority === "high"
+                            ? "text-orange-400"
+                            : "text-yellow-400"
+                          }`}
+                      >
+                        {selectedCalendarTask.priority}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {selectedCalendarTask.description && (
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
+                      <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
+                      <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
+                      <p className="text-sm text-white">
+                        {selectedCalendarTask.due_date
+                          ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                          : "No due date"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        )
+        }
+      </div >
       )
 }
