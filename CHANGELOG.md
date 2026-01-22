@@ -29,4 +29,6 @@ All notable changes to this project will be documented in this file.
 ### Fixed (v1.0.12+)
 - **Calendar Date Lag**: Fixed timezone offset issue where tasks were appearing one day late on the calendar grid.
 - **iOS PWA Overlap**: Added Safe Area insets to top navigation bar, Sidebar, and ALL modals to prevent overlap with iOS status bar.
+- **Quick Prompts UI**: Polished branding chips with better spacing, borders, and touch targets. Fixed button overlap in edit mode.
 - **Login Text**: Updated login greetings.
+- **Chat Timestamps**: Added minimal timestamps (e.g., "1:45 PM") to chat bubbles for better context.

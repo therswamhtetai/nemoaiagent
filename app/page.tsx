@@ -2033,6 +2033,11 @@ export default function NemoAIDashboard() {
                         } px-3.5 py-2.5 text-xs backdrop-blur-xl `}
                     >
                       <p className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
+                      {msg.created_at && (
+                        <p className={`text-[10px] text-white/40 mt-1 select-none ${msg.role === "user" ? "text-right" : "text-left"}`}>
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
