@@ -173,7 +173,7 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-black text-white p-4 font-sans">
+    <div className="flex min-h-screen items-center justify-center bg-black text-white p-4 font-sans">
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4">Welcome Back</h2>
@@ -1762,8 +1762,8 @@ export default function NemoAIDashboard() {
                 onClick={() => handleModuleClick(module.id)}
                 disabled={isPending || (loadingModule !== null && loadingModule !== module.id)}
                 className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === module.id
-                    ? "bg-white/[0.1] text-white"
-                    : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                  ? "bg-white/[0.1] text-white"
+                  : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
                   } ${isPending || (loadingModule !== null && loadingModule !== module.id)
                     ? "opacity-50 cursor-not-allowed"
                     : ""
