@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] - 2026-01-22
+
+### Fixed
+- **Calendar**: Fixed timezone-related bug where tasks displayed on the wrong date (1 day lag). Now uses local date formatting.
+
 ## [1.0.12] - 2026-01-22
 
 ### Added
