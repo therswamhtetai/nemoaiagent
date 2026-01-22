@@ -4072,6 +4072,7 @@ export default function NemoAIDashboard() {
               <div className="pt-4 border-t border-white/10 space-y-2">
                 <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.12)</label>
                 <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
+                  <p>• Chat Timestamps: Added timestamps to user & AI messages.</p>
                   <p>• Fixed Calendar Date Lag: Tasks now show on correct dates.</p>
                   <p>• Removed Unwanted Routes: Cleaned up /calendar path.</p>
                   <p>• Updated Login Screen: New greeting text & design.</p>
