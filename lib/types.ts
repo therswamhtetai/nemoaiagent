@@ -4,6 +4,13 @@ export interface Message {
     role: "user" | "assistant"
     created_at: string
     thread_id?: string
+    attachment?: {
+        type: 'image' | 'document'
+        url: string
+        filename: string
+        mime_type: string
+    }
+    isLoading?: boolean  // For skeleton animation
 }
 
 export interface Thread {

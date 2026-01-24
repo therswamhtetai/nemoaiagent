@@ -3,76 +3,111 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Updated color scheme to gradient black and grey with enhanced glassmorphism */
+/* Claude-inspired warm color palette with enhanced glassmorphism */
 :root {
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.06 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.04 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.65 0 0);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.12 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.2 0 0);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.15 0 0);
-  --input: oklch(0.1 0 0);
-  --ring: oklch(0.4 0 0);
-  --chart-1: oklch(0.6 0 0);
-  --chart-2: oklch(0.65 0 0);
-  --chart-3: oklch(0.55 0 0);
-  --chart-4: oklch(0.62 0 0);
-  --chart-5: oklch(0.58 0 0);
+  /* Core backgrounds - warm black tones */
+  --background: #0D0C0B;
+  --foreground: #FFFFFF;
+  --card: #1A1918;
+  --card-foreground: #FFFFFF;
+  --popover: #1A1918;
+  --popover-foreground: #FFFFFF;
+
+  /* Crail accent - primary warm orange */
+  --primary: #C15F3C;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary warm tones */
+  --secondary: #2A2826;
+  --secondary-foreground: #F4F3EE;
+
+  /* Muted - Cloudy color */
+  --muted: #2A2826;
+  --muted-foreground: #B1ADA1;
+
+  /* Accent - Crail */
+  --accent: #C15F3C;
+  --accent-foreground: #FFFFFF;
+
+  /* Destructive - warm red */
+  --destructive: #C15F3C;
+  --destructive-foreground: #FFFFFF;
+
+  /* Borders - warm gray */
+  --border: #2A2826;
+  --input: #1A1918;
+  --ring: #C15F3C;
+
+  /* Chart colors - warm palette */
+  --chart-1: #C15F3C;
+  --chart-2: #D4B483;
+  --chart-3: #8FB996;
+  --chart-4: #C49E9E;
+  --chart-5: #7BA3C4;
+
   --radius: 0.75rem;
-  --sidebar: oklch(0.04 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.65 0 0);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.12 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.12 0 0);
-  --sidebar-ring: oklch(0.5 0 0);
+
+  /* Sidebar - dark warm */
+  --sidebar: #0D0C0B;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #C15F3C;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1A1918;
+  --sidebar-accent-foreground: #F4F3EE;
+  --sidebar-border: #2A2826;
+  --sidebar-ring: #C15F3C;
 }
 
 .dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.06 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.04 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.65 0 0);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.12 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.2 0 0);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.12 0 0);
-  --input: oklch(0.08 0 0);
-  --ring: oklch(0.4 0 0);
-  --chart-1: oklch(0.6 0 0);
-  --chart-2: oklch(0.65 0 0);
-  --chart-3: oklch(0.55 0 0);
-  --chart-4: oklch(0.62 0 0);
-  --chart-5: oklch(0.58 0 0);
-  --sidebar: oklch(0.03 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.65 0 0);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.1 0 0);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.12 0 0);
-  --sidebar-ring: oklch(0.5 0 0);
+  /* Core backgrounds - warm black tones */
+  --background: #0D0C0B;
+  --foreground: #FFFFFF;
+  --card: #1A1918;
+  --card-foreground: #FFFFFF;
+  --popover: #1A1918;
+  --popover-foreground: #FFFFFF;
+
+  /* Crail accent - primary warm orange */
+  --primary: #C15F3C;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary warm tones */
+  --secondary: #2A2826;
+  --secondary-foreground: #F4F3EE;
+
+  /* Muted - Cloudy color */
+  --muted: #2A2826;
+  --muted-foreground: #B1ADA1;
+
+  /* Accent - Crail */
+  --accent: #C15F3C;
+  --accent-foreground: #FFFFFF;
+
+  /* Destructive - warm red */
+  --destructive: #C15F3C;
+  --destructive-foreground: #FFFFFF;
+
+  /* Borders - warm gray */
+  --border: #2A2826;
+  --input: #1A1918;
+  --ring: #C15F3C;
+
+  /* Chart colors - warm palette */
+  --chart-1: #C15F3C;
+  --chart-2: #D4B483;
+  --chart-3: #8FB996;
+  --chart-4: #C49E9E;
+  --chart-5: #7BA3C4;
+
+  /* Sidebar - dark warm */
+  --sidebar: #0D0C0B;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #C15F3C;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1A1918;
+  --sidebar-accent-foreground: #F4F3EE;
+  --sidebar-border: #2A2826;
+  --sidebar-ring: #C15F3C;
 }
 
 @theme inline {
@@ -145,8 +180,8 @@
   }
 
   body {
-    @apply bg-black text-foreground;
-    background: linear-gradient(180deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+    @apply bg-background text-foreground;
+    background: #0D0C0B;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     overscroll-behavior-y: none;
@@ -257,6 +292,7 @@
       transform: translateY(10px);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;
@@ -267,6 +303,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -282,11 +319,13 @@
 
   /* Siri orb animations */
   @keyframes pulse-glow {
+
     0%,
     100% {
       opacity: 0.6;
       transform: scale(1);
     }
+
     50% {
       opacity: 0.9;
       transform: scale(1.05);
@@ -297,16 +336,19 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
   }
 
   @keyframes pulse-soft {
+
     0%,
     100% {
       opacity: 0.3;
     }
+
     50% {
       opacity: 0.6;
     }
@@ -322,19 +364,23 @@
 
   /* Enhanced Siri-like fluid wave animations */
   @keyframes siri-flow-1 {
+
     0%,
     100% {
       transform: scale(1) translate(0, 0) rotate(0deg);
       border-radius: 60% 40% 50% 50% / 60% 50% 50% 40%;
     }
+
     25% {
       transform: scale(1.1) translate(-3px, 2px) rotate(90deg);
       border-radius: 50% 60% 40% 50% / 40% 60% 50% 50%;
     }
+
     50% {
       transform: scale(0.95) translate(2px, -3px) rotate(180deg);
       border-radius: 40% 50% 60% 50% / 50% 40% 60% 50%;
     }
+
     75% {
       transform: scale(1.05) translate(-2px, -2px) rotate(270deg);
       border-radius: 50% 50% 50% 60% / 50% 50% 40% 60%;
@@ -342,15 +388,18 @@
   }
 
   @keyframes siri-flow-2 {
+
     0%,
     100% {
       transform: scale(1.05) translate(0, 0) rotate(45deg);
       border-radius: 50% 50% 60% 40% / 60% 40% 50% 50%;
     }
+
     33% {
       transform: scale(0.9) translate(3px, -2px) rotate(135deg);
       border-radius: 60% 50% 50% 40% / 50% 60% 40% 50%;
     }
+
     66% {
       transform: scale(1.15) translate(-2px, 3px) rotate(225deg);
       border-radius: 40% 60% 50% 50% / 40% 50% 60% 50%;
@@ -358,15 +407,18 @@
   }
 
   @keyframes siri-flow-3 {
+
     0%,
     100% {
       transform: scale(0.95) translate(0, 0) rotate(90deg);
       border-radius: 50% 60% 40% 50% / 50% 50% 60% 40%;
     }
+
     40% {
       transform: scale(1.1) translate(-2px, -3px) rotate(180deg);
       border-radius: 60% 40% 50% 50% / 40% 60% 50% 50%;
     }
+
     80% {
       transform: scale(1) translate(3px, 2px) rotate(270deg);
       border-radius: 50% 50% 50% 60% / 60% 50% 40% 50%;
@@ -374,15 +426,18 @@
   }
 
   @keyframes siri-flow-4 {
+
     0%,
     100% {
       transform: scale(1) translate(0, 0) rotate(135deg);
       border-radius: 40% 50% 50% 60% / 50% 60% 40% 50%;
     }
+
     30% {
       transform: scale(1.08) translate(2px, 3px) rotate(225deg);
       border-radius: 50% 40% 60% 50% / 60% 50% 50% 40%;
     }
+
     60% {
       transform: scale(0.92) translate(-3px, -2px) rotate(315deg);
       border-radius: 60% 50% 50% 40% / 40% 50% 60% 50%;
@@ -393,6 +448,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -402,6 +458,7 @@
     from {
       transform: rotate(360deg);
     }
+
     to {
       transform: rotate(0deg);
     }
@@ -486,8 +543,8 @@
   }
 
   .orb-circle-wrapper {
-    /* Changed from purple (#261b99) to deep blue for chat bubble color matching */
-    background-color: #0a1a4a;
+    /* Warm terracotta base - matching Crail accent */
+    background-color: #8B3520;
     width: 100%;
     height: 100%;
     position: absolute;
@@ -503,8 +560,8 @@
   }
 
   .orb-circle.c1 {
-    /* Changed from purple (#8f40ad) to blue gradient color */
-    background-color: #1e5ec7;
+    /* Crail - primary accent */
+    background-color: #C15F3C;
     top: 0;
     left: 0;
     width: 50%;
@@ -514,8 +571,8 @@
   }
 
   .orb-circle.c2 {
-    /* Changed from pink (#db7cff) to cyan for gradient variety */
-    background-color: #00d4ff;
+    /* Warm yellow - secondary accent */
+    background-color: #D4B483;
     top: 0;
     right: 0;
     width: 60%;
@@ -525,8 +582,8 @@
   }
 
   .orb-circle.c3 {
-    /* Already close to correct blue (#15a9fd) - keeping similar */
-    background-color: #1e7fd4;
+    /* Dusty rose - warm pink */
+    background-color: #C49E9E;
     bottom: 0;
     left: 50%;
     width: 40%;
@@ -536,8 +593,8 @@
   }
 
   .orb-circle.c4 {
-    /* Already cyan (#15effd) - good for transition */
-    background-color: #00e5ff;
+    /* Bright orange - vibrant accent */
+    background-color: #E67E4D;
     bottom: 0;
     left: 0;
     width: 60%;
@@ -547,8 +604,8 @@
   }
 
   .orb-circle.c5 {
-    /* Changed from pink (#db7cff) to blue-cyan gradient */
-    background-color: #1e5ec7;
+    /* Warm yellow gold */
+    background-color: #D4A84D;
     top: 0;
     left: 50%;
     width: 50%;
@@ -558,8 +615,8 @@
   }
 
   .orb-circle.c6 {
-    /* Changed from purple (#8f40ad) to deeper blue */
-    background-color: #0f3d99;
+    /* Deep terracotta */
+    background-color: #8B4532;
     top: 0;
     left: 0;
     width: 50%;
@@ -569,8 +626,8 @@
   }
 
   .orb-circle.c7 {
-    /* Already cyan (#15effd) - perfect for final accent */
-    background-color: #00d9ff;
+    /* Pampas cream - final accent */
+    background-color: #F4F3EE;
     bottom: 0;
     left: 0;
     width: 40%;
@@ -584,6 +641,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -593,6 +651,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -602,6 +661,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -611,6 +671,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -620,6 +681,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -629,6 +691,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -638,6 +701,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -648,6 +712,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -657,6 +722,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -666,6 +732,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -675,6 +742,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -684,6 +752,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -693,6 +762,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -702,6 +772,7 @@
     from {
       transform: rotate(0deg);
     }
+
     to {
       transform: rotate(360deg);
     }
@@ -711,21 +782,27 @@
   .animate-idle-1 {
     animation: rotate-idle-1 20s linear infinite;
   }
+
   .animate-idle-2 {
     animation: rotate-idle-2 25s linear infinite;
   }
+
   .animate-idle-3 {
     animation: rotate-idle-3 30s linear infinite;
   }
+
   .animate-idle-4 {
     animation: rotate-idle-4 35s linear infinite;
   }
+
   .animate-idle-5 {
     animation: rotate-idle-5 28s linear infinite;
   }
+
   .animate-idle-6 {
     animation: rotate-idle-6 22s linear infinite;
   }
+
   .animate-idle-7 {
     animation: rotate-idle-7 32s linear infinite;
   }
@@ -734,22 +811,146 @@
   .animate-fast-1 {
     animation: rotate-fast-1 3s linear infinite;
   }
+
   .animate-fast-2 {
     animation: rotate-fast-2 4s linear infinite;
   }
+
   .animate-fast-3 {
     animation: rotate-fast-3 5s linear infinite;
   }
+
   .animate-fast-4 {
     animation: rotate-fast-4 6s linear infinite;
   }
+
   .animate-fast-5 {
     animation: rotate-fast-5 4.5s linear infinite;
   }
+
   .animate-fast-6 {
     animation: rotate-fast-6 3.5s linear infinite;
   }
+
   .animate-fast-7 {
     animation: rotate-fast-7 5.5s linear infinite;
+  }
+
+  /* Confetti Animation for What's New popup */
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(-10px) rotate(0deg);
+      opacity: 1;
+    }
+
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-confetti {
+    animation: confetti-fall 4s ease-out forwards;
+  }
+
+  /* Bubble animations for Fish Logo */
+  @keyframes bubble-float-1 {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.4;
+    }
+
+    50% {
+      opacity: 0.6;
+    }
+
+    100% {
+      transform: translate(30px, -60px) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bubble-float-2 {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.3;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+
+    100% {
+      transform: translate(20px, -50px) scale(0.4);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bubble-float-3 {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.35;
+    }
+
+    50% {
+      opacity: 0.55;
+    }
+
+    100% {
+      transform: translate(35px, -70px) scale(0.3);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bubble-float-4 {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.25;
+    }
+
+    50% {
+      opacity: 0.4;
+    }
+
+    100% {
+      transform: translate(15px, -40px) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bubble-float-5 {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.3;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+
+    100% {
+      transform: translate(25px, -55px) scale(0.4);
+      opacity: 0;
+    }
+  }
+
+  .animate-bubble-1 {
+    animation: bubble-float-1 1.5s ease-out infinite;
+  }
+
+  .animate-bubble-2 {
+    animation: bubble-float-2 1.8s ease-out infinite 0.2s;
+  }
+
+  .animate-bubble-3 {
+    animation: bubble-float-3 2s ease-out infinite 0.4s;
+  }
+
+  .animate-bubble-4 {
+    animation: bubble-float-4 1.3s ease-out infinite 0.6s;
+  }
+
+  .animate-bubble-5 {
+    animation: bubble-float-5 1.7s ease-out infinite 0.3s;
   }
 }

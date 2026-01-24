@@ -58,6 +58,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
+  ArrowUp,
 } from "lucide-react"
 
 import RichTextEditor from "@/components/RichTextEditor"
@@ -173,32 +174,45 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black text-white p-4 font-sans">
+    <div className="flex min-h-screen items-center justify-center bg-[#0D0C0B] text-white p-4 font-sans">
       <div className="w-full max-w-md z-10">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
+          {/* Fish Logo with Bubble Animation */}
+          <div className="relative w-32 h-32 mx-auto mb-6">
+            {/* Bubbles */}
+            <div className="absolute right-[15%] top-[45%] w-4 h-4 rounded-full bg-white/30 animate-bubble-1" />
+            <div className="absolute right-[10%] top-[50%] w-3 h-3 rounded-full bg-white/25 animate-bubble-2" />
+            <div className="absolute right-[20%] top-[55%] w-3.5 h-3.5 rounded-full bg-white/28 animate-bubble-3" />
+            {/* Fish Image */}
+            <img
+              src="/icon.png"
+              alt="Nemo"
+              className="w-full h-full object-contain"
+            />
+          </div>
           <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4">Greetings from Nemo</h2>
-          <p className="text-white/40 text-base font-light">Your Personal AI Assistant</p>
+          <p className="text-[#B1ADA1] text-base font-light">Your Personal AI Assistant</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-wider text-white/30 font-medium ml-1">Username</label>
+            <label className="text-xs uppercase tracking-wider text-[#B1ADA1] font-medium ml-1">Username</label>
             <Input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-white/10 focus:border-white/20 focus:ring-0 h-12 rounded-lg transition-colors"
+              className="bg-[#1A1918] border-[#2A2826] text-white placeholder:text-[#B1ADA1]/40 focus:border-[#C15F3C]/50 focus:ring-0 h-12 rounded-lg transition-colors"
               placeholder="Enter your username"
               required
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-wider text-white/30 font-medium ml-1">Password</label>
+            <label className="text-xs uppercase tracking-wider text-[#B1ADA1] font-medium ml-1">Password</label>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-white/10 focus:border-white/20 focus:ring-0 h-12 rounded-lg transition-colors"
+              className="bg-[#1A1918] border-[#2A2826] text-white placeholder:text-[#B1ADA1]/40 focus:border-[#C15F3C]/50 focus:ring-0 h-12 rounded-lg transition-colors"
               placeholder="Enter your password"
               required
             />
@@ -209,25 +223,25 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
               id="remember"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              className="border-zinc-700 data-[state=checked]:bg-white data-[state=checked]:text-black"
+              className="border-[#2A2826] data-[state=checked]:bg-[#C15F3C] data-[state=checked]:text-white data-[state=checked]:border-[#C15F3C]"
             />
             <label
               htmlFor="remember"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-white/60"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[#B1ADA1]"
             >
               Remember me
             </label>
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/10 text-red-400 text-sm text-center">
+            <div className="p-3 rounded-lg bg-[#C15F3C]/10 border border-[#C15F3C]/20 text-[#C15F3C] text-sm text-center">
               {error}
             </div>
           )}
 
           <Button
             type="submit"
-            className="w-full h-12 bg-white text-black hover:bg-zinc-200 rounded-lg font-medium transition-all active:scale-[0.98]"
+            className="w-full h-12 bg-[#F4F3EE] text-[#0D0C0B] hover:bg-white rounded-lg font-medium transition-all active:scale-[0.98]"
             disabled={loading}
           >
             {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Sign In"}
@@ -253,6 +267,9 @@ const playSound = (type: "reply" | "orb_open" | "orb_close" | "sent" | "received
   audio.play().catch(e => console.log("Audio play failed (user interaction needed likely):", e));
 };
 
+// What's New Version - update this when adding new changelog
+const CURRENT_VERSION = "1.1.0"
+
 export default function NemoAIDashboard() {
   const router = useRouter()
   const [useFallbackMode, setUseFallbackMode] = useState(false)
@@ -277,6 +294,29 @@ export default function NemoAIDashboard() {
       setUserId(storedUserId)
     }
   }, [])
+
+  // Check if should show What's New popup after login
+  useEffect(() => {
+    if (userId) {
+      const dismissedVersion = localStorage.getItem("nemo_whats_new_dismissed")
+      if (dismissedVersion !== CURRENT_VERSION) {
+        // Small delay to let the UI settle after login
+        const timer = setTimeout(() => {
+          setShowWhatsNew(true)
+        }, 500)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [userId])
+
+  const handleDismissWhatsNew = () => {
+    if (dontShowAgain) {
+      localStorage.setItem("nemo_whats_new_dismissed", CURRENT_VERSION)
+    }
+    setShowWhatsNew(false)
+    setWhatsNewSlide(0)
+    setDontShowAgain(false)
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("nemo_user_id")
@@ -309,6 +349,13 @@ export default function NemoAIDashboard() {
   const [loadingStateIndex, setLoadingStateIndex] = useState(0)
   const [isPushToTalk, setIsPushToTalk] = useState(false)
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadType, setUploadType] = useState<'document' | 'image' | null>(null)
+  const [uploadMessage, setUploadMessage] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [pendingContact, setPendingContact] = useState<{ name?: string, phone?: string, email?: string, company?: string, role?: string } | null>(null)
+  const [pendingReceipt, setPendingReceipt] = useState<{ items?: Array<{ name: string, qty?: number, price?: number }>, total?: number, currency?: string, vendor?: string } | null>(null)
   const [currentTime, setCurrentTime] = useState("")
   // Fix: Declare setWeather state variable
   const [weather, setWeather] = useState({ temp: "", condition: "" })
@@ -330,6 +377,19 @@ export default function NemoAIDashboard() {
   // CHANGE: Add refs for MediaRecorder and audio context
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
+  const attachmentMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target as Node)) {
+        setShowAttachmentMenu(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -384,6 +444,11 @@ export default function NemoAIDashboard() {
   const [passwordData, setPasswordData] = useState({ newPassword: "", confirmPassword: "" })
   const [showPasswordSection, setShowPasswordSection] = useState(false)
 
+  // What's New Popup State
+  const [showWhatsNew, setShowWhatsNew] = useState(false)
+  const [whatsNewSlide, setWhatsNewSlide] = useState(0)
+  const [dontShowAgain, setDontShowAgain] = useState(false)
+
   const [ideaFormData, setIdeaFormData] = useState({
     title: "",
     description: "",
@@ -400,6 +465,7 @@ export default function NemoAIDashboard() {
 
   const [currentGreeting, setCurrentGreeting] = useState("")
   const [greetingTimestamp, setGreetingTimestamp] = useState(0)
+  const [greetingReady, setGreetingReady] = useState(false)
 
   // Helper to render message content with markdown-like formatting
   const renderMessageContent = (content: string) => {
@@ -419,18 +485,15 @@ export default function NemoAIDashboard() {
   // Initialize greeting on mount to avoid hydration mismatch
   useEffect(() => {
     const generateGreeting = () => {
-      const now = Date.now()
-      const threeHours = 3 * 60 * 60 * 1000
-
-      // Always regenerate if the name changes or on initial load
-      // The 3-hour check prevented updates when the name loaded asynchronously
-      // if (!currentGreeting || now - greetingTimestamp > threeHours) {
       const hour = new Date().getHours()
-      // Don't generate greeting if we don't have a name yet and are still loading settings
-      // This prevents the "Boss" flash
-      if (!userSettings.full_name && settingsLoading) return
 
-      const userName = userSettings.full_name || "Boss"
+      // Wait until we have the actual user name loaded (not "Boss" fallback)
+      if (!userSettings.full_name) {
+        setGreetingReady(false)
+        return
+      }
+
+      const userName = userSettings.full_name
 
       const greetings = {
         morning: [
@@ -469,8 +532,10 @@ export default function NemoAIDashboard() {
       const newGreeting = periodGreetings[Math.floor(Math.random() * periodGreetings.length)]
 
       setCurrentGreeting(newGreeting)
-      setGreetingTimestamp(now)
-      // }
+      setGreetingTimestamp(Date.now())
+
+      // Small delay for smooth fade-in
+      setTimeout(() => setGreetingReady(true), 100)
     }
 
     generateGreeting()
@@ -547,7 +612,7 @@ export default function NemoAIDashboard() {
     if (!urlThreadId) {
       const newThreadId = crypto.randomUUID()
       setCurrentThreadId(newThreadId)
-      window.history.pushState({}, "", `/?thread_id=${newThreadId}`)
+      window.history.pushState({}, "", "/")
       console.log("[v0] Auto-created thread on home:", newThreadId)
     } else {
       console.log("[v0] Thread ID from URL:", urlThreadId)
@@ -679,7 +744,7 @@ export default function NemoAIDashboard() {
         setShowQuickPrompts(true)
         const newThreadId = crypto.randomUUID()
         setCurrentThreadId(newThreadId)
-        window.history.pushState({}, "", `/?thread_id=${newThreadId}`)
+        window.history.pushState({}, "", "/")
         console.log("[v0] Reset to home, new thread:", newThreadId)
         setLoadingModule(null)
       } else {
@@ -727,7 +792,48 @@ export default function NemoAIDashboard() {
       console.log("[v0] Conversations loaded:", reversedData?.length || 0, "for thread:", threadId || "all")
 
       if (reversedData && reversedData.length > 0) {
-        setMessages(reversedData)
+        // Merge attachment data from sessionStorage
+        const attachmentKey = `chat_attachments_${threadId || 'all'}`
+        const storedAttachments = sessionStorage.getItem(attachmentKey)
+        let attachmentMap: Record<string, any> = {}
+
+        if (storedAttachments) {
+          try {
+            attachmentMap = JSON.parse(storedAttachments)
+          } catch (e) {
+            console.error("[v0] Failed to parse stored attachments:", e)
+          }
+        }
+
+        // Merge attachments and parse content for missing ones
+        const messagesWithAttachments = reversedData.map(msg => {
+          // 1. Check stored attachment in sessionStorage
+          const storedAttachment = attachmentMap[msg.content]
+          if (storedAttachment) {
+            return { ...msg, attachment: storedAttachment }
+          }
+
+          // 2. Parse content for File/Image tags if attachment missing
+          if (!msg.attachment) {
+            const docMatch = msg.content.match(/\[USER SENT A DOCUMENT: (.*?)\]/)
+            if (docMatch) {
+              return {
+                ...msg,
+                attachment: { type: 'document', filename: docMatch[1], url: '#' } // URL not needed for basic preview
+              }
+            }
+            const imgMatch = msg.content.match(/\[USER SENT AN IMAGE: (.*?)\]/)
+            if (imgMatch) {
+              return {
+                ...msg,
+                attachment: { type: 'image', filename: imgMatch[1], url: '/placeholder-image.png' } // Placeholder if no URL
+              }
+            }
+          }
+          return msg
+        })
+
+        setMessages(messagesWithAttachments)
         setShowQuickPrompts(false)
       } else {
         console.log("[v0] Database returned empty, keeping current messages")
@@ -795,7 +901,7 @@ export default function NemoAIDashboard() {
     setMessages([])
     setShowQuickPrompts(true)
 
-    window.history.pushState({}, "", `/?thread_id=${newThreadId}`)
+    window.history.pushState({}, "", "/")
 
     console.log("[v0] New thread created:", newThreadId)
   }
@@ -837,7 +943,7 @@ export default function NemoAIDashboard() {
       if (previousCurrentThreadId === threadId) {
         setCurrentThreadId(previousCurrentThreadId)
         setMessages(previousMessages)
-        window.history.pushState({}, "", `/?thread_id=${previousCurrentThreadId}`)
+        window.history.pushState({}, "", "/")
       }
     }
   }
@@ -877,7 +983,7 @@ export default function NemoAIDashboard() {
     if (!threadId) {
       threadId = crypto.randomUUID()
       setCurrentThreadId(threadId)
-      window.history.pushState({}, "", `/?thread_id=${threadId}`)
+      window.history.pushState({}, "", "/")
       console.log("[v0] Created new thread_id:", threadId)
     }
 
@@ -1071,13 +1177,293 @@ export default function NemoAIDashboard() {
   //   // Clear current conversation
   // }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'document' | 'image') => {
     const file = e.target.files?.[0]
     if (file) {
-      // For now just show the file name in chat
-      setMessage(`[Attached: ${file.name}]`)
+      setUploadFile(file)
+      setUploadType(type)
+      setShowUploadModal(true)
       setShowAttachmentMenu(false)
     }
+  }
+
+  const submitFileUpload = async () => {
+    if (!uploadFile || !uploadType) return
+
+    setIsUploading(true)
+    const loadingMsgId = `loading-${Date.now()}`
+
+    try {
+      // 1. Upload to Supabase Storage first
+      const fileExt = uploadFile.name.split('.').pop()
+      const fileName = `${userId}/${Date.now()}.${fileExt}`
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('chat-attachments')
+        .upload(fileName, uploadFile)
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError)
+        throw new Error('Failed to upload file to storage')
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(fileName)
+
+      const fileUrl = urlData.publicUrl
+
+      // 2. Create user message with attachment
+      const messageContent = uploadMessage || (uploadType === 'image' ? 'Analyze this image' : 'Process this document')
+      const attachmentData = {
+        type: uploadType,
+        url: fileUrl,
+        filename: uploadFile.name,
+        mime_type: uploadFile.type
+      }
+      const userMessage: Message = {
+        id: `msg-${Date.now()}`,
+        role: 'user',
+        content: messageContent,
+        created_at: new Date().toISOString(),
+        attachment: attachmentData
+      }
+      setMessages(prev => [...prev, userMessage])
+
+      // Save attachment to sessionStorage for persistence across reload
+      const threadIdForStorage = currentThreadId || `thread-${Date.now()}`
+      const attachmentKey = `chat_attachments_${threadIdForStorage}`
+      try {
+        const existingAttachments = sessionStorage.getItem(attachmentKey)
+        const attachmentMap = existingAttachments ? JSON.parse(existingAttachments) : {}
+        attachmentMap[messageContent] = attachmentData
+        sessionStorage.setItem(attachmentKey, JSON.stringify(attachmentMap))
+        console.log("[v0] Attachment saved to sessionStorage:", messageContent)
+      } catch (e) {
+        console.error("[v0] Failed to save attachment to sessionStorage:", e)
+      }
+
+      // 3. Add skeleton loading message
+      const loadingMessage: Message = {
+        id: loadingMsgId,
+        role: 'assistant',
+        content: '',
+        created_at: new Date().toISOString(),
+        isLoading: true
+      }
+      setMessages(prev => [...prev, loadingMessage])
+
+      // 4. Send to appropriate webhook
+      // Capture variables before closing modal
+      const fileToUpload = uploadFile
+      const typeToUpload = uploadType
+      const messageToUpload = uploadMessage
+
+      // Close modal immediately for better UX
+      setShowUploadModal(false)
+      setUploadFile(null)
+      setUploadType(null)
+      setUploadMessage('')
+
+      if (typeToUpload === 'image') {
+        // Convert to base64 for Gemini Vision
+        const reader = new FileReader()
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string
+            const base64 = result.split(',')[1]
+            resolve(base64)
+          }
+          reader.onerror = reject
+        })
+        reader.readAsDataURL(fileToUpload)
+        const imageBase64 = await base64Promise
+
+        const response = await fetch('https://admin.orcadigital.online/webhook/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            thread_id: currentThreadId || `thread-${Date.now()}`,
+            content: messageToUpload || 'Analyze this image',
+            image_base64: imageBase64,
+            image_mime_type: fileToUpload.type,
+            image_filename: fileToUpload.name
+          })
+        })
+
+        const result = await response.json()
+        console.log("[v0] Image webhook raw result:", JSON.stringify(result))
+        console.log("[v0] Result type:", typeof result)
+        console.log("[v0] Result keys:", result ? Object.keys(result) : 'null')
+
+        // Extract clean message - handle various response formats
+        let aiResponse = ''
+
+        // Handle array response (n8n sometimes returns array)
+        const data = Array.isArray(result) ? result[0] : result
+
+        if (typeof data === 'string') {
+          aiResponse = data
+        } else if (data?.message) {
+          aiResponse = data.message
+        } else if (data?.response) {
+          aiResponse = data.response
+        } else if (data?.analysis) {
+          aiResponse = data.analysis
+        } else if (data?.text) {
+          aiResponse = data.text
+        } else if (data?.output) {
+          aiResponse = data.output
+        } else if (data?.reply) {
+          aiResponse = data.reply
+        } else if (data?.content) {
+          aiResponse = data.content
+        } else {
+          // Last resort: try to find any string value
+          console.log("[v0] Could not find standard keys, checking all values...")
+          for (const key of Object.keys(data || {})) {
+            if (typeof data[key] === 'string' && data[key].length > 20) {
+              console.log("[v0] Found potential message in key:", key)
+              aiResponse = data[key]
+              break
+            }
+          }
+          if (!aiResponse) {
+            aiResponse = 'Image analyzed'
+          }
+        }
+
+        console.log("[v0] Extracted aiResponse:", aiResponse.substring(0, 100))
+
+        // Clean up any JSON artifacts if message is still wrapped
+        if (typeof aiResponse === 'string' && aiResponse.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(aiResponse)
+            aiResponse = parsed.message || parsed.text || parsed.response || aiResponse
+          } catch (e) {
+            // Not JSON, keep as is
+          }
+        }
+
+        // Replace skeleton with actual response
+        setMessages(prev => prev.map(msg =>
+          msg.id === loadingMsgId
+            ? { ...msg, id: `msg-${Date.now()}`, content: aiResponse, isLoading: false }
+            : msg
+        ))
+
+        // Handle auto-actions
+        if (result.detected_type === 'business_card' && result.contact_data) {
+          setPendingContact(result.contact_data)
+        } else if (result.detected_type === 'receipt' && result.receipt_data) {
+          setPendingReceipt(result.receipt_data)
+        }
+      } else {
+        // Document upload - Convert to base64 and send to main chat endpoint
+        const reader = new FileReader()
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string
+            const base64 = result.split(',')[1]
+            resolve(base64)
+          }
+          reader.onerror = reject
+        })
+        reader.readAsDataURL(fileToUpload)
+        const documentBase64 = await base64Promise
+
+        const response = await fetch('https://admin.orcadigital.online/webhook/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            thread_id: currentThreadId || `thread-${Date.now()}`,
+            message: `[USER SENT A DOCUMENT: ${fileToUpload.name}] ${messageToUpload || 'Process this document'}`,
+            document_base64: documentBase64,
+            document_mime_type: fileToUpload.type,
+            document_filename: fileToUpload.name
+          })
+        })
+
+        const result = await response.json()
+        console.log("[v0] Document webhook result:", result)
+
+        // Extract AI response
+        let aiResponse = ''
+        const data = Array.isArray(result) ? result[0] : result
+        if (typeof data === 'string') {
+          aiResponse = data
+        } else if (data?.message) {
+          aiResponse = data.message
+        } else if (data?.response) {
+          aiResponse = data.response
+        } else if (data?.reply) {
+          aiResponse = data.reply
+        } else {
+          aiResponse = 'Document processed successfully!'
+        }
+
+        // Replace skeleton with actual response
+        setMessages(prev => prev.map(msg =>
+          msg.id === loadingMsgId
+            ? { ...msg, id: `msg-${Date.now()}`, content: aiResponse, isLoading: false }
+            : msg
+        ))
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      // Replace skeleton with error message
+      setMessages(prev => prev.map(msg =>
+        msg.id === loadingMsgId
+          ? { ...msg, content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, isLoading: false }
+          : msg
+      ))
+    } finally {
+      setIsUploading(false)
+      // Modal closed at start
+    }
+  }
+
+  const confirmSaveContact = async () => {
+    if (!pendingContact) return
+    await createContact({
+      name: pendingContact.name || 'Unknown',
+      email: pendingContact.email || '',
+      phone: pendingContact.phone || '',
+      company: pendingContact.company || '',
+      role: pendingContact.role || '',
+      notes: 'Extracted from image'
+    })
+    setPendingContact(null)
+  }
+
+  const confirmCreateReceiptTask = async () => {
+    if (!pendingReceipt) return
+    const total = pendingReceipt.total || 0
+    const vendor = pendingReceipt.vendor || 'Unknown vendor'
+    const currency = pendingReceipt.currency || 'MMK'
+    const items = pendingReceipt.items || []
+
+    const itemList = items.map(item => `${item.name}${item.qty ? ` x${item.qty}` : ''}`).join(', ')
+
+    await createTask({
+      title: `Expense: ${vendor} - ${currency} ${total.toLocaleString()}`,
+      description: `Receipt items: ${itemList}`,
+      status: 'pending',
+      priority: 'medium'
+    })
+    setPendingReceipt(null)
+
+    // Show confirmation in chat
+    const confirmMsg: Message = {
+      id: `msg-${Date.now()}`,
+      role: 'assistant',
+      content: `Created expense task for ${vendor} (${currency} ${total.toLocaleString()})`,
+      created_at: new Date().toISOString()
+    }
+    setMessages(prev => [...prev, confirmMsg])
   }
 
   // CHANGE: Replace handlePushToTalk with new voice recording logic
@@ -1149,7 +1535,7 @@ export default function NemoAIDashboard() {
             updated_at: new Date().toISOString(),
           }
           setThreads((prev) => [newThread, ...prev])
-          window.history.pushState({}, "", `/?thread_id=${targetThreadId}`)
+          window.history.pushState({}, "", "/")
         }
 
         // 2. Switch UI to chat view immediately
@@ -1721,22 +2107,22 @@ export default function NemoAIDashboard() {
   }
 
   return (
-    <div className="flex fixed inset-0 w-full overflow-hidden bg-black text-white">
+    <div className="flex fixed inset-0 w-full overflow-hidden bg-[#0D0C0B] text-white">
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 z-30 md:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - Updated with gradient black and grey glassmorphism */}
+      {/* Sidebar - Clean solid design without glassy effects */}
       <div
         className={`${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } fixed md:translate-x-0 md:relative w-[280px] md:w-56 h-full bg-gradient-to-b from-zinc-900 to-black/90 backdrop-blur-xl border-r border-white/[0.08] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out z-40 flex flex-col custom-scrollbar-dark shadow-2xl md:shadow-none`}
+          } fixed md:translate-x-0 md:relative w-[280px] md:w-56 h-full bg-[#1A1918] border-r border-[#2A2826] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-out z-40 flex flex-col custom-scrollbar-dark shadow-2xl md:shadow-none`}
       >
-        {/* Logo Area - Updated with white/grey gradient */}
-        <div className="p-4 border-b border-white/[0.08] flex items-center justify-between">
+        {/* Logo Area - Updated with warm styling */}
+        <div className="h-14 px-4 border-b border-[#2A2826] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 relative rounded-lg overflow-hidden">
               <img src="/icon.png" alt="NemoAI" className="w-full h-full object-contain" />
@@ -1762,8 +2148,8 @@ export default function NemoAIDashboard() {
                 onClick={() => handleModuleClick(module.id)}
                 disabled={isPending || (loadingModule !== null && loadingModule !== module.id)}
                 className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === module.id
-                  ? "bg-white/[0.1] text-white"
-                  : "text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+                  ? "bg-[#2A2118] text-[#C15F3C]"
+                  : "text-[#B1ADA1] hover:bg-[#2A2826] hover:text-white"
                   } ${isPending || (loadingModule !== null && loadingModule !== module.id)
                     ? "opacity-50 cursor-not-allowed"
                     : ""
@@ -1780,16 +2166,16 @@ export default function NemoAIDashboard() {
           })}
         </nav>
 
-        {/* Threads Section - Reduced top padding and margin to move closer to Calendar */}
-        <div className="border-t border-white/[0.08] pt-1.5 flex-1 flex flex-col min-h-0 pb-2">
+        {/* Threads Section */}
+        <div className="border-t border-[#2A2826] pt-1.5 flex-1 flex flex-col min-h-0 pb-2">
           <div className="px-3 flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
-              <h3 className="text-[9px] font-semibold text-zinc-500 uppercase tracking-widest">Threads</h3>
+              <h3 className="text-[9px] font-semibold text-[#B1ADA1] uppercase tracking-widest">Threads</h3>
               {/* Updated thread creation button - removed orange accents */}
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-5 w-5 p-0 hover:bg-white/[0.08] text-zinc-600 hover:text-white"
+                className="h-5 w-5 p-0 hover:bg-[#2A2826] text-[#B1ADA1] hover:text-[#C15F3C]"
                 onClick={createNewThread}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -1800,13 +2186,13 @@ export default function NemoAIDashboard() {
                 <div
                   key={thread.id}
                   className={`group relative rounded-md px-2 py-1.5 cursor-pointer transition-all duration-200 ${currentThreadId === thread.id
-                    ? "bg-gradient-to-r from-white/[0.12] to-white/[0.08] shadow-sm"
-                    : "hover:bg-white/[0.06]"
+                    ? "bg-[#2A2118] text-[#C15F3C]"
+                    : "hover:bg-[#2A2826]"
                     }`}
                   onClick={() => {
                     setActiveModule("home")
                     setCurrentThreadId(thread.id)
-                    window.history.pushState({}, "", `/?thread_id=${thread.id}`)
+                    window.history.pushState({}, "", "/")
                     loadConversations(thread.id)
                     setIsSidebarOpen(false)
                   }}
@@ -1905,9 +2291,9 @@ export default function NemoAIDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar - Updated with hamburger menu for mobile and Task Remaining */}
-        <div className="flex flex-col border-b border-white/5 bg-gradient-to-r from-black/20 via-transparent to-black/20 backdrop-blur-sm pt-[env(safe-area-inset-top)] transition-all">
-          <div className="h-14 flex items-center justify-between px-4 md:px-6 w-full">
+        {/* Top Bar - Solid background, no blur */}
+        <div className="flex flex-col bg-[#1A1918] pt-[env(safe-area-inset-top)] transition-all">
+          <div className="h-14 flex items-center justify-between px-4 md:px-6 w-full border-b border-[#2A2826]">
             {/* Left: Hamburger menu (mobile/tablet) + Logo */}
             <div className="flex items-center gap-3">
               <button
@@ -1920,13 +2306,10 @@ export default function NemoAIDashboard() {
                 </svg>
               </button>
 
-              <div className="hidden md:flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="hidden md:flex items-center">
+                <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center">
                   <img src="/icon.png" alt="NemoAI" className="w-full h-full object-contain" />
                 </div>
-                <span className="text-lg font-semibold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                  NemoAI
-                </span>
               </div>
             </div>
 
@@ -1937,16 +2320,15 @@ export default function NemoAIDashboard() {
                 <span className="text-white/90 font-medium hidden sm:inline">Stable Sync</span>
                 <span className="text-white/90 font-medium sm:hidden">Sync</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.2)] transition-all hover:bg-blue-500/20">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2A2118] transition-all">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20"></div>
-                  <div className="relative w-2 h-2 rounded-full bg-blue-400"></div>
+                  <div className="relative w-2 h-2 rounded-full bg-[#C15F3C]"></div>
                 </div>
-                <span className="text-blue-200 font-medium text-xs tracking-wide">
+                <span className="text-[#C15F3C] font-medium text-xs tracking-wide">
                   In Progress: {tasks.filter((t) => t.status === "in_progress").length}
                 </span>
               </div>
-              <div className="text-white/70 font-mono text-xs md:text-sm">{currentTime}</div>
+              <div className="text-[#B1ADA1] font-mono text-xs md:text-sm">{currentTime}</div>
             </div>
 
             {/* Right: Settings - Visible on all devices */}
@@ -1970,48 +2352,47 @@ export default function NemoAIDashboard() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeModule === "home" ? (
             messages.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center p-3 md:p-4 overflow-y-auto">
+              <div className="flex-1 flex items-center justify-center p-3 md:p-4 overflow-y-auto bg-[#1C1917]">
                 <div className="w-full max-w-xl mx-auto flex flex-col items-center justify-center space-y-8">
                   {/* Text above orb - Updated typography */}
-                  <div className="text-center space-y-2 animate-fade-in">
+                  <div className="text-center space-y-2 min-h-[48px]">
                     {/* Increased text sizes throughout for better readability */}
-                    <h2 className="text-3xl md:text-4xl font-light tracking-wide text-white">
-                      {isPushToTalk ? "I'm Listening..." : getTimeBasedGreeting()}
+                    <h2
+                      className={`text-3xl md:text-4xl font-light tracking-wide text-white transition-opacity duration-500 ${isPushToTalk || greetingReady ? 'opacity-100' : 'opacity-0'
+                        }`}
+                    >
+                      {isPushToTalk ? "I'm Listening..." : currentGreeting}
                     </h2>
                   </div>
 
-                  {/* Orb */}
+                  {/* Fish Logo with Bubble Animation */}
                   <button
                     onClick={handlePushToTalk}
-                    className="relative w-36 h-36 md:w-40 md:h-40 flex items-center justify-center focus:outline-none transition-transform hover:scale-105"
-                    style={{ width: "150px", height: "150px" }}
+                    className="relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center focus:outline-none transition-transform hover:scale-105 active:scale-95"
                     aria-label="Voice assistant"
                   >
-                    <div className={`${orbAnimating || isPushToTalk ? "animated-orb-active" : "animated-orb-idle"}`}>
-                      <div className="orb-circle-wrapper">
-                        <div
-                          className={`orb-circle c1 ${orbAnimating || isPushToTalk ? "animate-fast-1" : "animate-idle-1"}`}
-                        ></div>
-                        <div
-                          className={`orb-circle c2 ${orbAnimating || isPushToTalk ? "animate-fast-2" : "animate-idle-2"}`}
-                        ></div>
-                        <div
-                          className={`orb-circle c3 ${orbAnimating || isPushToTalk ? "animate-fast-3" : "animate-idle-3"}`}
-                        ></div>
-                        <div
-                          className={`orb-circle c4 ${orbAnimating || isPushToTalk ? "animate-fast-4" : "animate-idle-4"}`}
-                        ></div>
-                        <div
-                          className={`orb-circle c5 ${orbAnimating || isPushToTalk ? "animate-fast-5" : "animate-idle-5"}`}
-                        ></div>
-                        <div
-                          className={`orb-circle c6 ${orbAnimating || isPushToTalk ? "animate-fast-6" : "animate-idle-6"}`}
-                        ></div>
-                        <div
-                          className={`orb-circle c7 ${orbAnimating || isPushToTalk ? "animate-fast-7" : "animate-idle-7"}`}
-                        ></div>
+                    {/* Bubbles - only visible when listening */}
+                    {(orbAnimating || isPushToTalk) && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {/* Bubble 1 */}
+                        <div className="absolute right-[15%] top-[45%] w-5 h-5 rounded-full bg-white/40 animate-bubble-1" />
+                        {/* Bubble 2 */}
+                        <div className="absolute right-[10%] top-[50%] w-4 h-4 rounded-full bg-white/30 animate-bubble-2" />
+                        {/* Bubble 3 */}
+                        <div className="absolute right-[20%] top-[55%] w-4 h-4 rounded-full bg-white/35 animate-bubble-3" />
+                        {/* Bubble 4 */}
+                        <div className="absolute right-[5%] top-[48%] w-3 h-3 rounded-full bg-white/25 animate-bubble-4" />
+                        {/* Bubble 5 */}
+                        <div className="absolute right-[12%] top-[52%] w-3.5 h-3.5 rounded-full bg-white/30 animate-bubble-5" />
                       </div>
-                    </div>
+                    )}
+                    {/* Fish Image */}
+                    <img
+                      src="/icon.png"
+                      alt="NemoAI"
+                      className={`w-full h-full object-contain transition-transform duration-300 ${orbAnimating || isPushToTalk ? 'scale-110' : 'scale-100'
+                        }`}
+                    />
                   </button>
 
                   <p className="text-sm text-white/50 text-center">
@@ -2020,45 +2401,91 @@ export default function NemoAIDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar-dark">
-                {messages.map((msg, index) => (
-                  <div
-                    key={msg.id || index}
-                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-slide-up`}
-                  >
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917]">
+                <div className="max-w-3xl mx-auto space-y-6">
+                  {messages.map((msg, index) => (
                     <div
-                      className={`max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none ${msg.role === "user"
-                        ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30"
-                        : "bg-gradient-to-br from-white/[0.06] to-white/[0.02] text-zinc-300 border border-white/[0.08]"
-                        } px-3.5 py-2.5 text-xs backdrop-blur-xl `}
+                      key={msg.id || index}
+                      className={`animate-slide-up ${msg.role === "user" ? "flex justify-end" : ""}`}
                     >
-                      <p className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
-                      {msg.created_at && (
-                        <p className={`text-[10px] text-white/40 mt-1 select-none ${msg.role === "user" ? "text-right" : "text-left"}`}>
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                        </p>
+                      {msg.role === "user" ? (
+                        /* User message - rounded bubble (dynamic) */
+                        <div className="inline-block max-w-[85%] md:max-w-[70%] bg-[#2A2826] rounded-2xl px-4 py-3 text-sm text-white/90">
+                          {/* Attachment Preview */}
+                          {msg.attachment && (
+                            <div className="mb-2">
+                              {msg.attachment.type === 'image' ? (
+                                <img
+                                  src={msg.attachment.url}
+                                  alt={msg.attachment.filename}
+                                  className="w-[150px] h-[150px] object-cover rounded-lg border border-white/10"
+                                />
+                              ) : (
+                                <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
+                                  <FileText className="w-5 h-5 text-blue-400" />
+                                  <span className="text-xs text-white/70 truncate max-w-[120px]">
+                                    {msg.attachment.filename}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</div>
+                        </div>
+                      ) : (
+                        /* AI message - no bubble, just text like Claude */
+                        <div className="text-sm text-[#E8E6E3] leading-relaxed">
+                          {/* Attachment Preview */}
+                          {msg.attachment && (
+                            <div className="mb-3">
+                              {msg.attachment.type === 'image' ? (
+                                <img
+                                  src={msg.attachment.url}
+                                  alt={msg.attachment.filename}
+                                  className="w-[150px] h-[150px] object-cover rounded-lg border border-white/10"
+                                />
+                              ) : (
+                                <div className="inline-flex items-center gap-2 bg-[#2A2826] rounded-lg px-3 py-2 border border-[#3A3836]">
+                                  <FileText className="w-5 h-5 text-blue-400" />
+                                  <span className="text-xs text-white/70 truncate max-w-[120px]">
+                                    {msg.attachment.filename}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {/* Skeleton or Content */}
+                          {msg.isLoading ? (
+                            <div className="space-y-2.5">
+                              <div className="h-3 w-32 bg-white/10 rounded animate-pulse" />
+                              <div className="h-3 w-full max-w-[280px] bg-white/10 rounded animate-pulse" />
+                              <div className="h-3 w-full max-w-[200px] bg-white/10 rounded animate-pulse" />
+                            </div>
+                          ) : (
+                            <div className="whitespace-pre-wrap">{renderMessageContent(msg.content)}</div>
+                          )}
+                          {msg.created_at && !msg.isLoading && (
+                            <p className="text-[10px] text-white/30 mt-2 select-none">
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
-                {loading && (
-                  <div className="flex justify-start animate-slide-up">
-                    <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tl-none bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] px-4 py-4 backdrop-blur-xl">
-                      <div className="space-y-2.5 mb-3">
-                        <div className="h-2 w-24 bg-white/20 rounded animate-pulse" />
-                        <div className="h-2 w-full max-w-[200px] bg-white/10 rounded animate-pulse" />
-                        <div className="h-2 w-full max-w-[160px] bg-white/10 rounded animate-pulse" />
-                      </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        <Sparkles className="w-3 h-3 text-blue-400 animate-pulse" />
-                        <span className="text-[10px] text-zinc-400 font-medium animate-pulse transition-opacity duration-500 uppercase tracking-wider">
-                          {loadingStates[loadingStateIndex]}
-                        </span>
+                  ))}
+                  {loading && (
+                    <div className="animate-slide-up">
+                      <div className="text-sm text-[#E8E6E3] leading-relaxed">
+                        <div className="space-y-3">
+                          <div className="h-3 w-48 bg-white/10 rounded animate-pulse" />
+                          <div className="h-3 w-full max-w-[400px] bg-white/10 rounded animate-pulse" />
+                          <div className="h-3 w-full max-w-[300px] bg-white/10 rounded animate-pulse" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
             )
           ) : activeModule === "tasks" ? (
@@ -2074,7 +2501,7 @@ export default function NemoAIDashboard() {
                 {/* Task Stats - Enhanced cards with better spacing */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card
-                    className="p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] backdrop-blur-xl hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group cursor-pointer"
+                    className="p-6 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all duration-300 group cursor-pointer"
                     onClick={() => setActiveTaskPopup("pending")}
                   >
                     <div className="flex items-start justify-between">
@@ -2092,7 +2519,7 @@ export default function NemoAIDashboard() {
                   </Card>
 
                   <Card
-                    className="p-6 bg-gradient-to-br from-emerald-500/[0.15] to-emerald-500/[0.05] border-emerald-500/[0.2] backdrop-blur-xl hover:from-emerald-500/[0.2] hover:to-emerald-500/[0.1] transition-all duration-300 group cursor-pointer"
+                    className="p-6 bg-[#1A4535] border border-[#2A5545] hover:bg-[#1F5040] transition-all duration-300 group cursor-pointer"
                     onClick={() => setActiveTaskPopup("completed")}
                   >
                     <div className="flex items-start justify-between">
@@ -2110,7 +2537,7 @@ export default function NemoAIDashboard() {
                   </Card>
 
                   <Card
-                    className="p-6 bg-gradient-to-br from-red-500/[0.15] to-red-500/[0.05] border-red-500/[0.2] backdrop-blur-xl hover:from-red-500/[0.2] hover:to-red-500/[0.1] transition-all duration-300 group cursor-pointer"
+                    className="p-6 bg-[#3E1A1A] border border-[#5E2828] hover:bg-[#4E2020] transition-all duration-300 group cursor-pointer"
                     onClick={() => setActiveTaskPopup("overdue")}
                   >
                     <div className="flex items-start justify-between">
@@ -2129,7 +2556,7 @@ export default function NemoAIDashboard() {
 
                   {/* Urgent Tasks Card */}
                   <Card
-                    className="p-6 bg-gradient-to-br from-orange-500/[0.15] to-orange-500/[0.05] border-orange-500/[0.2] backdrop-blur-xl hover:from-orange-500/[0.2] hover:to-orange-500/[0.1] transition-all duration-300 group cursor-pointer"
+                    className="p-6 bg-[#3C2A14] border border-[#5C3A24] hover:bg-[#4C3520] transition-all duration-300 group cursor-pointer"
                     onClick={() => setActiveTaskPopup("urgent")}
                   >
                     <div className="flex items-start justify-between">
@@ -2148,7 +2575,7 @@ export default function NemoAIDashboard() {
 
                   {/* Today's Tasks Card */}
                   <Card
-                    className="p-6 bg-gradient-to-br from-blue-500/[0.15] to-blue-500/[0.05] border-blue-500/[0.2] backdrop-blur-xl hover:from-blue-500/[0.2] hover:to-blue-500/[0.1] transition-all duration-300 group cursor-pointer"
+                    className="p-6 bg-[#1A2838] border border-[#2A3848] hover:bg-[#202F45] transition-all duration-300 group cursor-pointer"
                     onClick={() => setActiveTaskPopup("today")}
                   >
                     <div className="flex items-start justify-between">
@@ -2167,7 +2594,7 @@ export default function NemoAIDashboard() {
 
                   {/* Archived Tasks Card */}
                   <Card
-                    className="p-6 bg-gradient-to-br from-purple-500/[0.15] to-purple-500/[0.05] border-purple-500/[0.2] backdrop-blur-xl hover:from-purple-500/[0.2] hover:to-purple-500/[0.1] transition-all duration-300 group cursor-pointer"
+                    className="p-6 bg-[#2A1A38] border border-[#3A2A48] hover:bg-[#351F45] transition-all duration-300 group cursor-pointer"
                     onClick={() => setActiveTaskPopup("archived")}
                   >
                     <div className="flex items-start justify-between">
@@ -2193,8 +2620,8 @@ export default function NemoAIDashboard() {
                         key={status}
                         onClick={() => setTaskStatusFilter(status)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${taskStatusFilter === status
-                          ? "bg-white text-black shadow-lg shadow-white/10"
-                          : "bg-white/[0.05] text-white/70 border border-white/[0.08] hover:bg-white/[0.08] hover:text-white"
+                          ? "bg-[#F4F3EE] text-[#0D0C0B]"
+                          : "bg-[#2A2826] text-[#B1ADA1] hover:bg-[#3A3836] hover:text-white"
                           }`}
                       >
                         {status === "all"
@@ -2211,7 +2638,7 @@ export default function NemoAIDashboard() {
                   </div>
                   <button
                     onClick={() => setShowNewTaskForm(!showNewTaskForm)}
-                    className="px-4 py-2 bg-white/[0.12] hover:bg-white/[0.18] border border-white/[0.2] rounded-lg text-white font-medium text-sm transition-all duration-200 flex items-center gap-2 justify-center md:justify-start"
+                    className="px-4 py-2 bg-[#F4F3EE] hover:bg-white rounded-lg text-[#0D0C0B] font-medium text-sm transition-all duration-200 flex items-center gap-2 justify-center md:justify-start"
                   >
                     <Plus className="w-4 h-4" />
                     New Task
@@ -2225,7 +2652,13 @@ export default function NemoAIDashboard() {
                   {filteredTasks.map((task) => (
                     <Card
                       key={task.id}
-                      className="relative p-4 md:p-6 bg-gradient-to-br from-white/[0.08] to-white/[0.03] border-white/[0.12] hover:from-white/[0.12] hover:to-white/[0.06] transition-all duration-300 group"
+                      className={`relative p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all duration-300 group overflow-hidden
+                        ${task.priority === "urgent" ? "border-l-4 border-l-[#C49E9E]" :
+                          task.priority === "high" ? "border-l-4 border-l-[#C15F3C]" :
+                            task.status === "completed" ? "border-l-4 border-l-[#8FB996]" :
+                              task.status === "in_progress" ? "border-l-4 border-l-[#7BA3C4]" :
+                                "border-l-4 border-l-[#D4B483]"}
+                      `}
                     >
 
                       {editingTaskId === task.id ? (
@@ -2294,12 +2727,12 @@ export default function NemoAIDashboard() {
                                 <span
                                   className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
                                     ${task.priority === "urgent"
-                                      ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                                      ? "bg-[#C49E9E]/20 text-[#C49E9E] border border-[#C49E9E]/30"
                                       : task.priority === "high"
-                                        ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                                        ? "bg-[#C15F3C]/20 text-[#C15F3C] border border-[#C15F3C]/30"
                                         : task.priority === "medium"
-                                          ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                                          : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                          ? "bg-[#D4B483]/20 text-[#D4B483] border border-[#D4B483]/30"
+                                          : "bg-[#7BA3C4]/20 text-[#7BA3C4] border border-[#7BA3C4]/30"
                                     }`}
                                 >
                                   {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
@@ -2307,10 +2740,10 @@ export default function NemoAIDashboard() {
                                 <span
                                   className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200
                                     ${task.status === "completed"
-                                      ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                                      ? "bg-[#8FB996]/20 text-[#8FB996] border border-[#8FB996]/30"
                                       : task.status === "in_progress"
-                                        ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                        : "bg-white/10 text-white/70 border border-white/20"
+                                        ? "bg-[#7BA3C4]/20 text-[#7BA3C4] border border-[#7BA3C4]/30"
+                                        : "bg-[#2A2826] text-[#B1ADA1] border border-[#2A2826]"
                                     }`}
                                 >
                                   {task.status === "pending" ? "Pending" : task.status.replace("_", " ")}
@@ -2334,7 +2767,7 @@ export default function NemoAIDashboard() {
                                 <MoreVertical className="w-4 h-4 text-white/60 group-hover:text-white" />
                               </button>
                               {taskMenuOpenId === task.id && (
-                                <div className="absolute right-0 top-12 bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px] backdrop-blur-xl">
+                                <div className="absolute right-0 top-12 bg-[#1A1918] border border-[#2A2826] rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
                                   <button
                                     onClick={() => {
                                       setEditingTaskId(task.id)
@@ -2351,7 +2784,7 @@ export default function NemoAIDashboard() {
                                       updateTaskStatus(task.id, "archived")
                                       setTaskMenuOpenId(null)
                                     }}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center gap-2"
+                                    className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2"
                                   >
                                     <CheckSquare className="w-4 h-4" />
                                     Archive
@@ -2362,7 +2795,7 @@ export default function NemoAIDashboard() {
                                         completeTask(task.id)
                                         setTaskMenuOpenId(null)
                                       }}
-                                      className="w-full text-left px-4 py-2.5 text-sm text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-2"
+                                      className="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2"
                                     >
                                       <CheckCircle2 className="w-4 h-4" />
                                       Mark Complete
@@ -2373,7 +2806,7 @@ export default function NemoAIDashboard() {
                                       deleteTask(task.id)
                                       setTaskMenuOpenId(null)
                                     }}
-                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-500/20 text-red-400 flex items-center gap-2"
+                                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 text-white/80 flex items-center gap-2"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                     Delete Task
@@ -2401,7 +2834,7 @@ export default function NemoAIDashboard() {
                   ))}
 
                   {filteredTasks.length === 0 && (
-                    <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
+                    <Card className="p-12 bg-[#1A1918] border border-[#2A2826] text-center">
                       <Briefcase className="w-12 h-12 mx-auto mb-4 text-white/20" />
                       <p className="text-white/40">
                         No{" "}
@@ -2418,8 +2851,8 @@ export default function NemoAIDashboard() {
 
                 {/* New Task Form Modal */}
                 {showNewTaskForm && (
-                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
-                    <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
+                  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
+                    <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-[#1A1918] border border-[#2A2826] space-y-5 rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl md:text-2xl font-bold text-white">Create New Task</h2>
                         <button onClick={() => setShowNewTaskForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
@@ -2442,29 +2875,29 @@ export default function NemoAIDashboard() {
                         className="space-y-4"
                       >
                         <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Title *</label>
+                          <label className="text-sm font-medium text-[#B1ADA1] mb-1 block">Title *</label>
                           <Input
                             name="title"
                             required
-                            className="bg-white/[0.1] border-white/[0.2] text-white placeholder:text-white/40"
+                            className="bg-[#1A1918] border-[#2A2826] text-white placeholder:text-[#B1ADA1]/40 focus:border-[#C15F3C]/50"
                             placeholder="e.g. Design the new landing page"
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Description</label>
+                          <label className="text-sm font-medium text-[#B1ADA1] mb-1 block">Description</label>
                           <textarea
                             name="description"
-                            className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                            className="w-full bg-[#1A1918] border border-[#2A2826] rounded-lg p-3 text-sm text-white placeholder-[#B1ADA1]/40 focus:outline-none focus:border-[#C15F3C]/50"
                             placeholder="Add more details about the task"
                             rows={3}
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm font-medium text-white/70 mb-1 block">Status</label>
+                            <label className="text-sm font-medium text-[#B1ADA1] mb-1 block">Status</label>
                             <select
                               name="status"
-                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                              className="w-full bg-[#1A1918] border border-[#2A2826] rounded-lg p-3 text-sm text-white appearance-none"
                             >
                               <option value="pending">Pending</option>
                               <option value="in_progress">In Progress</option>
@@ -2473,10 +2906,10 @@ export default function NemoAIDashboard() {
                             </select>
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-white/70 mb-1 block">Priority</label>
+                            <label className="text-sm font-medium text-[#B1ADA1] mb-1 block">Priority</label>
                             <select
                               name="priority"
-                              className="w-full bg-white/[0.1] border border-white/[0.2] rounded-lg p-3 text-sm text-white appearance-none"
+                              className="w-full bg-[#1A1918] border border-[#2A2826] rounded-lg p-3 text-sm text-white appearance-none"
                             >
                               <option value="low">Low</option>
                               <option value="medium">Medium</option>
@@ -2486,15 +2919,15 @@ export default function NemoAIDashboard() {
                           </div>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-white/70 mb-1 block">Due Date</label>
+                          <label className="text-sm font-medium text-[#B1ADA1] mb-1 block">Due Date</label>
                           <Input
                             name="due_date"
                             type="datetime-local"
-                            className="bg-white/[0.1] border-white/[0.2] text-white"
+                            className="bg-[#1A1918] border-[#2A2826] text-white"
                           />
                         </div>
                         <div className="flex gap-3 pt-4">
-                          <Button type="submit" className="flex-1 bg-white/[0.15] hover:bg-white/[0.2] text-white">
+                          <Button type="submit" className="flex-1 bg-[#C15F3C] hover:bg-[#D4714A] text-white">
                             <Plus className="w-4 h-4 mr-2" />
                             Create Task
                           </Button>
@@ -2502,7 +2935,7 @@ export default function NemoAIDashboard() {
                             type="button"
                             onClick={() => setShowNewTaskForm(false)}
                             variant="outline"
-                            className="flex-1 border-white/[0.2] text-white/70 hover:text-white"
+                            className="flex-1 border-[#2A2826] text-[#B1ADA1] hover:text-white hover:bg-[#2A2826]"
                           >
                             Cancel
                           </Button>
@@ -2514,8 +2947,8 @@ export default function NemoAIDashboard() {
 
                 {/* Edit Task Modal */}
                 {editingTask && editingTaskId && (
-                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
-                    <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-gradient-to-br from-zinc-900 to-black border-white/20 backdrop-blur-xl space-y-5 rounded-none md:rounded-xl overflow-y-auto">
+                  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
+                    <Card className="w-full max-w-lg h-full md:h-auto p-4 md:p-8 bg-[#1A1918] border border-[#2A2826] space-y-5 rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl md:text-2xl font-bold text-white">Edit Task</h2>
                         <button
@@ -2631,7 +3064,7 @@ export default function NemoAIDashboard() {
                   <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ideas Collection</h1>
                   <Button
                     onClick={() => setShowNewIdeaForm(true)}
-                    className="bg-gradient-to-br from-white/10 to-white/5 hover:from-white/15 hover:to-white/10 border border-white/10 backdrop-blur-xl"
+                    className="bg-[#2A2826] hover:bg-[#3A3836] border border-[#3A3836]"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     New Idea
@@ -2657,7 +3090,7 @@ export default function NemoAIDashboard() {
                               setViewingIdeaId(idea.id)
                               setViewingIdea(idea)
                             }}
-                            className="p-4 bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-xl hover:from-white/15 hover:to-white/8 transition-all group cursor-pointer"
+                            className="p-4 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all group cursor-pointer"
                           >
                             <div className="space-y-3">
                               <div className="flex items-start justify-between gap-2">
@@ -2679,7 +3112,7 @@ export default function NemoAIDashboard() {
 
                                   {/* Action menu dropdown */}
                                   {editingIdeaId === idea.id && (
-                                    <div className="absolute right-0 top-full mt-1 bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg shadow-xl z-50 min-w-[140px]">
+                                    <div className="absolute right-0 top-full mt-1 bg-[#1A1918] border border-[#2A2826] rounded-lg shadow-xl z-50 min-w-[140px]">
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
@@ -2765,14 +3198,14 @@ export default function NemoAIDashboard() {
 
                 {viewingIdeaId && viewingIdea && (
                   <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
+                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
                     onClick={() => {
                       setViewingIdeaId(null)
                       setViewingIdea(null)
                     }}
                   >
                     <div
-                      className="bg-gradient-to-br from-white/10 to-white/5 border-0 md:border md:border-white/20 w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 rounded-none md:rounded-2xl"
+                      className="bg-[#1A1918] border-0 md:border md:border-[#2A2826] w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 rounded-none md:rounded-2xl"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="space-y-4">
@@ -2871,7 +3304,7 @@ export default function NemoAIDashboard() {
                 )}
 
                 {ideas.length === 0 && !showNewIdeaForm && (
-                  <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
+                  <Card className="p-12 bg-[#1A1918] border border-[#2A2826] text-center">
                     <Lightbulb className="w-12 h-12 mx-auto mb-4 text-white/20" />
                     <p className="text-white/40">No ideas yet. Create your first idea to get started!</p>
                   </Card>
@@ -2879,8 +3312,8 @@ export default function NemoAIDashboard() {
 
                 {/* New Idea Form Modal */}
                 {showNewIdeaForm && (
-                  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
-                    <Card className="w-full max-w-lg p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
+                  <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
+                    <Card className="w-full max-w-lg p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] space-y-4 h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto">
                       <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold">Create New Idea</h2>
                         <button onClick={() => setShowNewIdeaForm(false)} className="p-2 hover:bg-white/10 rounded-lg">
@@ -3014,7 +3447,7 @@ export default function NemoAIDashboard() {
                           setSelectedCompetitor({ ...competitor, stats: latestStats })
                           setShowCompetitorModal(true)
                         }}
-                        className="p-5 bg-gradient-to-br from-white/10 to-white/5 border-white/10 backdrop-blur-xl hover:from-white/15 hover:to-white/8 transition-all cursor-pointer"
+                        className="p-5 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all cursor-pointer"
                       >
                         <div className="space-y-4">
                           <div className="flex items-start justify-between gap-3">
@@ -3102,7 +3535,7 @@ export default function NemoAIDashboard() {
                 </div>
 
                 {competitors.length === 0 && !loadingMarketData && (
-                  <Card className="p-12 bg-gradient-to-br from-white/5 to-white/0 border-white/10 backdrop-blur-xl text-center">
+                  <Card className="p-12 bg-[#1A1918] border border-[#2A2826] text-center">
                     <TrendingUp className="w-12 h-12 mx-auto mb-4 text-white/20" />
                     <p className="text-white/40 mb-4">No competitor data available yet.</p>
                     <Button
@@ -3120,11 +3553,11 @@ export default function NemoAIDashboard() {
                 {/* Competitor Detail Modal */}
                 {showCompetitorModal && selectedCompetitor && (
                   <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
+                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
                     onClick={() => setShowCompetitorModal(false)}
                   >
                     <Card
-                      className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl rounded-none md:rounded-xl"
+                      className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-[#1A1918] border border-[#2A2826] rounded-none md:rounded-xl"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="p-6 space-y-6">
@@ -3161,14 +3594,14 @@ export default function NemoAIDashboard() {
                         {selectedCompetitor.stats && (
                           <>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/5 rounded-lg border border-blue-500/30">
-                                <p className="text-xs text-blue-300 font-semibold mb-2">👥 Followers</p>
+                              <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
+                                <p className="text-xs text-white/60 font-semibold mb-2">👥 Followers</p>
                                 <p className="text-xl md:text-2xl font-bold text-white">
                                   {(selectedCompetitor.stats.follower_count / 1000).toFixed(1)}K
                                 </p>
                               </div>
-                              <div className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-500/5 rounded-lg border border-purple-500/30">
-                                <p className="text-xs text-purple-300 font-semibold mb-2">🔥 Viral Score</p>
+                              <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
+                                <p className="text-xs text-white/60 font-semibold mb-2">🔥 Viral Score</p>
                                 <div className="flex items-baseline gap-2">
                                   <p className="text-xl md:text-2xl font-bold text-white">
                                     {selectedCompetitor.stats.viral_score || 0}
@@ -3186,8 +3619,8 @@ export default function NemoAIDashboard() {
                               </div>
                               <div
                                 className={`p-4 rounded-lg border ${selectedCompetitor.stats.is_running_ads
-                                  ? "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/30"
-                                  : "bg-gradient-to-br from-gray-500/20 to-gray-500/5 border-gray-500/30"
+                                  ? "bg-[#1A1918] border-[#2A2826]"
+                                  : "bg-[#1A1918] border-[#2A2826]"
                                   }`}
                               >
                                 <p className="text-xs font-semibold mb-2">📢 Ads Running</p>
@@ -3199,8 +3632,8 @@ export default function NemoAIDashboard() {
                                   )}
                                 </p>
                               </div>
-                              <div className="p-4 bg-gradient-to-br from-amber-500/20 to-amber-500/5 rounded-lg border border-amber-500/30">
-                                <p className="text-xs text-amber-300 font-semibold mb-2">📅 Data Age</p>
+                              <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
+                                <p className="text-xs text-white/60 font-semibold mb-2">📅 Data Age</p>
                                 <p className="text-sm text-white">
                                   {Math.floor(
                                     (Date.now() - new Date(selectedCompetitor.stats.scraped_at).getTime()) /
@@ -3306,7 +3739,7 @@ export default function NemoAIDashboard() {
                   />
                 </div>
 
-                <div className="bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.1] overflow-hidden">
+                <div className="bg-[#1A1918] rounded-2xl border border-[#2A2826] overflow-hidden">
                   {contacts.length === 0 ? (
                     <div className="p-8 text-center">
                       <Users className="w-12 h-12 text-white/20 mx-auto mb-4" />
@@ -3448,7 +3881,7 @@ export default function NemoAIDashboard() {
                         const prevMonthLastDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate()
                         const prevDate = prevMonthLastDate + dayNumber
                         return (
-                          <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                          <div key={index} className="min-h-[80px] md:min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
                             <div className="text-lg font-medium text-white/50">{prevDate}</div>
                           </div>
                         )
@@ -3458,7 +3891,7 @@ export default function NemoAIDashboard() {
                       if (dayNumber > daysInMonth) {
                         const nextDate = dayNumber - daysInMonth
                         return (
-                          <div key={index} className="min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                          <div key={index} className="min-h-[80px] md:min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
                             <div className="text-lg font-medium text-white/50">{nextDate}</div>
                           </div>
                         )
@@ -3484,8 +3917,8 @@ export default function NemoAIDashboard() {
                       return (
                         <div
                           key={index}
-                          className={`min-h-[120px] p-3 rounded-3xl border transition-all relative group flex flex-col items-start justify-start gap-2 ${isToday
-                            ? "bg-blue-600 border-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                          className={`min-h-[80px] md:min-h-[120px] p-3 rounded-3xl border transition-all relative group flex flex-col items-start justify-start gap-2 ${isToday
+                            ? "bg-[#C15F3C] border-[#D4714A] shadow-[0_0_20px_rgba(193,95,60,0.3)]"
                             : "bg-white/[0.05] border-white/[0.08] hover:border-white/20 hover:bg-white/[0.08]"
                             }`}
                         >
@@ -3511,13 +3944,13 @@ export default function NemoAIDashboard() {
                                   task.priority === "medium" ? "bg-amber-400" :
                                     "bg-sky-400"
                                   }`} />
-                                <span className={`text-[10px] truncate ${isToday ? "text-blue-100" : "text-white/70 group-hover/task:text-white"}`}>
+                                <span className={`text-[10px] truncate ${isToday ? "text-white" : "text-white/70 group-hover/task:text-white"}`}>
                                   {task.title}
                                 </span>
                               </div>
                             ))}
                             {dayTasks.length > 3 && (
-                              <div className={`text-[10px] pl-2 ${isToday ? "text-blue-200" : "text-white/40"}`}>
+                              <div className={`text-[10px] pl-2 ${isToday ? "text-white/80" : "text-white/40"}`}>
                                 +{dayTasks.length - 3} more
                               </div>
                             )}
@@ -3529,7 +3962,7 @@ export default function NemoAIDashboard() {
                 </div>
 
                 {/* Upcoming Tasks Sidebar - Visible always */}
-                <div className="mt-6 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.1] p-4">
+                <div className="mt-6 bg-[#1A1918] rounded-2xl border border-[#2A2826] p-4">
                   <h3 className="text-lg font-semibold text-white mb-4">Upcoming Tasks</h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {tasks
@@ -3580,8 +4013,8 @@ export default function NemoAIDashboard() {
         {/* Quick Prompts - Changed to horizontal slider with rectangle cards */}
         {
           activeModule === "home" && promptCards.length > 0 && (
-            <div className="px-2 md:px-3 pb-2 pt-2">
-              <div className="max-w-2xl mx-auto">
+            <div className="px-2 md:px-3 pb-2 pt-2 bg-[#1C1917]">
+              <div className="max-w-3xl mx-auto">
                 <div className="flex items-center justify-between mb-2">
                   <button
                     onClick={() => setShowQuickPrompts(!showQuickPrompts)}
@@ -3593,7 +4026,7 @@ export default function NemoAIDashboard() {
                   {showQuickPrompts && (
                     <button
                       onClick={() => setIsEditingPrompts(!isEditingPrompts)}
-                      className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/[0.08] flex items-center gap-1.5 backdrop-blur"
+                      className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-[#2A2826] flex items-center gap-1.5"
                       title="Edit Quick Prompts"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -3608,7 +4041,7 @@ export default function NemoAIDashboard() {
                         return (
                           <Card
                             key={card.id}
-                            className={`relative group transition-all duration-300 backdrop-blur-md rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] w-auto border
+                            className={`relative group transition-all duration-300 rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] w-auto border
                               ${isEditingPrompts
                                 ? "bg-white/[0.08] border-white/20 px-4 py-3"
                                 : "bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.1] hover:border-white/[0.2] px-5 py-2.5"
@@ -3653,16 +4086,16 @@ export default function NemoAIDashboard() {
                                     e.stopPropagation()
                                     startEditCard(card)
                                   }}
-                                  className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center hover:bg-zinc-700 border border-white/20 shadow-lg transition-transform hover:scale-110"
+                                  className="w-6 h-6 bg-[#2A2826] rounded-full flex items-center justify-center hover:bg-[#3A3836] border border-white/20 shadow-lg transition-transform hover:scale-110"
                                 >
-                                  <Edit2 className="w-3 h-3 text-blue-300" />
+                                  <Edit2 className="w-3 h-3 text-white/70" />
                                 </button>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     removePromptCard(card.id)
                                   }}
-                                  className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center hover:bg-red-900/50 border border-white/20 shadow-lg transition-transform hover:scale-110"
+                                  className="w-6 h-6 bg-[#2A2826] rounded-full flex items-center justify-center hover:bg-red-900/50 border border-white/20 shadow-lg transition-transform hover:scale-110"
                                 >
                                   <X className="w-3 h-3 text-red-400" />
                                 </button>
@@ -3692,14 +4125,14 @@ export default function NemoAIDashboard() {
         {
           showIconPicker && iconPickerCardId && (
             <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
               onClick={() => {
                 setShowIconPicker(false)
                 setIconPickerCardId(null)
               }}
             >
               <div
-                className="bg-gradient-to-br from-[#0a0a0a] to-black backdrop-blur-2xl rounded-2xl p-5 max-w-sm w-full border border-white/[0.12]"
+                className="bg-[#1A1918] border border-[#2A2826] rounded-2xl p-5 max-w-sm w-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3 className="text-sm font-semibold mb-3 text-white">Choose Icon</h3>
@@ -3708,7 +4141,7 @@ export default function NemoAIDashboard() {
                     <button
                       key={name}
                       onClick={() => updateCardIcon(iconPickerCardId, name)}
-                      className="p-2.5 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.03] hover:from-white/[0.15] hover:to-white/[0.08] transition-all duration-200 flex items-center justify-center border border-white/[0.1] hover:border-white/[0.2] backdrop-blur-xl"
+                      className="p-2.5 rounded-xl bg-[#2A2826] hover:bg-[#3A3836] transition-all duration-200 flex items-center justify-center border border-[#3A3836]"
                     >
                       <Icon className="w-4 h-4 text-zinc-400" />
                     </button>
@@ -3719,7 +4152,7 @@ export default function NemoAIDashboard() {
                     setShowIconPicker(false)
                     setIconPickerCardId(null)
                   }}
-                  className="mt-3 w-full py-2 bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-white/[0.1] hover:to-white/[0.04] rounded-xl transition-colors text-xs text-zinc-400 border border-white/[0.1] backdrop-blur-xl"
+                  className="mt-3 w-full py-2 bg-[#2A2826] hover:bg-[#3A3836] rounded-xl transition-colors text-xs text-zinc-400 border border-[#3A3836]"
                 >
                   Close
                 </button>
@@ -3729,70 +4162,90 @@ export default function NemoAIDashboard() {
         }
 
         {/* Chat Input - Fixed for mobile zoom issue */}
-        <div className="border-t border-white/10 bg-gradient-to-r from-black/40 via-black/30 to-black/40 backdrop-blur-md p-3 md:p-4">
+        <div className="border-t border-[#2A2826] bg-[#1A1918] p-3 md:p-4">
           <div className="flex items-center gap-2 [&_input]:text-xs [&_input]:leading-tight">
-            <Textarea
-              ref={inputRef}
-              placeholder="Ask anything..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 min-h-[40px] resize-none py-3"
-              style={{ fontSize: "12px", lineHeight: "1.2" }}
-              disabled={loading}
-              rows={1}
-            />
-
-            <button
-              onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-              className="p-1.5 hover:bg-white/[0.1] rounded-xl transition-colors text-zinc-500 hover:text-zinc-300"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            {showAttachmentMenu && (
-              <div className="absolute bottom-full left-0 mb-1.5 bg-gradient-to-br from-gray-900 to-black backdrop-blur-2xl rounded-xl p-1.5 shadow-2xl min-w-[120px]">
-                <button className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors">
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>Photo</span>
-                </button>
-                <button className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors">
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Camera</span>
-                </button>
+            {/* Input with Mic inside */}
+            <div className="flex-1 relative">
+              <Textarea
+                ref={inputRef}
+                placeholder="Ask anything..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 min-h-[40px] resize-none py-3 pr-10"
+                style={{ fontSize: "12px", lineHeight: "1.2" }}
+                disabled={loading}
+                rows={1}
+              />
+              {/* Mic inside input - only show when message is empty */}
+              {!message.trim() && (
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2.5 px-2.5 py-1.5 text-[10px] text-zinc-400 hover:bg-white/[0.1] hover:text-zinc-200 rounded-lg w-full transition-colors"
+                  onClick={handlePushToTalk}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-all ${isPushToTalk
+                    ? "bg-red-500/20 text-red-400 animate-pulse"
+                    : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  title="Voice input"
                 >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload</span>
+                  <Mic className="w-4 h-4" />
                 </button>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.doc,.docx"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
+              )}
+            </div>
 
-            <button
-              onClick={handlePushToTalk}
-              className={`p-1.5 rounded-xl transition-all ${isPushToTalk
-                ? "bg-red-500/20 text-red-400 animate-pulse"
-                : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
-                }`}
-              title="Voice input"
-            >
-              <Mic className="w-4 h-4" />
-            </button>
+            <div className="relative" ref={attachmentMenuRef}>
+              <button
+                onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                className={`p-1.5 rounded-xl transition-all duration-200 ${showAttachmentMenu
+                  ? "bg-white/20 text-white rotate-45"
+                  : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
+                  }`}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              {showAttachmentMenu && (
+                <div className="absolute bottom-full right-0 mb-3 bg-[#1A1918] rounded-2xl p-2 shadow-2xl border border-[#2A2826] min-w-[160px] animate-in fade-in zoom-in-95 duration-200">
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = '.pdf,.doc,.docx,.txt'
+                      input.onchange = (e) => handleFileUpload(e as unknown as React.ChangeEvent<HTMLInputElement>, 'document')
+                      input.click()
+                      setShowAttachmentMenu(false)
+                    }}
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all group"
+                  >
+                    <div className="p-1.5 bg-white/5 rounded-lg group-hover:bg-white/10 text-zinc-400 group-hover:text-white transition-colors">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <span>Document</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/*'
+                      input.onchange = (e) => handleFileUpload(e as unknown as React.ChangeEvent<HTMLInputElement>, 'image')
+                      input.click()
+                      setShowAttachmentMenu(false)
+                    }}
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all group mt-1"
+                  >
+                    <div className="p-1.5 bg-white/5 rounded-lg group-hover:bg-white/10 text-zinc-400 group-hover:text-white transition-colors">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
+                    <span>Image</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             <Button
               onClick={handleSendMessage}
               disabled={!message.trim() || loading}
-              size="sm"
-              className="h-7 px-2.5 rounded-xl bg-gradient-to-br from-white/[0.15] to-white/[0.08] hover:from-white/[0.2] hover:to-white/[0.12] disabled:from-white/[0.05] disabled:to-white/[0.02] text-zinc-300 hover:text-white disabled:text-zinc-600 transition-all backdrop-blur-xl border border-white/[0.12]"
+              size="icon"
+              className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-[#C15F3C] hover:bg-[#D4714A] disabled:bg-[#C15F3C]/50 text-white shadow-lg hover:shadow-[#C15F3C]/20 hover:scale-105 active:scale-95 transition-all border-0 flex-shrink-0"
             >
-              <Send className="w-3.5 h-3.5" />
+              <ArrowUp className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
             </Button>
           </div>
         </div>
@@ -3809,7 +4262,7 @@ export default function NemoAIDashboard() {
       {
         showContactModal && (
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowContactModal(false)
@@ -3825,7 +4278,7 @@ export default function NemoAIDashboard() {
               }
             }}
           >
-            <Card className="w-full md:max-w-lg h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl">
+            <Card className="w-full md:max-w-lg h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] space-y-4 rounded-none md:rounded-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">{selectedContact ? "Edit Contact" : "Add New Contact"}</h2>
                 <button onClick={() => setShowContactModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
@@ -3942,11 +4395,11 @@ export default function NemoAIDashboard() {
       {
         showSettingsModal && (
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
             onClick={() => setShowSettingsModal(false)}
           >
             <Card
-              className="w-full md:max-w-md h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl space-y-4 rounded-none md:rounded-xl"
+              className="w-full md:max-w-md h-full md:h-auto md:max-h-[90vh] overflow-y-auto custom-scrollbar-dark p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] space-y-4 rounded-none md:rounded-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
@@ -4070,17 +4523,26 @@ export default function NemoAIDashboard() {
 
               {/* Change Log Section */}
               <div className="pt-4 border-t border-white/10 space-y-2">
-                <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log (V1.0.12)</label>
-                <div className="p-3 bg-white/5 rounded-lg border border-white/10 h-32 overflow-y-auto custom-scrollbar-dark text-xs text-zinc-400 space-y-1">
-                  <p>• Chat Timestamps: Added timestamps to user & AI messages.</p>
-                  <p>• Fixed Calendar Date Lag: Tasks now show on correct dates.</p>
-                  <p>• Removed Unwanted Routes: Cleaned up /calendar path.</p>
-                  <p>• Updated Login Screen: New greeting text & design.</p>
-                  <p>• PWA Support: Installable App with offline capabilities.</p>
-                  <p>• Fixed UI Glitches: Background scrolling & floating issues resolved.</p>
-                  <p>• Deployment Fixes: Switched to stable npm configuration.</p>
-                  <p>• Fixed Topbar Task Count: Now loads immediately on app start.</p>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Change Log</label>
+                  <span className="text-xs text-white/40">v{CURRENT_VERSION}</span>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setShowSettingsModal(false)
+                    setShowWhatsNew(true)
+                  }}
+                  className="w-full p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white">View Updates</p>
+                      <p className="text-xs text-white/40 mt-0.5">See what's new in this version</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/30" />
+                  </div>
+                </button>
               </div>
 
               {/* Save Button */}
@@ -4114,9 +4576,203 @@ export default function NemoAIDashboard() {
         )
       }
 
+      {/* File Upload Modal */}
+      {
+        showUploadModal && uploadFile && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => {
+              setShowUploadModal(false)
+              setUploadFile(null)
+              setUploadType(null)
+              setUploadMessage('')
+            }}
+          >
+            <Card
+              className="w-full max-w-md p-6 bg-gradient-to-br from-zinc-900 to-black border border-white/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white">
+                  {uploadType === 'document' ? '📄 Upload Document' : '🖼️ Upload Image'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowUploadModal(false)
+                    setUploadFile(null)
+                    setUploadType(null)
+                    setUploadMessage('')
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* File Preview */}
+                <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3">
+                  {uploadType === 'image' ? (
+                    <ImageIcon className="w-8 h-8 text-blue-400" />
+                  ) : (
+                    <FileText className="w-8 h-8 text-amber-400" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{uploadFile.name}</p>
+                    <p className="text-xs text-zinc-500">{(uploadFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                </div>
+
+                {/* Message Input */}
+                <div>
+                  <label className="text-sm text-white/70 mb-2 block">
+                    Add a message (optional)
+                  </label>
+                  <textarea
+                    value={uploadMessage}
+                    onChange={(e) => setUploadMessage(e.target.value)}
+                    placeholder={uploadType === 'image' ? 'e.g., Write a caption for this photo' : 'e.g., Summarize this document'}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  onClick={submitFileUpload}
+                  disabled={isUploading}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                >
+                  {isUploading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Upload & Analyze
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+
+      {/* Contact Confirmation Modal */}
+      {
+        pendingContact && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setPendingContact(null)}
+          >
+            <Card
+              className="w-full max-w-md p-6 bg-gradient-to-br from-zinc-900 to-black border border-white/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-bold text-white mb-4">📇 Save Contact?</h2>
+              <p className="text-sm text-zinc-400 mb-4">
+                Extracted contact information from image:
+              </p>
+
+              <div className="space-y-2 mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                {pendingContact.name && (
+                  <p className="text-sm"><span className="text-zinc-500">Name:</span> <span className="text-white">{pendingContact.name}</span></p>
+                )}
+                {pendingContact.phone && (
+                  <p className="text-sm"><span className="text-zinc-500">Phone:</span> <span className="text-white">{pendingContact.phone}</span></p>
+                )}
+                {pendingContact.email && (
+                  <p className="text-sm"><span className="text-zinc-500">Email:</span> <span className="text-white">{pendingContact.email}</span></p>
+                )}
+                {pendingContact.company && (
+                  <p className="text-sm"><span className="text-zinc-500">Company:</span> <span className="text-white">{pendingContact.company}</span></p>
+                )}
+                {pendingContact.role && (
+                  <p className="text-sm"><span className="text-zinc-500">Role:</span> <span className="text-white">{pendingContact.role}</span></p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmSaveContact}
+                  className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30"
+                >
+                  Save Contact
+                </Button>
+                <Button
+                  onClick={() => setPendingContact(null)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+
+      {/* Receipt Confirmation Modal */}
+      {
+        pendingReceipt && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setPendingReceipt(null)}
+          >
+            <Card
+              className="w-full max-w-md p-6 bg-gradient-to-br from-zinc-900 to-black border border-white/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-lg font-bold text-white mb-4">🧾 Create Expense Task?</h2>
+              <p className="text-sm text-zinc-400 mb-4">
+                Extracted receipt information from image:
+              </p>
+
+              <div className="space-y-2 mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                {pendingReceipt.vendor && (
+                  <p className="text-sm"><span className="text-zinc-500">Vendor:</span> <span className="text-white">{pendingReceipt.vendor}</span></p>
+                )}
+                {pendingReceipt.items && pendingReceipt.items.length > 0 && (
+                  <div className="text-sm">
+                    <span className="text-zinc-500">Items:</span>
+                    <ul className="mt-1 ml-4 text-white">
+                      {pendingReceipt.items.map((item, idx) => (
+                        <li key={idx}>{item.name}{item.qty ? ` x${item.qty}` : ''}{item.price ? ` - ${item.price}` : ''}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {pendingReceipt.total && (
+                  <p className="text-sm font-semibold"><span className="text-zinc-500">Total:</span> <span className="text-green-400">{pendingReceipt.currency || 'MMK'} {pendingReceipt.total.toLocaleString()}</span></p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={confirmCreateReceiptTask}
+                  className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30"
+                >
+                  Create Expense Task
+                </Button>
+                <Button
+                  onClick={() => setPendingReceipt(null)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+
       {
         activeTaskPopup && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4">
             <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-0 md:border md:border-white/10 shadow-2xl rounded-none md:rounded-xl">
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <h2 className="text-xl font-semibold text-white capitalize">
@@ -4218,215 +4874,410 @@ export default function NemoAIDashboard() {
               </div>
             </Card>
           </div>
-        )}
+        )
+      }
 
-      {showCalendarTaskModal && selectedCalendarTask && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
-          onClick={() => setShowCalendarTaskModal(false)}
-        >
-          <Card
-            className="w-full md:max-w-2xl p-4 md:p-6 bg-gradient-to-br from-zinc-900 to-black border-0 md:border md:border-white/20 backdrop-blur-xl h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+      {
+        showCalendarTaskModal && selectedCalendarTask && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-0 pt-[env(safe-area-inset-top)] md:p-4"
+            onClick={() => setShowCalendarTaskModal(false)}
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex-1 mr-4">
-                {editingTaskId === selectedCalendarTask.id ? (
-                  <div className="space-y-3">
-                    <Input
-                      value={selectedCalendarTask.title}
-                      onChange={(e) =>
-                        setSelectedCalendarTask({ ...selectedCalendarTask, title: e.target.value })
-                      }
-                      className="text-xl font-bold bg-white/10 border-white/20 text-white"
-                      placeholder="Task Title"
-                    />
-                    <div className="flex gap-2">
+            <Card
+              className="w-full md:max-w-2xl p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] h-full md:h-auto rounded-none md:rounded-xl overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex-1 mr-4">
+                  {editingTaskId === selectedCalendarTask.id ? (
+                    <div className="space-y-3">
                       <Input
-                        type="datetime-local"
-                        value={selectedCalendarTask.due_date ? new Date(selectedCalendarTask.due_date).toISOString().slice(0, 16) : ""}
+                        value={selectedCalendarTask.title}
                         onChange={(e) =>
-                          setSelectedCalendarTask({ ...selectedCalendarTask, due_date: e.target.value })
+                          setSelectedCalendarTask({ ...selectedCalendarTask, title: e.target.value })
                         }
-                        className="bg-white/10 border-white/20 text-white text-sm"
+                        className="text-xl font-bold bg-white/10 border-white/20 text-white"
+                        placeholder="Task Title"
                       />
-                      <select
-                        value={selectedCalendarTask.priority}
-                        onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value as any })}
-                        className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
-                      >
-                        <option value="low">Low Priority</option>
-                        <option value="medium">Medium Priority</option>
-                        <option value="high">High Priority</option>
-                        <option value="urgent">Urgent</option>
-                      </select>
-                      <select
-                        value={selectedCalendarTask.status}
-                        onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value as any })}
-                        className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="archived">Archived</option>
-                      </select>
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Input
+                          type="datetime-local"
+                          value={selectedCalendarTask.due_date ? new Date(selectedCalendarTask.due_date).toISOString().slice(0, 16) : ""}
+                          onChange={(e) =>
+                            setSelectedCalendarTask({ ...selectedCalendarTask, due_date: e.target.value })
+                          }
+                          className="bg-white/10 border-white/20 text-white text-sm"
+                        />
+                        <select
+                          value={selectedCalendarTask.priority}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, priority: e.target.value as any })}
+                          className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
+                        >
+                          <option value="low">Low Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="high">High Priority</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                        <select
+                          value={selectedCalendarTask.status}
+                          onChange={(e) => setSelectedCalendarTask({ ...selectedCalendarTask, status: e.target.value as any })}
+                          className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                          <option value="archived">Archived</option>
+                        </select>
+                      </div>
+                      <textarea
+                        value={selectedCalendarTask.description || ""}
+                        onChange={(e) =>
+                          setSelectedCalendarTask({ ...selectedCalendarTask, description: e.target.value })
+                        }
+                        className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
+                        placeholder="Description..."
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            updateTask(selectedCalendarTask.id, selectedCalendarTask)
+                            setEditingTaskId(null)
+                            setShowCalendarTaskModal(false)
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <Check className="w-4 h-4 mr-2" /> Save Changes
+                        </Button>
+                        <Button
+                          onClick={() => setEditingTaskId(null)}
+                          variant="outline"
+                          className="border-white/20 text-white hover:bg-white/10"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
-                    <textarea
-                      value={selectedCalendarTask.description || ""}
-                      onChange={(e) =>
-                        setSelectedCalendarTask({ ...selectedCalendarTask, description: e.target.value })
-                      }
-                      className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30"
-                      placeholder="Description..."
-                      rows={3}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          updateTask(selectedCalendarTask.id, selectedCalendarTask)
-                          setEditingTaskId(null)
-                          setShowCalendarTaskModal(false)
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
+                      <p className="text-sm text-white/60 mt-1">
+                        Due:{" "}
+                        {selectedCalendarTask.due_date
+                          ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                          : "No date"}
+                      </p>
+                    </>
+                  )}
+                </div>
+                {!editingTaskId && (
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button
+                        onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                       >
-                        <Check className="w-4 h-4 mr-2" /> Save Changes
-                      </Button>
-                      <Button
-                        onClick={() => setEditingTaskId(null)}
-                        variant="outline"
-                        className="border-white/20 text-white hover:bg-white/10"
-                      >
-                        Cancel
-                      </Button>
+                        <MoreVertical className="w-5 h-5 text-white/70" />
+                      </button>
+                      {taskMenuOpen && (
+                        <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
+                          <button
+                            onClick={() => {
+                              setEditingTaskId(selectedCalendarTask.id)
+                              // setEditingTask(selectedCalendarTask) // No need, we edit directly in selectedCalendarTask
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit Task
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (selectedCalendarTask.id) {
+                                deleteTask(selectedCalendarTask.id)
+                              }
+                              setShowCalendarTaskModal(false)
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Task
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (selectedCalendarTask.id) {
+                                updateTaskStatus(
+                                  selectedCalendarTask.id,
+                                  selectedCalendarTask.status === "completed" ? "pending" : "completed",
+                                )
+                              }
+                              setShowCalendarTaskModal(false)
+                              setTaskMenuOpen(false)
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2"
+                          >
+                            <Check className="w-4 h-4" />
+                            {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    <h2 className="text-2xl font-bold text-white">{selectedCalendarTask.title}</h2>
-                    <p className="text-sm text-white/60 mt-1">
-                      Due:{" "}
-                      {selectedCalendarTask.due_date
-                        ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                        : "No date"}
-                    </p>
-                  </>
-                )}
-              </div>
-              {!editingTaskId && (
-                <div className="flex items-center gap-2">
-                  <div className="relative">
                     <button
-                      onClick={() => setTaskMenuOpen(!taskMenuOpen)}
+                      onClick={() => setShowCalendarTaskModal(false)}
                       className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     >
-                      <MoreVertical className="w-5 h-5 text-white/70" />
+                      <X className="w-5 h-5 text-white/70" />
                     </button>
-                    {taskMenuOpen && (
-                      <div className="absolute right-0 mt-1 w-48 bg-zinc-800 border border-white/20 rounded-lg shadow-lg z-10">
-                        <button
-                          onClick={() => {
-                            setEditingTaskId(selectedCalendarTask.id)
-                            // setEditingTask(selectedCalendarTask) // No need, we edit directly in selectedCalendarTask
-                            setTaskMenuOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                          Edit Task
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedCalendarTask.id) {
-                              deleteTask(selectedCalendarTask.id)
-                            }
-                            setShowCalendarTaskModal(false)
-                            setTaskMenuOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Task
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selectedCalendarTask.id) {
-                              updateTaskStatus(
-                                selectedCalendarTask.id,
-                                selectedCalendarTask.status === "completed" ? "pending" : "completed",
-                              )
-                            }
-                            setShowCalendarTaskModal(false)
-                            setTaskMenuOpen(false)
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2"
-                        >
-                          <Check className="w-4 h-4" />
-                          {selectedCalendarTask.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
-                        </button>
-                      </div>
-                    )}
                   </div>
-                  <button
-                    onClick={() => setShowCalendarTaskModal(false)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5 text-white/70" />
-                  </button>
+                )}
+              </div>
+
+              {!editingTaskId && (
+                <div className="space-y-6">
+                  {/* Status and Priority */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
+                      <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
+                      <p
+                        className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
+                          ? "text-red-400"
+                          : selectedCalendarTask.priority === "high"
+                            ? "text-orange-400"
+                            : "text-yellow-400"
+                          }`}
+                      >
+                        {selectedCalendarTask.priority}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {selectedCalendarTask.description && (
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
+                      <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
+                      <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
+                      <p className="text-sm text-white">
+                        {selectedCalendarTask.due_date
+                          ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
+                          : "No due date"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
+            </Card>
+          </div>
+        )
+      }
 
-            {!editingTaskId && (
-              <div className="space-y-6">
-                {/* Status and Priority */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Status</p>
-                    <p className="text-sm text-white capitalize">{selectedCalendarTask.status.replace("_", " ")}</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Priority</p>
-                    <p
-                      className={`text-sm capitalize font-semibold ${selectedCalendarTask.priority === "urgent"
-                        ? "text-red-400"
-                        : selectedCalendarTask.priority === "high"
-                          ? "text-orange-400"
-                          : "text-yellow-400"
-                        }`}
-                    >
-                      {selectedCalendarTask.priority}
+      {/* What's New Popup */}
+      {
+        showWhatsNew && (
+          <div
+            className="fixed inset-0 bg-black/90 z-[55] flex items-center justify-center p-4"
+            onClick={handleDismissWhatsNew}
+          >
+            <Card
+              className="w-full max-w-sm md:max-w-md bg-zinc-900 border border-white/10 shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="relative p-4 md:p-5 border-b border-white/10">
+                <button
+                  onClick={handleDismissWhatsNew}
+                  className="absolute top-3 right-3 p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-white/50" />
+                </button>
+                <h2 className="text-lg md:text-xl font-semibold text-white">What's New</h2>
+                <p className="text-xs text-white/40 mt-0.5">Version {CURRENT_VERSION}</p>
+              </div>
+
+              {/* Slides Content */}
+              <div className="p-4 md:p-5 min-h-[200px] md:min-h-[240px]">
+                {/* Slide 1: Document Upload */}
+                {whatsNewSlide === 0 && (
+                  <div className="space-y-3 animate-fade-in">
+                    <h3 className="text-base font-medium text-white">Document Upload</h3>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      Upload PDFs and documents, then ask questions about the content.
                     </p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                {selectedCalendarTask.description && (
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Description</p>
-                    <p className="text-sm text-white/90">{selectedCalendarTask.description}</p>
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                      <p className="text-xs text-white/40 mb-1.5">Try asking:</p>
+                      <p className="text-xs text-white/50 italic">
+                        "Summarize this contract"<br />
+                        "What are the key points?"
+                      </p>
+                    </div>
                   </div>
                 )}
 
-                {/* Dates */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Created</p>
-                    <p className="text-sm text-white">{new Date(selectedCalendarTask.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-xs text-white/60 mb-2 uppercase font-semibold">Due Date</p>
-                    <p className="text-sm text-white">
-                      {selectedCalendarTask.due_date
-                        ? new Date(selectedCalendarTask.due_date).toLocaleDateString()
-                        : "No due date"}
+                {/* Slide 2: Image Analysis */}
+                {whatsNewSlide === 1 && (
+                  <div className="space-y-3 animate-fade-in">
+                    <h3 className="text-base font-medium text-white">Image Analysis</h3>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      Upload photos for AI analysis. Extract contacts from business cards automatically.
                     </p>
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                      <p className="text-xs text-white/40 mb-1.5">Try asking:</p>
+                      <p className="text-xs text-white/50 italic">
+                        "Save this business card"<br />
+                        "What's in this image?"
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slide 3: Reminders */}
+                {whatsNewSlide === 2 && (
+                  <div className="space-y-3 animate-fade-in">
+                    <h3 className="text-base font-medium text-white">Smart Reminders</h3>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      Set reminders by telling the AI when you want to be notified.
+                    </p>
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                      <p className="text-xs text-white/40 mb-1.5">Try asking:</p>
+                      <p className="text-xs text-white/50 italic">
+                        "Remind me about the meeting at 3pm"<br />
+                        "Set a reminder for tomorrow 9am"
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slide 4: Other Updates */}
+                {whatsNewSlide === 3 && (
+                  <div className="space-y-3 animate-fade-in">
+                    <h3 className="text-base font-medium text-white">Other Updates</h3>
+                    <div className="space-y-2">
+                      <div className="p-2.5 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-sm text-white/80">Daily Briefing</p>
+                        <p className="text-xs text-white/40">Get briefings at morning, noon, and evening</p>
+                      </div>
+                      <div className="p-2.5 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-sm text-white/80">Security Update</p>
+                        <p className="text-xs text-white/40">Your data is encrypted and private</p>
+                      </div>
+                      <div className="p-2.5 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-sm text-white/80">Bug Fixes</p>
+                        <p className="text-xs text-white/40">Improved stability and performance</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slide 5: Overhaul Theme Nemo */}
+                {whatsNewSlide === 4 && (
+                  <div className="space-y-3 animate-fade-in">
+                    <h3 className="text-base font-medium text-white">🎨 Overhaul Theme "Nemo"</h3>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      We've completely refreshed the look and feel with the new "Nemo" theme.
+                    </p>
+                    <div className="space-y-2">
+                      <div className="p-2.5 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-sm text-white/80">New Color Palette</p>
+                        <p className="text-xs text-white/40">Warm terracotta tones with dark elegance</p>
+                      </div>
+                      <div className="p-2.5 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-sm text-white/80">Improved UI/UX</p>
+                        <p className="text-xs text-white/40">Cleaner layouts and smoother interactions</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Slide 6: Nemo AI Mascot */}
+                {whatsNewSlide === 5 && (
+                  <div className="space-y-3 animate-fade-in">
+                    <h3 className="text-base font-medium text-white">🐟 Meet Nemo!</h3>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      Say hello to our new mascot! The animated fish logo now greets you on the home screen.
+                    </p>
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10 text-center">
+                      <img src="/icon.png" alt="Nemo" className="w-16 h-16 mx-auto mb-2" />
+                      <p className="text-xs text-white/40">Tap to speak - watch for bubbles!</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dotted Navigation */}
+              <div className="flex justify-center gap-2 pb-3">
+                {[0, 1, 2, 3, 4, 5].map((index) => (
+                  <button
+                    key={index}
+                    onClick={() => setWhatsNewSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${whatsNewSlide === index
+                      ? 'bg-white'
+                      : 'bg-white/20 hover:bg-white/40'
+                      }`}
+                  />
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="p-3 md:p-4 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={dontShowAgain}
+                      onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
+                      className="border-white/20 data-[state=checked]:bg-white data-[state=checked]:text-black w-4 h-4"
+                    />
+                    <span className="text-xs text-white/40">Don't show again</span>
+                  </label>
+                  <div className="flex gap-2">
+                    {whatsNewSlide > 0 && (
+                      <Button
+                        onClick={() => setWhatsNewSlide(whatsNewSlide - 1)}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/10 text-white/60 hover:bg-white/5 h-8 px-3 text-xs"
+                      >
+                        Back
+                      </Button>
+                    )}
+                    {whatsNewSlide < 5 ? (
+                      <Button
+                        onClick={() => setWhatsNewSlide(whatsNewSlide + 1)}
+                        size="sm"
+                        className="bg-white/10 text-white hover:bg-white/20 h-8 px-4 text-xs"
+                      >
+                        Next
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleDismissWhatsNew}
+                        size="sm"
+                        className="bg-white text-black hover:bg-white/90 h-8 px-4 text-xs"
+                      >
+                        Done
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
-          </Card>
-        </div>
-      )
+            </Card>
+          </div>
+        )
       }
     </div >
   )

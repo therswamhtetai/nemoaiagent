@@ -1,0 +1,131 @@
+{
+    "name": "Nemo - Image Analysis",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "upload-image",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-1",
+            "name": "Image Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                300
+            ],
+            "webhookId": "upload-image"
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst item = items[0];\n\nconst binary = item.binary?.file || item.binary?.data;\nif (!binary) {\n  return [{ json: { error: 'No image uploaded', success: false } }];\n}\n\nconst userId = item.json.body?.user_id || item.json.user_id || 'unknown';\nconst message = item.json.body?.message || 'Describe this image';\nconst filename = binary.fileName || 'image';\nconst mimeType = binary.mimeType || 'image/png';\n\nreturn [{\n  json: {\n    user_id: userId,\n    message: message,\n    filename: filename,\n    mime_type: mimeType,\n    base64: binary.data\n  }\n}];"
+            },
+            "id": "code-1",
+            "name": "Extract Image Info",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpQueryAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"inline_data\": {\n          \"mime_type\": \"{{ $json.mime_type }}\",\n          \"data\": \"{{ $json.base64 }}\"\n        }\n      },\n      {\n        \"text\": \"{{ $json.message }}\\n\\nRespond appropriately. For caption requests, write a creative caption. For business cards, extract contact as JSON {name,phone,email,company,role}. Otherwise describe what you see.\"\n      }\n    ]\n  }],\n  \"generationConfig\": { \"temperature\": 0.7 }\n}",
+                "options": {}
+            },
+            "id": "http-1",
+            "name": "Gemini Vision",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                760,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const response = $input.first().json;\nconst prevData = $('Extract Image Info').first().json;\n\nconst text = response.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not analyze';\n\n// Try to detect contact JSON\nlet contactData = null;\nlet isContact = false;\ntry {\n  const match = text.match(/\\{[^}]*name[^}]*\\}/i);\n  if (match) {\n    contactData = JSON.parse(match[0]);\n    isContact = !!(contactData.name || contactData.email || contactData.phone);\n  }\n} catch(e) {}\n\nreturn [{\n  json: {\n    success: true,\n    type: isContact ? 'contact' : 'analysis',\n    analysis: text,\n    contact_data: contactData,\n    requires_confirmation: isContact,\n    message: isContact ? `Contact detected: ${contactData?.name || 'Unknown'}. Save?` : null\n  }\n}];"
+            },
+            "id": "code-2",
+            "name": "Format Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1020,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify($json) }}",
+                "options": {}
+            },
+            "id": "respond-1",
+            "name": "Send Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1280,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Image Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Image Info",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Image Info": {
+            "main": [
+                [
+                    {
+                        "node": "Gemini Vision",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gemini Vision": {
+            "main": [
+                [
+                    {
+                        "node": "Format Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Response": {
+            "main": [
+                [
+                    {
+                        "node": "Send Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
