@@ -1649,7 +1649,9 @@ export default function NemoAIDashboard() {
       if (activeThreadId) {
         console.log("[v0] Reloading conversations for thread:", activeThreadId)
         await loadConversations(activeThreadId)
-        console.log("[v0] Conversations reloaded successfully")
+        // Also reload threads list to show the new/updated thread in sidebar
+        await loadThreads()
+        console.log("[v0] Conversations and Threads reloaded successfully")
       }
 
       if (data.audio_base64) {
