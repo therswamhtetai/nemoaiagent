@@ -320,7 +320,7 @@ export const LoginWithWebhook = async (credentials: any): Promise<any> => {
     console.log("[v0] Attempting Webhook login...", payload)
 
     try {
-        const response = await fetch("https://admin.orcadigital.online/webhook/auth/login", {
+        const response = await fetch("/api/auth/webhook", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

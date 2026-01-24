@@ -1019,7 +1019,7 @@ export default function NemoAIDashboard() {
 
     try {
       console.log("[v0] Calling webhook with thread_id:", threadId)
-      const webhookResponse = await fetch("https://admin.orcadigital.online/webhook/chat", {
+      const webhookResponse = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1289,7 +1289,7 @@ export default function NemoAIDashboard() {
         reader.readAsDataURL(fileToUpload)
         const imageBase64 = await base64Promise
 
-        const response = await fetch('https://admin.orcadigital.online/webhook/chat', {
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1384,7 +1384,7 @@ export default function NemoAIDashboard() {
         reader.readAsDataURL(fileToUpload)
         const documentBase64 = await base64Promise
 
-        const response = await fetch('https://admin.orcadigital.online/webhook/chat', {
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1627,7 +1627,7 @@ export default function NemoAIDashboard() {
         setMessages([placeholderMsg])
       }
 
-      const response = await fetch("https://admin.orcadigital.online/webhook/voice-chat", {
+      const response = await fetch("/api/voice", {
         method: "POST",
         body: formData,
       })
@@ -1957,7 +1957,7 @@ export default function NemoAIDashboard() {
       }
       setLoadingMarketData(true)
 
-      const response = await fetch("https://admin.orcadigital.online/webhook/monitor-competitor", {
+      const response = await fetch("/api/monitor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
