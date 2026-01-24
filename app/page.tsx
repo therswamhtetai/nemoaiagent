@@ -3869,8 +3869,8 @@ export default function NemoAIDashboard() {
                 {/* Calendar Grid - Month Only */}
                 <div className="space-y-4">
                   {/* Weekday Headers */}
-                  <div className="grid grid-cols-7 gap-3 mb-2">
-                    {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
+                  <div className="grid grid-cols-7 gap-1 md:gap-3 mb-2">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
                       <div
                         key={index}
                         className="text-left px-2 text-xs font-medium text-white/40"
@@ -3880,7 +3880,7 @@ export default function NemoAIDashboard() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-7 gap-3">
+                  <div className="grid grid-cols-7 gap-1 md:gap-3">
                     {Array.from({ length: 42 }).map((_, index) => {
                       const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
                       const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
@@ -3894,7 +3894,7 @@ export default function NemoAIDashboard() {
                         const prevMonthLastDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate()
                         const prevDate = prevMonthLastDate + dayNumber
                         return (
-                          <div key={index} className="min-h-[80px] md:min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                          <div key={index} className="min-h-[80px] md:min-h-[120px] p-1 md:p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
                             <div className="text-lg font-medium text-white/50">{prevDate}</div>
                           </div>
                         )
@@ -3904,7 +3904,7 @@ export default function NemoAIDashboard() {
                       if (dayNumber > daysInMonth) {
                         const nextDate = dayNumber - daysInMonth
                         return (
-                          <div key={index} className="min-h-[80px] md:min-h-[120px] p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
+                          <div key={index} className="min-h-[80px] md:min-h-[120px] p-1 md:p-3 rounded-2xl border border-white/[0.05] bg-white/[0.02] flex flex-col justify-between opacity-30">
                             <div className="text-lg font-medium text-white/50">{nextDate}</div>
                           </div>
                         )
@@ -3930,13 +3930,13 @@ export default function NemoAIDashboard() {
                       return (
                         <div
                           key={index}
-                          className={`min-h-[80px] md:min-h-[120px] p-3 rounded-3xl border transition-all relative group flex flex-col items-start justify-start gap-2 ${isToday
+                          className={`min-h-[80px] md:min-h-[120px] p-1 md:p-3 rounded-2xl border transition-all relative group flex flex-col items-start justify-start gap-1 md:gap-2 ${isToday
                             ? "bg-[#C15F3C] border-[#D4714A] shadow-[0_0_20px_rgba(193,95,60,0.3)]"
                             : "bg-white/[0.05] border-white/[0.08] hover:border-white/20 hover:bg-white/[0.08]"
                             }`}
                         >
                           <div
-                            className={`text-xl font-medium ${isToday ? "text-white" : "text-white/90"}`}
+                            className={`text-sm md:text-xl font-medium ${isToday ? "text-white" : "text-white/90"}`}
                           >
                             {dayNumber}
                           </div>
