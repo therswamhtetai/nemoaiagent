@@ -805,31 +805,40 @@ export default function NemoAIDashboard() {
           }
         }
 
-        // Merge attachments and parse content for missing ones
+        // Merge attachments: DB > sessionStorage > content parsing
         const messagesWithAttachments = reversedData.map(msg => {
-          // 1. Check stored attachment in sessionStorage
+          // 1. Check if attachment exists in database (JSONB column)
+          if (msg.attachment) {
+            const dbAttachment = typeof msg.attachment === 'string'
+              ? JSON.parse(msg.attachment)
+              : msg.attachment
+            if (dbAttachment && dbAttachment.url) {
+              return { ...msg, attachment: dbAttachment }
+            }
+          }
+
+          // 2. Fallback: Check stored attachment in sessionStorage
           const storedAttachment = attachmentMap[msg.content]
           if (storedAttachment) {
             return { ...msg, attachment: storedAttachment }
           }
 
-          // 2. Parse content for File/Image tags if attachment missing
-          if (!msg.attachment) {
-            const docMatch = msg.content.match(/\[USER SENT A DOCUMENT: (.*?)\]/)
-            if (docMatch) {
-              return {
-                ...msg,
-                attachment: { type: 'document', filename: docMatch[1], url: '#' } // URL not needed for basic preview
-              }
-            }
-            const imgMatch = msg.content.match(/\[USER SENT AN IMAGE: (.*?)\]/)
-            if (imgMatch) {
-              return {
-                ...msg,
-                attachment: { type: 'image', filename: imgMatch[1], url: '/placeholder-image.png' } // Placeholder if no URL
-              }
+          // 3. Last resort: Parse content for File/Image tags
+          const docMatch = msg.content.match(/\[USER SENT A DOCUMENT: (.*?)\]/)
+          if (docMatch) {
+            return {
+              ...msg,
+              attachment: { type: 'document', filename: docMatch[1], url: '#' }
             }
           }
+          const imgMatch = msg.content.match(/\[USER SENT AN IMAGE: (.*?)\]/)
+          if (imgMatch) {
+            return {
+              ...msg,
+              attachment: { type: 'image', filename: imgMatch[1], url: '/placeholder-image.png' }
+            }
+          }
+
           return msg
         })
 
@@ -1289,7 +1298,8 @@ export default function NemoAIDashboard() {
             content: messageToUpload || 'Analyze this image',
             image_base64: imageBase64,
             image_mime_type: fileToUpload.type,
-            image_filename: fileToUpload.name
+            image_filename: fileToUpload.name,
+            image_url: fileUrl
           })
         })
 
@@ -1383,7 +1393,8 @@ export default function NemoAIDashboard() {
             message: `[USER SENT A DOCUMENT: ${fileToUpload.name}] ${messageToUpload || 'Process this document'}`,
             document_base64: documentBase64,
             document_mime_type: fileToUpload.type,
-            document_filename: fileToUpload.name
+            document_filename: fileToUpload.name,
+            document_url: fileUrl
           })
         })
 
@@ -4591,7 +4602,7 @@ export default function NemoAIDashboard() {
             }}
           >
             <Card
-              className="w-full max-w-md p-6 bg-gradient-to-br from-zinc-900 to-black border border-white/20"
+              className="w-full max-w-md p-6 bg-[#1A1918] border border-[#2A2826] shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -4613,7 +4624,7 @@ export default function NemoAIDashboard() {
 
               <div className="space-y-4">
                 {/* File Preview */}
-                <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center gap-3">
+                <div className="p-4 bg-[#2A2826] rounded-xl border border-[#3A3836] flex items-center gap-3">
                   {uploadType === 'image' ? (
                     <ImageIcon className="w-8 h-8 text-blue-400" />
                   ) : (
@@ -4634,16 +4645,16 @@ export default function NemoAIDashboard() {
                     value={uploadMessage}
                     onChange={(e) => setUploadMessage(e.target.value)}
                     placeholder={uploadType === 'image' ? 'e.g., Write a caption for this photo' : 'e.g., Summarize this document'}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 resize-none"
+                    className="w-full bg-[#2A2826] border border-[#3A3836] rounded-xl p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C15F3C]/50 resize-none"
                     rows={3}
                   />
                 </div>
 
                 {/* Submit Button */}
-                <Button
+                <button
                   onClick={submitFileUpload}
                   disabled={isUploading}
-                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  className="w-full py-3 bg-[#C15F3C] text-white font-medium rounded-xl hover:bg-[#D4714A] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-[#C15F3C]/20"
                 >
                   {isUploading ? (
                     <span className="flex items-center gap-2">
@@ -4656,7 +4667,7 @@ export default function NemoAIDashboard() {
                       Upload & Analyze
                     </span>
                   )}
-                </Button>
+                </button>
               </div>
             </Card>
           </div>
