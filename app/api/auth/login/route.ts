@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Debug logging
+    console.log('Attempting login for:', username)
+    console.log('N8N URL:', webhookUrl)
+    console.log('API Key present:', !!process.env.INTERNAL_API_KEY)
+
     const n8nResponse = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -33,27 +38,42 @@ export async function POST(request: NextRequest) {
     })
 
     const responseText = await n8nResponse.text()
+    console.log('N8N Status:', n8nResponse.status)
+    console.log('N8N Response:', responseText)
 
     if (!n8nResponse.ok) {
+      console.error('N8N returned error status')
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: `Invalid credentials (N8N Status: ${n8nResponse.status})` },
         { status: 401 }
       )
     }
 
     if (!responseText) {
+      console.error('N8N returned empty response')
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid credentials (Empty response from N8N)' },
         { status: 401 }
       )
     }
 
-    const userData = JSON.parse(responseText)
+    let userData
+    try {
+      userData = JSON.parse(responseText)
+    } catch (e) {
+      console.error('Failed to parse N8N response:', e)
+      return NextResponse.json(
+        { error: 'Invalid credentials (Invalid JSON from N8N)' },
+        { status: 401 }
+      )
+    }
+
     const userId = userData.id || userData.user_id
 
     if (!userId) {
+      console.error('No user ID in N8N response:', userData)
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid credentials (No user ID returned)' },
         { status: 401 }
       )
     }
