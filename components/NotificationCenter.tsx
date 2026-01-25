@@ -111,7 +111,9 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch(`/api/notifications?user_id=${userId}`)
+      const response = await fetch(`/api/notifications`, {
+        credentials: 'include' // Send session cookie
+      })
       const data = await response.json()
       if (data.notifications) {
         setNotifications(data.notifications)
@@ -165,8 +167,8 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
       const response = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Send session cookie
         body: JSON.stringify({
-          user_id: userId,
           subscription: subscription.toJSON(),
           device_info: {
             userAgent: navigator.userAgent,
@@ -205,8 +207,8 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
         await fetch('/api/notifications/subscribe', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Send session cookie
           body: JSON.stringify({
-            user_id: userId,
             endpoint: subscription.endpoint
           })
         })
@@ -224,8 +226,8 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
       await fetch('/api/notifications/read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Send session cookie
         body: JSON.stringify({
-          user_id: userId,
           notification_id: notificationId
         })
       })
@@ -246,8 +248,8 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
       await fetch('/api/notifications/read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Send session cookie
         body: JSON.stringify({
-          user_id: userId,
           mark_all: true
         })
       })
@@ -263,8 +265,9 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
   // Clear all notifications
   const clearAll = async () => {
     try {
-      await fetch(`/api/notifications?user_id=${userId}`, {
-        method: 'DELETE'
+      await fetch(`/api/notifications`, {
+        method: 'DELETE',
+        credentials: 'include' // Send session cookie
       })
       setNotifications([])
       setUnreadCount(0)

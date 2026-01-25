@@ -1,7 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
+        // Get user ID from session (set by middleware)
+        const sessionUserId = request.headers.get('x-user-id')
+
+        if (!sessionUserId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const body = await request.json()
         const webhookUrl = process.env.N8N_WEBHOOK_URL_MONITOR
 
@@ -10,10 +17,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
         }
 
+        // Use session user_id, not the one from body (prevents spoofing)
+        const secureBody = {
+            ...body,
+            user_id: sessionUserId,
+            userId: sessionUserId,
+        }
+
         const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify(secureBody)
         })
 
         if (!response.ok) {

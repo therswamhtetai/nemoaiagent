@@ -128,43 +128,18 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
     setError("")
 
     try {
-      let loggedInUserId = null
+      // Use secure session-based login (httpOnly cookie)
+      const result = await API.SecureLogin(username, password)
 
-      // Authenticate with DB first
-      try {
-        const user = await API.AuthenticateUser(username, password)
-        if (user && user.id) {
-          loggedInUserId = user.id
-        }
-      } catch (dbErr) {
-        console.error("[v0] DB Login info:", dbErr)
-      }
-
-      // Check webhook if DB fails
-      if (!loggedInUserId) {
-        try {
-          const webhookData = await API.LoginWithWebhook({ username, password })
-          if (webhookData && (webhookData.id || webhookData.user_id)) {
-            loggedInUserId = webhookData.id || webhookData.user_id
-          }
-        } catch (webhookErr) {
-          console.error("[v0] Webhook Login info:", webhookErr)
-        }
-      }
-
-      // Fallback for admin/dev access if everything else fails
-      if (!loggedInUserId && username === "admin") {
-        console.log("[v0] Using fallback admin login")
-        loggedInUserId = "admin-user-id"
-      }
-
-      if (loggedInUserId) {
+      if (result.success && result.user) {
+        // Session cookie is automatically set by the API
+        // Store user_id locally for app state (backup, not for auth)
         if (rememberMe) {
-          localStorage.setItem("nemo_user_id", loggedInUserId)
+          localStorage.setItem("nemo_user_id", result.user.id)
         }
-        onLogin(loggedInUserId)
+        onLogin(result.user.id)
       } else {
-        setError("Invalid username or password")
+        setError(result.error || "Invalid username or password")
       }
     } catch (err) {
       console.error("[v0] Login error:", err)
@@ -288,12 +263,24 @@ export default function NemoAIDashboard() {
     }
   })
 
-  // Check for remembered user on mount
+  // Check for valid session on mount
   useEffect(() => {
-    const storedUserId = localStorage.getItem("nemo_user_id")
-    if (storedUserId) {
-      setUserId(storedUserId)
+    const checkAuth = async () => {
+      // First check server session (httpOnly cookie)
+      const sessionResult = await API.CheckSession()
+
+      if (sessionResult.authenticated && sessionResult.user) {
+        setUserId(sessionResult.user.id)
+        // Keep localStorage in sync (backup)
+        localStorage.setItem("nemo_user_id", sessionResult.user.id)
+      } else {
+        // No valid session - clear any stale localStorage
+        localStorage.removeItem("nemo_user_id")
+        setUserId(null)
+      }
     }
+
+    checkAuth()
   }, [])
 
   // Check if should show What's New popup after login
@@ -319,7 +306,10 @@ export default function NemoAIDashboard() {
     setDontShowAgain(false)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear server session (httpOnly cookie)
+    await API.SecureLogout()
+    // Clear local storage
     localStorage.removeItem("nemo_user_id")
     setUserId(null)
     setShowSettingsModal(false)
@@ -669,7 +659,9 @@ export default function NemoAIDashboard() {
     const fetchNotificationCount = async () => {
       if (!userId) return
       try {
-        const response = await fetch(`/api/notifications?user_id=${userId}&unread=true`)
+        const response = await fetch(`/api/notifications?unread=true`, {
+          credentials: 'include' // Send session cookie
+        })
         const data = await response.json()
         if (data.unread_count !== undefined) {
           setUnreadNotificationCount(data.unread_count)
@@ -4659,7 +4651,7 @@ export default function NemoAIDashboard() {
                 onClose={() => {
                   setShowNotificationPanel(false)
                   // Refresh notification count after closing
-                  fetch(`/api/notifications?user_id=${userId}&unread=true`)
+                  fetch(`/api/notifications?unread=true`, { credentials: 'include' })
                     .then(res => res.json())
                     .then(data => {
                       if (data.unread_count !== undefined) {

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -7,15 +7,16 @@ const supabase = createClient(
 )
 
 // GET - Fetch user notifications
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    // Get user ID from session (set by middleware)
+    const userId = request.headers.get('x-user-id')
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('user_id')
     const unreadOnly = searchParams.get('unread') === 'true'
     const limit = parseInt(searchParams.get('limit') || '50')
 
     if (!userId) {
-      return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     let query = supabase
@@ -57,13 +58,13 @@ export async function GET(request: Request) {
 }
 
 // DELETE - Clear all notifications for a user
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('user_id')
+    // Get user ID from session (set by middleware)
+    const userId = request.headers.get('x-user-id')
 
     if (!userId) {
-      return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { error } = await supabase

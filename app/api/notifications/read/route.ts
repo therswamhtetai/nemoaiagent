@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -7,14 +7,17 @@ const supabase = createClient(
 )
 
 // POST - Mark notification(s) as read
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { user_id, notification_id, mark_all } = body
+    // Get user ID from session (set by middleware)
+    const userId = request.headers.get('x-user-id')
 
-    if (!user_id) {
-      return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const body = await request.json()
+    const { notification_id, mark_all } = body
 
     const updateData = {
       is_read: true,
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
       const { error } = await supabase
         .from('notifications')
         .update(updateData)
-        .eq('user_id', user_id)
+        .eq('user_id', userId)
         .eq('is_read', false)
 
       if (error) {
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
         .from('notifications')
         .update(updateData)
         .eq('id', notification_id)
-        .eq('user_id', user_id)
+        .eq('user_id', userId)
 
       if (error) {
         console.error('Error marking as read:', error)

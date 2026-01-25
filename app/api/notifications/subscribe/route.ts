@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -7,14 +7,21 @@ const supabase = createClient(
 )
 
 // POST - Save push subscription
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { user_id, subscription, device_info } = body
+    // Get user ID from session (set by middleware)
+    const userId = request.headers.get('x-user-id')
 
-    if (!user_id || !subscription) {
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { subscription, device_info } = body
+
+    if (!subscription) {
       return NextResponse.json(
-        { error: 'user_id and subscription are required' },
+        { error: 'subscription is required' },
         { status: 400 }
       )
     }
@@ -32,7 +39,7 @@ export async function POST(request: Request) {
       .from('push_subscriptions')
       .upsert(
         {
-          user_id,
+          user_id: userId,
           endpoint,
           p256dh: keys.p256dh,
           auth: keys.auth,
@@ -64,19 +71,22 @@ export async function POST(request: Request) {
 }
 
 // DELETE - Remove push subscription
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { user_id, endpoint } = body
+    // Get user ID from session (set by middleware)
+    const userId = request.headers.get('x-user-id')
 
-    if (!user_id) {
-      return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const body = await request.json()
+    const { endpoint } = body
 
     let query = supabase
       .from('push_subscriptions')
       .delete()
-      .eq('user_id', user_id)
+      .eq('user_id', userId)
 
     if (endpoint) {
       query = query.eq('endpoint', endpoint)

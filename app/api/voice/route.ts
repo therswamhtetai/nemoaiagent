@@ -1,9 +1,21 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        // Forward FormData directly
+        // Get user ID from session (set by middleware)
+        const sessionUserId = request.headers.get('x-user-id')
+
+        if (!sessionUserId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Forward FormData with secure user_id
         const formData = await request.formData()
+
+        // Override user_id with session user_id (prevents spoofing)
+        formData.set('user_id', sessionUserId)
+        formData.set('userId', sessionUserId)
+
         const webhookUrl = process.env.N8N_WEBHOOK_URL_VOICE
 
         if (!webhookUrl) {

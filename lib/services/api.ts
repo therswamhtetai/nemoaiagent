@@ -347,3 +347,60 @@ export const LoginWithWebhook = async (credentials: any): Promise<any> => {
         throw err
     }
 }
+
+// Secure Session-based Authentication
+export const SecureLogin = async (username: string, password: string): Promise<{ success: boolean; user?: any; error?: string }> => {
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Important for cookies
+            body: JSON.stringify({ username, password })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            return { success: false, error: data.error || 'Login failed' }
+        }
+
+        return { success: true, user: data.user }
+    } catch (error) {
+        console.error('[v0] Secure login error:', error)
+        return { success: false, error: 'An error occurred during login' }
+    }
+}
+
+export const CheckSession = async (): Promise<{ authenticated: boolean; user?: any }> => {
+    try {
+        const response = await fetch('/api/auth/session', {
+            method: 'GET',
+            credentials: 'include'
+        })
+
+        const data = await response.json()
+
+        if (!response.ok || !data.authenticated) {
+            return { authenticated: false }
+        }
+
+        return { authenticated: true, user: data.user }
+    } catch (error) {
+        console.error('[v0] Session check error:', error)
+        return { authenticated: false }
+    }
+}
+
+export const SecureLogout = async (): Promise<boolean> => {
+    try {
+        const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        })
+
+        return response.ok
+    } catch (error) {
+        console.error('[v0] Logout error:', error)
+        return false
+    }
+}
