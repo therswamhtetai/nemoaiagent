@@ -12,7 +12,8 @@ import {
   Calendar,
   Lightbulb,
   AlertCircle,
-  BellOff
+  BellOff,
+  Smartphone
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -56,18 +57,55 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
   const [loading, setLoading] = useState(true)
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushSupported, setPushSupported] = useState(false)
+  const [pushStatus, setPushStatus] = useState<string>('')
+  const [isIOS, setIsIOS] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
 
-  // Check if push notifications are supported and enabled
+  // Check device and push support
   useEffect(() => {
-    const checkPushSupport = async () => {
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
+    const checkEnvironment = async () => {
+      // Detect iOS
+      const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+      setIsIOS(iOS)
+
+      // Check if running as standalone PWA
+      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true
+      setIsStandalone(standalone)
+
+      // Check push support
+      if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
         setPushSupported(true)
-        const registration = await navigator.serviceWorker.ready
-        const subscription = await registration.pushManager.getSubscription()
-        setPushEnabled(!!subscription)
+
+        // Check current permission and subscription
+        const permission = Notification.permission
+        if (permission === 'granted') {
+          try {
+            const registration = await navigator.serviceWorker.ready
+            const subscription = await registration.pushManager.getSubscription()
+            setPushEnabled(!!subscription)
+            if (subscription) {
+              setPushStatus('Push notifications enabled')
+            }
+          } catch (e) {
+            console.error('Error checking subscription:', e)
+          }
+        } else if (permission === 'denied') {
+          setPushStatus('Notifications blocked in settings')
+        }
+      } else {
+        // Determine why push isn't supported
+        if (iOS && !standalone) {
+          setPushStatus('Add to Home Screen to enable notifications')
+        } else if (!('Notification' in window)) {
+          setPushStatus('Notifications not supported on this browser')
+        } else {
+          setPushStatus('Push notifications not available')
+        }
       }
     }
-    checkPushSupport()
+
+    checkEnvironment()
   }, [])
 
   // Fetch notifications
@@ -92,19 +130,39 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
     }
   }, [userId, fetchNotifications])
 
-  // Enable push notifications
+  // Enable push notifications - iOS requires user gesture
   const enablePush = async () => {
     try {
+      setPushStatus('Requesting permission...')
+
+      // First request notification permission
+      const permission = await Notification.requestPermission()
+
+      if (permission !== 'granted') {
+        setPushStatus(permission === 'denied' ? 'Permission denied. Check settings.' : 'Permission not granted')
+        return
+      }
+
+      setPushStatus('Subscribing...')
+
+      // Wait for service worker
       const registration = await navigator.serviceWorker.ready
+
+      // Get VAPID key
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!vapidKey) {
+        setPushStatus('Configuration error')
+        return
+      }
+
+      // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        )
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
       })
 
       // Save subscription to server
-      await fetch('/api/notifications/subscribe', {
+      const response = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,14 +170,28 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
           subscription: subscription.toJSON(),
           device_info: {
             userAgent: navigator.userAgent,
-            platform: navigator.platform
+            platform: navigator.platform,
+            isIOS: isIOS,
+            isStandalone: isStandalone
           }
         })
       })
 
-      setPushEnabled(true)
-    } catch (error) {
+      if (response.ok) {
+        setPushEnabled(true)
+        setPushStatus('Push notifications enabled!')
+      } else {
+        setPushStatus('Failed to save subscription')
+      }
+    } catch (error: any) {
       console.error('Error enabling push:', error)
+      if (error.name === 'NotAllowedError') {
+        setPushStatus('Permission denied by user')
+      } else if (error.name === 'AbortError') {
+        setPushStatus('Subscription aborted')
+      } else {
+        setPushStatus(`Error: ${error.message || 'Unknown error'}`)
+      }
     }
   }
 
@@ -140,6 +212,7 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
         })
       }
       setPushEnabled(false)
+      setPushStatus('Push notifications disabled')
     } catch (error) {
       console.error('Error disabling push:', error)
     }
@@ -239,29 +312,43 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
         )}
       </div>
 
-      {/* Push notification toggle */}
-      {pushSupported && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5">
+      {/* Push notification section */}
+      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {pushEnabled ? (
               <Bell className="w-4 h-4 text-green-400" />
+            ) : isIOS && !isStandalone ? (
+              <Smartphone className="w-4 h-4 text-yellow-400" />
             ) : (
               <BellOff className="w-4 h-4 text-white/40" />
             )}
             <span className="text-sm text-white/80">Push Notifications</span>
           </div>
-          <button
-            onClick={pushEnabled ? disablePush : enablePush}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-              pushEnabled
-                ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                : 'bg-white/10 text-white/60 hover:bg-white/20'
-            }`}
-          >
-            {pushEnabled ? 'Enabled' : 'Enable'}
-          </button>
+          {pushSupported ? (
+            <button
+              onClick={pushEnabled ? disablePush : enablePush}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                pushEnabled
+                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                  : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+              }`}
+            >
+              {pushEnabled ? 'Enabled' : 'Enable'}
+            </button>
+          ) : (
+            <span className="text-xs text-white/40">Not available</span>
+          )}
         </div>
-      )}
+        {pushStatus && (
+          <p className="text-xs text-white/50 mt-1.5">{pushStatus}</p>
+        )}
+        {isIOS && !isStandalone && (
+          <p className="text-xs text-yellow-400/80 mt-1.5">
+            Tap Share → "Add to Home Screen" to enable push notifications
+          </p>
+        )}
+      </div>
 
       {/* Action buttons */}
       {notifications.length > 0 && (

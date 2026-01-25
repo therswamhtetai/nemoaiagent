@@ -17,7 +17,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://18.143.133.236/api/notifications/send",
+        "url": "https://agent.nemoautomation.services/api/notifications/send",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

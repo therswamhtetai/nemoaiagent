@@ -478,6 +478,11 @@ export default function NemoAIDashboard() {
       .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold mt-3 mb-1 text-white">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-4 mb-2 text-white border-b border-white/10 pb-1">$1</h2>')
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
+      // Linkify URLs - robust regex for http/https URLs
+      .replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-[#C15F3C] hover:underline hover:text-[#C15F3C]/80 transition-colors break-all">$1</a>'
+      )
 
     return <div dangerouslySetInnerHTML={{ __html: processed }} className="whitespace-pre-wrap font-sans" />
   }
