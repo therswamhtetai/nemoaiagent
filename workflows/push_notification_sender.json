@@ -1,0 +1,85 @@
+{
+  "name": "Nemo - Push Notification Sender",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        180,
+        240
+      ],
+      "id": "trigger-push",
+      "name": "When Called by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/api/notifications/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message || $json.body, type: $json.type || 'general', data: $json.data || {} }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        240
+      ],
+      "id": "send-push",
+      "name": "Send Push Notification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nreturn [{\n  json: {\n    success: result.success || false,\n    notification_id: result.notification_id || null,\n    push_sent: result.push_sent || false,\n    devices_notified: result.devices_notified || 0,\n    message: result.message || 'Notification processed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        240
+      ],
+      "id": "format-result",
+      "name": "Format Result"
+    }
+  ],
+  "connections": {
+    "When Called by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Send Push Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Push Notification": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true
+}

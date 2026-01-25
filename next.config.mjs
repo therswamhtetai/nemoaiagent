@@ -1,11 +1,13 @@
-// PWA disabled - uncomment and install @ducanh2912/next-pwa to enable
-// import withPWAInit from "@ducanh2912/next-pwa";
-// const withPWA = withPWAInit({
-//   dest: "public",
-//   disable: process.env.NODE_ENV === "development",
-//   register: true,
-//   skipWaiting: true,
-// });
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
+  sw: "sw.js",
+  publicExcludes: ["!sw.js"], // Don't precache sw.js as it's already there
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -15,7 +17,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  turbopack: {},
 }
 
-// export default withPWA(nextConfig);
-export default nextConfig;
+export default withPWA(nextConfig);

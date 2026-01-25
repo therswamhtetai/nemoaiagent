@@ -62,6 +62,7 @@ import {
 } from "lucide-react"
 
 import RichTextEditor from "@/components/RichTextEditor"
+import NotificationCenter from "@/components/NotificationCenter"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -432,6 +433,8 @@ export default function NemoAIDashboard() {
   const [loadingMarketData, setLoadingMarketData] = useState(false)
 
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false)
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
   const [userSettings, setUserSettings] = useState({
     username: "",
     full_name: "",
@@ -643,6 +646,39 @@ export default function NemoAIDashboard() {
       setUseFallbackMode(true)
     }
   }, [userId, supabase, useFallbackMode])
+
+  // Register Service Worker and fetch notification count
+  useEffect(() => {
+    // Register service worker for push notifications
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('[PWA] Service Worker registered:', registration.scope)
+        })
+        .catch((error) => {
+          console.error('[PWA] Service Worker registration failed:', error)
+        })
+    }
+
+    // Fetch unread notification count
+    const fetchNotificationCount = async () => {
+      if (!userId) return
+      try {
+        const response = await fetch(`/api/notifications?user_id=${userId}&unread=true`)
+        const data = await response.json()
+        if (data.unread_count !== undefined) {
+          setUnreadNotificationCount(data.unread_count)
+        }
+      } catch (error) {
+        console.error('[Notifications] Error fetching count:', error)
+      }
+    }
+
+    fetchNotificationCount()
+    // Refresh notification count every 30 seconds
+    const interval = setInterval(fetchNotificationCount, 30000)
+    return () => clearInterval(interval)
+  }, [userId])
 
   useEffect(() => {
     if (!showNewIdeaForm) {
@@ -2344,8 +2380,21 @@ export default function NemoAIDashboard() {
               <div className="text-[#B1ADA1] font-mono text-xs md:text-sm">{currentTime}</div>
             </div>
 
-            {/* Right: Settings - Visible on all devices */}
-            <div>
+            {/* Right: Notifications + Settings - Visible on all devices */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 hover:bg-white/10 text-white/70 hover:text-white relative"
+                onClick={() => setShowNotificationPanel(true)}
+              >
+                <Bell className="w-4 h-4" />
+                {unreadNotificationCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                  </span>
+                )}
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -4586,6 +4635,37 @@ export default function NemoAIDashboard() {
               </div>
             </Card>
           </div >
+        )
+      }
+
+      {/* Notification Panel */}
+      {
+        showNotificationPanel && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-end md:items-center justify-center"
+            onClick={() => setShowNotificationPanel(false)}
+          >
+            <div
+              className="w-full md:max-w-md h-[85vh] md:h-[70vh] md:max-h-[600px] bg-[#1A1918] border-t md:border border-[#2A2826] rounded-t-2xl md:rounded-xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <NotificationCenter
+                userId={userId}
+                onClose={() => {
+                  setShowNotificationPanel(false)
+                  // Refresh notification count after closing
+                  fetch(`/api/notifications?user_id=${userId}&unread=true`)
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data.unread_count !== undefined) {
+                        setUnreadNotificationCount(data.unread_count)
+                      }
+                    })
+                    .catch(console.error)
+                }}
+              />
+            </div>
+          </div>
         )
       }
 

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "NemoAI - Your Business Operating System",
   description: "AI-powered business operating system with intelligent task management, ideas, CRM, and more",
   generator: "v0.app",
+  manifest: "/manifest.json",
   icons: {
     icon: "/icon.png?v=3",
     apple: "/apple-icon.png?v=3",
