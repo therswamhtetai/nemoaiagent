@@ -4241,7 +4241,7 @@ export default function NemoAIDashboard() {
         <div className="border-t border-[#2A2826] bg-[#1A1918] p-3 md:p-4">
           <div className="flex items-center gap-2 [&_input]:text-xs [&_input]:leading-tight">
             {/* Input with Mic inside */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-w-0">
               <Textarea
                 ref={inputRef}
                 placeholder="Ask anything..."
