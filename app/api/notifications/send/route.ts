@@ -2,17 +2,35 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import webpush from 'web-push'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// Initialize supabase lazily to avoid build-time errors
+const getSupabase = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  )
+}
 
-// Configure web-push with VAPID keys
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || 'mailto:admin@nemoai.app',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+// Configure web-push lazily (only when needed)
+let vapidConfigured = false
+const configureVapid = () => {
+  if (vapidConfigured) return true
+
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  const privateKey = process.env.VAPID_PRIVATE_KEY
+
+  if (!publicKey || !privateKey) {
+    console.warn('VAPID keys not configured - push notifications disabled')
+    return false
+  }
+
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:admin@nemoai.app',
+    publicKey,
+    privateKey
+  )
+  vapidConfigured = true
+  return true
+}
 
 // POST - Send push notification to user
 export async function POST(request: Request) {
@@ -26,6 +44,8 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    const supabase = getSupabase()
 
     // 1. Save notification to database for in-app display
     const { data: notification, error: notifError } = await supabase
@@ -47,6 +67,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: notifError.message }, { status: 500 })
     }
 
+    // Check if VAPID is configured before trying to send push
+    const canSendPush = configureVapid()
+
+    if (!canSendPush) {
+      return NextResponse.json({
+        success: true,
+        notification_id: notification.id,
+        push_sent: false,
+        message: 'Notification saved but VAPID keys not configured'
+      })
+    }
+
     // 2. Get user's push subscriptions
     const { data: subscriptions, error: subError } = await supabase
       .from('push_subscriptions')
@@ -55,12 +87,11 @@ export async function POST(request: Request) {
 
     if (subError) {
       console.error('Error fetching subscriptions:', subError)
-      // Still return success since notification was saved
       return NextResponse.json({
         success: true,
         notification_id: notification.id,
         push_sent: false,
-        message: 'Notification saved but no push subscriptions found'
+        message: 'Notification saved but error fetching subscriptions'
       })
     }
 
