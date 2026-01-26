@@ -52,7 +52,7 @@ export default function MarketPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500">
               <TrendingUp className="h-4 w-4 text-white" />
             </div>
-            <h1 className="text-lg font-semibold text-zinc-100">Market Intelligence</h1>
+            <h1 className="text-lg font-semibold text-zinc-100 font-lettering">Market Intelligence</h1>
           </div>
         </div>
       </header>

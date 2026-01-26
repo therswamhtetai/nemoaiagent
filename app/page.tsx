@@ -114,6 +114,83 @@ const loadingStates = [
   "Almost there...",
 ]
 
+const Typewriter = ({ text, delay = 50, infinite = false }: { text: string; delay?: number; infinite?: boolean }) => {
+  const [currentText, setCurrentText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    if (currentIndex < text.length) {
+      timeout = setTimeout(() => {
+        setCurrentText((prev) => prev + text[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, delay);
+    } else if (infinite) {
+      // Optional: Reset after a pause if strictly infinite, but for this use case 
+      // we might want it to handle switching texts. 
+      // This simple implementation stops at end.
+    }
+
+    return () => clearTimeout(timeout);
+  }, [currentIndex, delay, infinite, text]);
+
+  // Reset if text prop changes
+  useEffect(() => {
+    setCurrentText("");
+    setCurrentIndex(0);
+  }, [text]);
+
+  return <span>{currentText}</span>;
+};
+
+// Component to cycle through prompts
+const TypewriterPrompts = ({ prompts, delay = 50, waitTime = 2000 }: { prompts: string[], delay?: number, waitTime?: number }) => {
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currentText, setCurrentText] = useState("");
+  const [typingSpeed, setTypingSpeed] = useState(delay);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    const fullText = prompts[promptIndex];
+
+    const type = () => {
+      if (isDeleting) {
+        // Deleting
+        setCurrentText((prev) => fullText.substring(0, prev.length - 1));
+        setTypingSpeed(30); // Faster delete
+      } else {
+        // Typing
+        setCurrentText((prev) => fullText.substring(0, prev.length + 1));
+        setTypingSpeed(delay);
+      }
+
+      // Determine next state
+      if (!isDeleting && currentText === fullText) {
+        // Finished typing, wait before deleting
+        timeout = setTimeout(() => setIsDeleting(true), waitTime);
+        return;
+      } else if (isDeleting && currentText === "") {
+        // Finished deleting, next prompt
+        setIsDeleting(false);
+        setPromptIndex((prev) => (prev + 1) % prompts.length);
+        timeout = setTimeout(type, 500); // Small pause before new typing
+        return;
+      }
+
+      timeout = setTimeout(type, typingSpeed);
+    };
+
+    timeout = setTimeout(type, typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [currentText, isDeleting, promptIndex, prompts, delay, waitTime, typingSpeed]);
+
+  return <span>{currentText}</span>;
+};
+
 // FIXED_USER_ID removed for dynamic auth
 const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   const [username, setUsername] = useState("")
@@ -166,7 +243,7 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
               className="w-full h-full object-contain"
             />
           </div>
-          <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4">Greetings from Nemo</h2>
+          <h2 className="text-4xl md:text-5xl font-light text-white tracking-tight mb-4 font-lettering">Greetings from Nemo</h2>
           <p className="text-[#B1ADA1] text-base font-light">Your Personal AI Assistant</p>
         </div>
 
@@ -344,6 +421,19 @@ export default function NemoAIDashboard() {
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null)
   const [editingThreadTitle, setEditingThreadTitle] = useState("")
   const [loadingStateIndex, setLoadingStateIndex] = useState(0)
+
+  // Timer state for loading
+  const [loadingElapsedTime, setLoadingElapsedTime] = useState(0)
+  const [loadingText, setLoadingText] = useState("")
+  const loadingTexts = [
+    "Thinking",
+    "Analysing",
+    "Processing",
+    "Diving deep",
+    "Searching",
+    "Connecting dots",
+    "Almost there",
+  ]
   const [isPushToTalk, setIsPushToTalk] = useState(false)
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
@@ -499,31 +589,63 @@ export default function NemoAIDashboard() {
 
       const userName = userSettings.full_name
 
+      const maybeAppendName = (text: string) => {
+        return Math.random() > 0.5 ? `${text}, ${userName}!` : `${text}!`
+      }
+
       const greetings = {
         morning: [
-          `Good morning, ${userName}!`,
-          `Rise and shine, ${userName}!`,
-          `Morning, ${userName}!`,
-          `Let's go, ${userName}!`,
+          maybeAppendName("Good morning"),
+          "Morning brew?",
+          "Ready to start?",
+          maybeAppendName("Let’s win the day"),
+          maybeAppendName("Rise and grind"),
         ],
         afternoon: [
-          `Good afternoon, ${userName}!`,
-          `Keep it up, ${userName}!`,
-          `Hey ${userName}!`,
-          `Let's keep going, ${userName}!`,
+          maybeAppendName("Stay focused"),
+          maybeAppendName("Afternoon check-in"),
+          maybeAppendName("Keep moving"),
+          maybeAppendName("Back to work"),
+          maybeAppendName("Momentum is key"),
         ],
         evening: [
-          `Good evening, ${userName}!`,
-          `Winding down, ${userName}?`,
-          `Hey ${userName}!`,
-          `Almost there, ${userName}!`,
+          maybeAppendName("Evening wrap-up"),
+          maybeAppendName("Good evening"),
+          maybeAppendName("Day in review"),
+          maybeAppendName("Time to reflect"),
         ],
         night: [
-          `Night owl, ${userName}?`,
-          `Still here, ${userName}?`,
-          `Late night, ${userName}!`,
-          `Burning the candle, ${userName}?`,
+          "Still awake?",
+          maybeAppendName("Midnight ideas"),
+          maybeAppendName("Quiet hours"),
+          maybeAppendName("Late night grind"),
         ],
+        action: [
+          "Shall we begin?",
+          maybeAppendName("Your command"),
+          maybeAppendName("Ready to build"),
+          maybeAppendName("Systems online"),
+          maybeAppendName("At your service"),
+          "Coffee and Nemo?",
+          "What are we building?",
+          maybeAppendName("Ready to create"),
+          maybeAppendName("Let’s get to work"),
+          "What’s on your mind?",
+          maybeAppendName("Good to see you"),
+          maybeAppendName("Time to execute"),
+          maybeAppendName("Imagine the possibilities"),
+          maybeAppendName("Let’s make it happen"),
+          maybeAppendName("Ready for launch"),
+          maybeAppendName("Design your future"),
+          maybeAppendName("Awaiting your command"),
+          maybeAppendName("Let’s solve this"),
+          maybeAppendName("Create something new"),
+          maybeAppendName("Welcome back"),
+          "Focus mode on.",
+          maybeAppendName("Let's dive in"),
+          "Your Pocket CEO is ready.",
+          "Turn ideas into reality."
+        ]
       }
 
       let period = "afternoon"
@@ -532,8 +654,18 @@ export default function NemoAIDashboard() {
       else if (hour >= 17 && hour < 21) period = "evening"
       else period = "night"
 
-      const periodGreetings = greetings[period as keyof typeof greetings]
-      const newGreeting = periodGreetings[Math.floor(Math.random() * periodGreetings.length)]
+      // Selection logic: 60% chance for Time-Based, 40% chance for Action
+      // This ensures time-based greetings appear frequently despite the shorter list
+      const useTimeBased = Math.random() < 0.6
+
+      let selectedList: string[]
+      if (useTimeBased) {
+        selectedList = greetings[period as keyof typeof greetings] as string[]
+      } else {
+        selectedList = greetings.action
+      }
+
+      const newGreeting = selectedList[Math.floor(Math.random() * selectedList.length)]
 
       setCurrentGreeting(newGreeting)
       setGreetingTimestamp(Date.now())
@@ -560,6 +692,15 @@ export default function NemoAIDashboard() {
     const interval = setInterval(updateTimeAndWeather, 60000)
 
     return () => clearInterval(interval)
+  }, [])
+
+  // Auto-focus chat input on mount
+  useEffect(() => {
+    // Small delay to ensure DOM is ready and transitions are done
+    const timer = setTimeout(() => {
+      inputRef.current?.focus()
+    }, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -590,6 +731,36 @@ export default function NemoAIDashboard() {
       }, 3000) // Slower transition (3s)
     }
     return () => clearInterval(interval)
+  }, [loading])
+
+  // Timer for loading elapsed time
+  useEffect(() => {
+    let timerInterval: NodeJS.Timeout
+    let textInterval: NodeJS.Timeout
+
+    if (loading) {
+      // Reset and start timer
+      setLoadingElapsedTime(0)
+      setLoadingText(loadingTexts[Math.floor(Math.random() * loadingTexts.length)])
+
+      // Update timer every second
+      timerInterval = setInterval(() => {
+        setLoadingElapsedTime((prev) => prev + 1)
+      }, 1000)
+
+      // Change loading text every 3 seconds
+      textInterval = setInterval(() => {
+        setLoadingText(loadingTexts[Math.floor(Math.random() * loadingTexts.length)])
+      }, 3000)
+    } else {
+      // Reset when loading ends
+      setLoadingElapsedTime(0)
+    }
+
+    return () => {
+      clearInterval(timerInterval)
+      clearInterval(textInterval)
+    }
   }, [loading])
 
   useEffect(() => {
@@ -2280,8 +2451,7 @@ export default function NemoAIDashboard() {
                   ) : (
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="flex items-center gap-1.5 flex-1 min-w-0 text-[13px]">
-                        <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-zinc-500 group-hover:text-zinc-400" />
-                        <span className="flex-1 truncate text-zinc-300 group-hover:text-white font-light">
+                        <span className="flex-1 truncate text-zinc-300 group-hover:text-white font-medium font-sans">
                           {thread.title}
                         </span>
                       </div>
@@ -2428,51 +2598,176 @@ export default function NemoAIDashboard() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeModule === "home" ? (
             messages.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center p-3 md:p-4 overflow-y-auto bg-[#1C1917]">
-                <div className="w-full max-w-xl mx-auto flex flex-col items-center justify-center space-y-8">
-                  {/* Text above orb - Updated typography */}
-                  <div className="text-center space-y-2 min-h-[48px]">
-                    {/* Increased text sizes throughout for better readability */}
-                    <h2
-                      className={`text-3xl md:text-4xl font-light tracking-wide text-white transition-opacity duration-500 ${isPushToTalk || greetingReady ? 'opacity-100' : 'opacity-0'
-                        }`}
-                    >
-                      {isPushToTalk ? "I'm Listening..." : currentGreeting}
-                    </h2>
-                  </div>
+              <div className="flex-1 flex flex-col items-center px-5 md:px-6 py-4 overflow-y-auto bg-[#1C1917] relative">
+                <div className="w-full max-w-2xl mx-auto flex flex-col items-center pt-8 md:pt-8">
+                  {/* Logo at top center - much bigger and higher */}
 
-                  {/* Fish Logo with Bubble Animation */}
-                  <button
-                    onClick={handlePushToTalk}
-                    className="relative w-60 h-60 md:w-72 md:h-72 flex items-center justify-center focus:outline-none transition-transform hover:scale-105 active:scale-95"
-                    aria-label="Voice assistant"
-                  >
-                    {/* Bubbles - only visible when listening */}
-                    {(orbAnimating || isPushToTalk) && (
-                      <div className="absolute inset-0 pointer-events-none">
-                        {/* Bubble 1 */}
-                        <div className="absolute right-[15%] top-[45%] w-5 h-5 rounded-full bg-white/40 animate-bubble-1" />
-                        {/* Bubble 2 */}
-                        <div className="absolute right-[10%] top-[50%] w-4 h-4 rounded-full bg-white/30 animate-bubble-2" />
-                        {/* Bubble 3 */}
-                        <div className="absolute right-[20%] top-[55%] w-4 h-4 rounded-full bg-white/35 animate-bubble-3" />
-                        {/* Bubble 4 */}
-                        <div className="absolute right-[5%] top-[48%] w-3 h-3 rounded-full bg-white/25 animate-bubble-4" />
-                        {/* Bubble 5 */}
-                        <div className="absolute right-[12%] top-[52%] w-3.5 h-3.5 rounded-full bg-white/30 animate-bubble-5" />
+
+                  {isPushToTalk ? (
+                    /* Listening State - Only show "I'm listening..." with animated dots */
+                    <div className="text-center mb-4 md:mb-6 h-[280px] md:h-[360px] flex flex-col items-center justify-end">
+                      <h2 className="text-4xl md:text-5xl font-light tracking-wide text-white font-lettering">
+                        I'm listening
+                        <span className="inline-flex ml-1">
+                          <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                          <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                          <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                        </span>
+                      </h2>
+                    </div>
+                  ) : (
+                    /* Normal State - Rotating greeting, username below */
+                    <div className="text-center mb-4 md:mb-6 h-[280px] md:h-[360px] flex flex-col items-center justify-end">
+                      <img
+                        src="/icon.png"
+                        alt="NemoAI"
+                        className={`w-36 h-36 md:w-44 md:h-44 object-contain mb-4 transition-opacity duration-500 ${greetingReady ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                      {/* Rotating greeting text */}
+                      <h2
+                        className={`text-5xl md:text-6xl font-light tracking-wide text-white transition-opacity duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
+                          }`}
+                      >
+                        {currentGreeting.replace(userSettings.full_name || "Boss", "").replace(", ", "").replace("!", "")}
+                      </h2>
+                    </div>
+                  )}
+
+                  {/* Chat Input - Integrated into home screen */}
+                  <div className="w-full max-w-xl px-2 md:px-0">
+                    {/* Input Container - Pill shaped */}
+                    <div className="relative bg-[#2A2826] rounded-3xl border border-[#3A3836]">
+                      <div className="flex items-start">
+                        {/* Left button - Plus */}
+                        <div className="flex items-center pl-3 pt-3">
+                          <div className="relative" ref={attachmentMenuRef}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setShowAttachmentMenu(!showAttachmentMenu)
+                              }}
+                              className={`p-2 rounded-full transition-all duration-200 ${showAttachmentMenu
+                                ? "bg-white/10 text-white"
+                                : "text-zinc-400 hover:text-white hover:bg-white/5"
+                                }`}
+                            >
+                              <Plus className="w-5 h-5" />
+                            </button>
+                            {showAttachmentMenu && (
+                              <div
+                                className="absolute bottom-full left-0 mb-3 bg-[#1A1918] rounded-2xl p-2 shadow-2xl border border-[#3A3836] min-w-[160px] z-[100]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const input = document.createElement('input')
+                                    input.type = 'file'
+                                    input.accept = '.pdf,.doc,.docx,.txt'
+                                    input.onchange = (ev) => handleFileUpload(ev as unknown as React.ChangeEvent<HTMLInputElement>, 'document')
+                                    input.click()
+                                    setShowAttachmentMenu(false)
+                                  }}
+                                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  <span>Document</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const input = document.createElement('input')
+                                    input.type = 'file'
+                                    input.accept = 'image/*'
+                                    input.onchange = (ev) => handleFileUpload(ev as unknown as React.ChangeEvent<HTMLInputElement>, 'image')
+                                    input.click()
+                                    setShowAttachmentMenu(false)
+                                  }}
+                                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all mt-1"
+                                >
+                                  <ImageIcon className="w-4 h-4" />
+                                  <span>Image</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Textarea field */}
+                        <div className="flex-1 relative min-h-[52px]">
+                          {!message.trim() && (
+                            <div className="absolute top-4 left-2 pointer-events-none">
+                              <span className="text-zinc-500 text-sm">
+                                <TypewriterPrompts
+                                  prompts={[
+                                    "Create a marketing plan",
+                                    "Spy on this competitor",
+                                    "Draft a business proposal",
+                                    "Plan my schedule for today",
+                                    "Write a social media post",
+                                  ]}
+                                  delay={50}
+                                  waitTime={2000}
+                                />
+                              </span>
+                            </div>
+                          )}
+                          <textarea
+                            ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && e.shiftKey && message.trim()) {
+                                e.preventDefault()
+                                handleSendMessage()
+                              }
+                            }}
+                            className="w-full bg-transparent text-white text-sm py-4 px-2 focus:outline-none resize-none min-h-[52px] max-h-[150px] overflow-y-auto custom-scrollbar-dark"
+                            disabled={loading}
+                            rows={1}
+                            onInput={(e) => {
+                              const target = e.target as HTMLTextAreaElement
+                              target.style.height = 'auto'
+                              const newHeight = Math.min(target.scrollHeight, 150)
+                              target.style.height = newHeight + 'px'
+                            }}
+                          />
+                        </div>
+
+                        {/* Right button - Mic or Send */}
+                        <div className="pr-2 pt-2">
+                          {message.trim() ? (
+                            <Button
+                              onClick={handleSendMessage}
+                              disabled={loading}
+                              size="icon"
+                              className="w-10 h-10 rounded-full bg-[#C15F3C] hover:bg-[#D4714A] text-white transition-all"
+                            >
+                              <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                            </Button>
+                          ) : (
+                            <button
+                              onClick={handlePushToTalk}
+                              className={`p-2.5 rounded-full transition-all ${isPushToTalk
+                                ? "bg-red-500/20 text-red-400 animate-pulse"
+                                : "text-zinc-400 hover:text-white hover:bg-white/5"
+                                }`}
+                              title="Voice input"
+                            >
+                              <Mic className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {/* Fish Image */}
-                    <img
-                      src="/icon.png"
-                      alt="NemoAI"
-                      className={`w-full h-full object-contain transition-transform duration-300 ${orbAnimating || isPushToTalk ? 'scale-110' : 'scale-100'
-                        }`}
-                    />
-                  </button>
+                    </div>
 
-                  <p className="text-sm text-white/50 text-center">
-                    {isPushToTalk ? "Tap again to send" : "Tap to speak"}
+                  </div>
+                </div>
+
+                {/* Disclaimer - Fixed at bottom */}
+                <div className="absolute bottom-4 left-0 right-0 text-center">
+                  <p className="text-xs text-zinc-500">
+                    Nemo AI can make mistakes. Please double-check responses.
                   </p>
                 </div>
               </div>
@@ -2536,6 +2831,16 @@ export default function NemoAIDashboard() {
                               <div className="h-3 w-32 bg-white/10 rounded animate-pulse" />
                               <div className="h-3 w-full max-w-[280px] bg-white/10 rounded animate-pulse" />
                               <div className="h-3 w-full max-w-[200px] bg-white/10 rounded animate-pulse" />
+                              {/* Processing text and timer */}
+                              <div className="flex items-center gap-2 mt-3 text-xs text-zinc-500">
+                                <span>{loadingText}</span>
+                                <span className="inline-flex">
+                                  <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                                  <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                                  <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                                </span>
+                                <span className="text-zinc-600 ml-1">{loadingElapsedTime}s</span>
+                              </div>
                             </div>
                           ) : (
                             <div className="whitespace-pre-wrap">{renderMessageContent(msg.content)}</div>
@@ -2557,6 +2862,16 @@ export default function NemoAIDashboard() {
                           <div className="h-3 w-full max-w-[400px] bg-white/10 rounded animate-pulse" />
                           <div className="h-3 w-full max-w-[300px] bg-white/10 rounded animate-pulse" />
                         </div>
+                        {/* Processing text and timer */}
+                        <div className="flex items-center gap-2 mt-4 text-xs text-zinc-500">
+                          <span>{loadingText}</span>
+                          <span className="inline-flex">
+                            <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                            <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                            <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                          </span>
+                          <span className="text-zinc-600 ml-1">{loadingElapsedTime}s</span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -2570,7 +2885,7 @@ export default function NemoAIDashboard() {
               <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header Section - Improved typography hierarchy */}
                 <div className="space-y-2 mb-8">
-                  <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">Task Management</h1>
+                  <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-lettering">Task Management</h1>
                   <p className="text-base text-zinc-400">Organize and track your work efficiently</p>
                 </div>
 
@@ -3137,7 +3452,7 @@ export default function NemoAIDashboard() {
             <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark">
               <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ideas Collection</h1>
+                  <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-lettering">Idea Collection</h1>
                   <Button
                     onClick={() => setShowNewIdeaForm(true)}
                     className="bg-[#2A2826] hover:bg-[#3A3836] border border-[#3A3836]"
@@ -3507,7 +3822,7 @@ export default function NemoAIDashboard() {
             <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar-dark">
               <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-2xl md:text-3xl font-bold">Market Intelligence</h1>
+                  <h1 className="text-4xl md:text-5xl font-bold font-lettering">Market Intelligence</h1>
                   {/* Refresh Button Moved to Modal */}
                 </div>
 
@@ -3790,7 +4105,7 @@ export default function NemoAIDashboard() {
               <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white">Contacts</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold text-white font-lettering">Customer Relations</h1>
                     <p className="text-sm text-white/50 mt-1">Manage your business contacts and relationships</p>
                   </div>
                   <Button
@@ -4086,245 +4401,128 @@ export default function NemoAIDashboard() {
           )}
         </div>
 
-        {/* Quick Prompts - Changed to horizontal slider with rectangle cards */}
-        {
-          activeModule === "home" && promptCards.length > 0 && (
-            <div className="px-2 md:px-3 pb-2 pt-2 bg-[#1C1917]">
-              <div className="max-w-3xl mx-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <button
-                    onClick={() => setShowQuickPrompts(!showQuickPrompts)}
-                    className="flex items-center gap-2 text-sm font-semibold text-white hover:text-white/90 transition-colors"
-                  >
-                    <span className="mx-[11px]">Quick Prompts</span>
-                    {showQuickPrompts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
-                  {showQuickPrompts && (
-                    <button
-                      onClick={() => setIsEditingPrompts(!isEditingPrompts)}
-                      className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-[#2A2826] flex items-center gap-1.5"
-                      title="Edit Quick Prompts"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      <span>Edit</span>
-                    </button>
-                  )}
-                </div>
-                {showQuickPrompts && (
-                  <div className="relative overflow-x-auto scrollbar-hide py-3">
-                    <div className="flex gap-3 min-w-max px-2">
-                      {promptCards.map((card) => {
-                        return (
-                          <Card
-                            key={card.id}
-                            className={`relative group transition-all duration-300 rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] w-auto border
-                              ${isEditingPrompts
-                                ? "bg-white/[0.08] border-white/20 px-4 py-3"
-                                : "bg-white/[0.03] hover:bg-white/[0.08] border-white/[0.1] hover:border-white/[0.2] px-5 py-2.5"
-                              } cursor-pointer select-none`}
-                          >
-                            {editingCardId === card.id ? (
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  value={editText}
-                                  onChange={(e) => setEditText(e.target.value)}
-                                  onKeyPress={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault()
-                                      saveEditCard(card.id)
-                                    }
-                                  }}
-                                  className="h-7 text-sm bg-white/10 border-white/20 text-white min-w-[120px]"
-                                  autoFocus
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => saveEditCard(card.id)}
-                                  className="h-7 w-7 p-0 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => !isEditingPrompts && handlePromptCardClick(card.text)}
-                                className={`w-full flex items-center text-sm font-medium transition-colors whitespace-nowrap
-                                  ${isEditingPrompts ? "text-white/50 pr-8" : "text-zinc-200 hover:text-white"}`}
-                              >
-                                {card.text}
-                              </button>
-                            )}
-                            {isEditingPrompts && editingCardId !== card.id && (
-                              <div className="absolute -top-2 -right-2 flex gap-1 z-10 scale-90">
-                                {/* Only show Sparkles/Icon picker if really needed to save space, otherwise keeping consistent */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    startEditCard(card)
-                                  }}
-                                  className="w-6 h-6 bg-[#2A2826] rounded-full flex items-center justify-center hover:bg-[#3A3836] border border-white/20 shadow-lg transition-transform hover:scale-110"
-                                >
-                                  <Edit2 className="w-3 h-3 text-white/70" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    removePromptCard(card.id)
-                                  }}
-                                  className="w-6 h-6 bg-[#2A2826] rounded-full flex items-center justify-center hover:bg-red-900/50 border border-white/20 shadow-lg transition-transform hover:scale-110"
-                                >
-                                  <X className="w-3 h-3 text-red-400" />
-                                </button>
-                              </div>
-                            )}
-                          </Card>
-                        )
-                      })}
-                      {isEditingPrompts && (
-                        <Button
-                          onClick={addPromptCard}
-                          variant="outline"
-                          className="h-auto min-h-[44px] min-w-[80px] border-dashed border-white/20 hover:border-white/40 bg-white/[0.02] hover:bg-white/[0.05] text-zinc-400 hover:text-white rounded-xl transition-all duration-300 flex items-center justify-center gap-2 px-4"
+        {/* Chat Input - Only show on home module when there are messages */}
+        {activeModule === "home" && messages.length > 0 && (
+          <div className="bg-[#1C1917] px-4 md:px-6 pb-4 pt-2">
+            <div className="max-w-3xl mx-auto">
+              {/* Input Container - Pill shaped */}
+              <div className="relative bg-[#2A2826] rounded-3xl border border-[#3A3836]">
+                <div className="flex items-start">
+                  {/* Left button - Plus only */}
+                  <div className="flex items-center pl-3 pt-3">
+                    <div className="relative" ref={attachmentMenuRef}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowAttachmentMenu(!showAttachmentMenu)
+                        }}
+                        className={`p-2 rounded-full transition-all duration-200 ${showAttachmentMenu
+                          ? "bg-white/10 text-white"
+                          : "text-zinc-400 hover:text-white hover:bg-white/5"
+                          }`}
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                      {showAttachmentMenu && (
+                        <div
+                          className="absolute bottom-full left-0 mb-3 bg-[#1A1918] rounded-2xl p-2 shadow-2xl border border-[#3A3836] min-w-[160px] z-[100]"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Plus className="w-4 h-4" />
-                          <span className="text-sm font-medium">Add</span>
-                        </Button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const input = document.createElement('input')
+                              input.type = 'file'
+                              input.accept = '.pdf,.doc,.docx,.txt'
+                              input.onchange = (ev) => handleFileUpload(ev as unknown as React.ChangeEvent<HTMLInputElement>, 'document')
+                              input.click()
+                              setShowAttachmentMenu(false)
+                            }}
+                            className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>Document</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const input = document.createElement('input')
+                              input.type = 'file'
+                              input.accept = 'image/*'
+                              input.onchange = (ev) => handleFileUpload(ev as unknown as React.ChangeEvent<HTMLInputElement>, 'image')
+                              input.click()
+                              setShowAttachmentMenu(false)
+                            }}
+                            className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all mt-1"
+                          >
+                            <ImageIcon className="w-4 h-4" />
+                            <span>Image</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          )
-        }
 
-        {
-          showIconPicker && iconPickerCardId && (
-            <div
-              className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
-              onClick={() => {
-                setShowIconPicker(false)
-                setIconPickerCardId(null)
-              }}
-            >
-              <div
-                className="bg-[#1A1918] border border-[#2A2826] rounded-2xl p-5 max-w-sm w-full"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="text-sm font-semibold mb-3 text-white">Choose Icon</h3>
-                <div className="grid grid-cols-5 gap-2">
-                  {availableIcons.map(({ name, icon: Icon }) => (
-                    <button
-                      key={name}
-                      onClick={() => updateCardIcon(iconPickerCardId, name)}
-                      className="p-2.5 rounded-xl bg-[#2A2826] hover:bg-[#3A3836] transition-all duration-200 flex items-center justify-center border border-[#3A3836]"
-                    >
-                      <Icon className="w-4 h-4 text-zinc-400" />
-                    </button>
-                  ))}
+                  {/* Textarea field with cycling placeholder - Enter for new line, Shift+Enter to send */}
+                  <div className="flex-1 relative min-h-[52px]">
+                    <textarea
+                      placeholder="Reply .."
+                      ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        // Shift+Enter to send, Enter for new line
+                        if (e.key === "Enter" && e.shiftKey && message.trim()) {
+                          e.preventDefault()
+                          handleSendMessage()
+                        }
+                      }}
+                      className="w-full bg-transparent text-white text-sm py-4 px-2 focus:outline-none resize-none min-h-[52px] max-h-[150px] overflow-y-auto custom-scrollbar-dark placeholder:text-zinc-500"
+                      disabled={loading}
+                      rows={1}
+                      onInput={(e) => {
+                        const target = e.target as HTMLTextAreaElement
+                        target.style.height = 'auto'
+                        const newHeight = Math.min(target.scrollHeight, 150)
+                        target.style.height = newHeight + 'px'
+                      }}
+                    />
+                  </div>
+
+                  {/* Right button - Mic or Send */}
+                  <div className="pr-2 pt-2">
+                    {message.trim() ? (
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={loading}
+                        size="icon"
+                        className="w-10 h-10 rounded-full bg-[#C15F3C] hover:bg-[#D4714A] text-white transition-all"
+                      >
+                        <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
+                      </Button>
+                    ) : (
+                      <button
+                        onClick={handlePushToTalk}
+                        className={`p-2.5 rounded-full transition-all ${isPushToTalk
+                          ? "bg-red-500/20 text-red-400 animate-pulse"
+                          : "text-zinc-400 hover:text-white hover:bg-white/5"
+                          }`}
+                        title="Voice input"
+                      >
+                        <Mic className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowIconPicker(false)
-                    setIconPickerCardId(null)
-                  }}
-                  className="mt-3 w-full py-2 bg-[#2A2826] hover:bg-[#3A3836] rounded-xl transition-colors text-xs text-zinc-400 border border-[#3A3836]"
-                >
-                  Close
-                </button>
               </div>
-            </div>
-          )
-        }
 
-        {/* Chat Input - Fixed for mobile zoom issue */}
-        <div className="border-t border-[#2A2826] bg-[#1A1918] p-3 md:p-4">
-          <div className="flex items-center gap-2 [&_input]:text-xs [&_input]:leading-tight">
-            {/* Input with Mic inside */}
-            <div className="flex-1 relative min-w-0">
-              <Textarea
-                ref={inputRef}
-                placeholder="Ask anything..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20 focus:ring-1 focus:ring-white/20 min-h-[40px] resize-none py-3 pr-10"
-                style={{ fontSize: "12px", lineHeight: "1.2" }}
-                disabled={loading}
-                rows={1}
-              />
-              {/* Mic inside input - only show when message is empty */}
-              {!message.trim() && (
-                <button
-                  onClick={handlePushToTalk}
-                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-all ${isPushToTalk
-                    ? "bg-red-500/20 text-red-400 animate-pulse"
-                    : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  title="Voice input"
-                >
-                  <Mic className="w-4 h-4" />
-                </button>
-              )}
+              {/* Disclaimer */}
+              <p className="text-center text-xs text-zinc-500 mt-3">
+                Nemo AI can make mistakes. Please double-check responses.
+              </p>
             </div>
-
-            <div className="relative" ref={attachmentMenuRef}>
-              <button
-                onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`p-1.5 rounded-xl transition-all duration-200 ${showAttachmentMenu
-                  ? "bg-white/20 text-white rotate-45"
-                  : "hover:bg-white/[0.1] text-zinc-500 hover:text-zinc-300"
-                  }`}
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              {showAttachmentMenu && (
-                <div className="absolute bottom-full right-0 mb-3 bg-[#1A1918] rounded-2xl p-2 shadow-2xl border border-[#2A2826] min-w-[160px] animate-in fade-in zoom-in-95 duration-200">
-                  <button
-                    onClick={() => {
-                      const input = document.createElement('input')
-                      input.type = 'file'
-                      input.accept = '.pdf,.doc,.docx,.txt'
-                      input.onchange = (e) => handleFileUpload(e as unknown as React.ChangeEvent<HTMLInputElement>, 'document')
-                      input.click()
-                      setShowAttachmentMenu(false)
-                    }}
-                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all group"
-                  >
-                    <div className="p-1.5 bg-white/5 rounded-lg group-hover:bg-white/10 text-zinc-400 group-hover:text-white transition-colors">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <span>Document</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const input = document.createElement('input')
-                      input.type = 'file'
-                      input.accept = 'image/*'
-                      input.onchange = (e) => handleFileUpload(e as unknown as React.ChangeEvent<HTMLInputElement>, 'image')
-                      input.click()
-                      setShowAttachmentMenu(false)
-                    }}
-                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all group mt-1"
-                  >
-                    <div className="p-1.5 bg-white/5 rounded-lg group-hover:bg-white/10 text-zinc-400 group-hover:text-white transition-colors">
-                      <ImageIcon className="w-4 h-4" />
-                    </div>
-                    <span>Image</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <Button
-              onClick={handleSendMessage}
-              disabled={!message.trim() || loading}
-              size="icon"
-              className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-[#C15F3C] hover:bg-[#D4714A] disabled:bg-[#C15F3C]/50 text-white shadow-lg hover:shadow-[#C15F3C]/20 hover:scale-105 active:scale-95 transition-all border-0 flex-shrink-0"
-            >
-              <ArrowUp className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
-            </Button>
           </div>
-        </div>
+        )}
       </div >
 
       {/* Mobile Sidebar Overlay */}

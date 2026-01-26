@@ -1,11 +1,17 @@
 import type React from "react"
 import type { Metadata } from "next"
+import localFont from "next/font/local"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
+
+const welcomeToLettering = localFont({
+  src: "../public/fonts/WelcomeToLettering.woff2",
+  variable: "--font-lettering",
+})
 
 export const metadata: Metadata = {
   title: "NemoAI - Your Business Operating System",
@@ -39,7 +45,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`font-sans antialiased min-h-screen`} suppressHydrationWarning>
+      <body className={`font-sans antialiased min-h-screen ${welcomeToLettering.variable}`} suppressHydrationWarning>
         {children}
         <Analytics />
       </body>
