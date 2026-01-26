@@ -486,7 +486,7 @@ export default function NemoAIDashboard() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null)
   const [showNewTaskForm, setShowNewTaskForm] = useState(false)
-  const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "pending" | "in_progress" | "completed" | "archived">("all")
+  const [taskStatusFilter, setTaskStatusFilter] = useState<"pending" | "in_progress" | "completed" | "archived">("in_progress")
   const [taskMenuOpenId, setTaskMenuOpenId] = useState<string | null>(null)
   const [slidingTaskId, setSlidingTaskId] = useState<string | null>(null)
   const [slideOffset, setSlideOffset] = useState(0)
@@ -1290,13 +1290,13 @@ export default function NemoAIDashboard() {
         const errorCode = errorData.code || ''
 
         if (webhookResponse.status === 504 || errorCode === 'TIMEOUT') {
-          assistantContent = "Response took too long. The AI might be busy - please try again in a moment."
+          assistantContent = "Error: Response took too long. The AI might be busy - please try again in a moment."
         } else if (webhookResponse.status === 502 || errorCode === 'WEBHOOK_ERROR') {
-          assistantContent = "AI service is temporarily unavailable. Please try again shortly."
+          assistantContent = "Error: AI service is temporarily unavailable. Please try again shortly."
         } else if (webhookResponse.status === 401) {
-          assistantContent = "Session expired. Please refresh the page and log in again."
+          assistantContent = "Error: Session expired. Please refresh the page and log in again."
         } else {
-          assistantContent = "Something went wrong. Please try again."
+          assistantContent = "Error: Something went wrong. Please try again."
         }
       }
 
@@ -1318,7 +1318,7 @@ export default function NemoAIDashboard() {
       console.error("[v0] Webhook error:", error)
       const errorMsg: Message = {
         id: crypto.randomUUID(),
-        content: "Network error. Please check your connection and try again.",
+        content: "Error: Network error. Please check your connection and try again.",
         role: "assistant",
         created_at: new Date().toISOString(),
         thread_id: threadId,
@@ -1430,6 +1430,13 @@ export default function NemoAIDashboard() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'document' | 'image') => {
     const file = e.target.files?.[0]
     if (file) {
+      // 5MB Limit
+      const MAX_FILE_SIZE = 5 * 1024 * 1024
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum allowed size is 5MB.`)
+        return
+      }
+
       setUploadFile(file)
       setUploadType(type)
       setShowUploadModal(true)
@@ -1505,6 +1512,8 @@ export default function NemoAIDashboard() {
       setMessages(prev => [...prev, loadingMessage])
 
       // 4. Send to appropriate webhook
+      setLoading(true)
+      setLoadingElapsedTime(0)
       // Capture variables before closing modal
       const fileToUpload = uploadFile
       const typeToUpload = uploadType
@@ -1543,6 +1552,11 @@ export default function NemoAIDashboard() {
             image_url: fileUrl
           })
         })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `Upload failed with status ${response.status}`)
+        }
 
         const result = await response.json()
         console.log("[v0] Image webhook raw result:", JSON.stringify(result))
@@ -1639,6 +1653,11 @@ export default function NemoAIDashboard() {
           })
         })
 
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `Upload failed with status ${response.status}`)
+        }
+
         const result = await response.json()
         console.log("[v0] Document webhook result:", result)
 
@@ -1669,12 +1688,14 @@ export default function NemoAIDashboard() {
       // Replace skeleton with error message
       setMessages(prev => prev.map(msg =>
         msg.id === loadingMsgId
-          ? { ...msg, content: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`, isLoading: false }
+          ? { ...msg, content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`, isLoading: false }
           : msg
       ))
     } finally {
+      setLoading(false)
       setIsUploading(false)
-      // Modal closed at start
+      setUploadFile(null) // Ensure file is cleared so user can pick new one if needed, though modal flow handles this.
+      setUploadType(null)
     }
   }
 
@@ -2653,8 +2674,9 @@ export default function NemoAIDashboard() {
                   {isPushToTalk ? (
                     /* Listening State - Only show "I'm listening..." with animated dots */
                     <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
-                      <h2 className="text-4xl md:text-5xl font-light tracking-wide text-white font-lettering">
+                      <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white font-lettering">
                         I'm listening
+
                         <span className="inline-flex ml-1">
                           <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
                           <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
@@ -2672,7 +2694,7 @@ export default function NemoAIDashboard() {
                       />
                       {/* Rotating greeting text */}
                       <h2
-                        className={`text-5xl md:text-6xl font-light tracking-wide text-white transition-opacity duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
+                        className={`text-5xl md:text-6xl font-bold tracking-tight text-white transition-opacity duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
                           }`}
                       >
                         {currentGreeting.replace(userSettings.full_name || "Boss", "").replace(", ", "").replace("!", "")}
@@ -2852,19 +2874,19 @@ export default function NemoAIDashboard() {
                       className={`animate-slide-up ${msg.role === "user" ? "flex justify-end" : ""}`}
                     >
                       {msg.role === "user" ? (
-                        /* User message - rounded bubble (dynamic) */
-                        <div className="inline-block max-w-[85%] md:max-w-[70%] bg-[#2A2826] rounded-2xl px-4 py-3 text-sm text-white/90">
-                          {/* Attachment Preview */}
+                        /* User message - separate bubbles for attachment and text */
+                        <div className="flex flex-col items-end gap-2 max-w-[85%] md:max-w-[70%]">
+                          {/* Attachment Bubble */}
                           {msg.attachment && (
-                            <div className="mb-2">
+                            <div className="bg-[#2A2826] p-2 rounded-2xl inline-block border border-white/5">
                               {msg.attachment.type === 'image' ? (
                                 <img
                                   src={msg.attachment.url}
                                   alt={msg.attachment.filename}
-                                  className="w-[150px] h-[150px] object-cover rounded-lg border border-white/10"
+                                  className="max-w-full h-auto max-h-[200px] object-cover rounded-xl"
                                 />
                               ) : (
-                                <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/10">
+                                <div className="flex items-center gap-2 px-2 py-1">
                                   <FileText className="w-5 h-5 text-blue-400" />
                                   <span className="text-xs text-white/70 truncate max-w-[120px]">
                                     {msg.attachment.filename}
@@ -2873,7 +2895,13 @@ export default function NemoAIDashboard() {
                               )}
                             </div>
                           )}
-                          <div className="leading-relaxed whitespace-pre-wrap">{renderMessageContent(msg.content)}</div>
+
+                          {/* Text Bubble */}
+                          {msg.content && (
+                            <div className="bg-[#2A2826] rounded-2xl px-4 py-3 text-sm text-white/90 break-words whitespace-pre-wrap">
+                              {renderMessageContent(msg.content)}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         /* AI message - no bubble, just text like Claude */
@@ -2915,7 +2943,22 @@ export default function NemoAIDashboard() {
                               </div>
                             </div>
                           ) : (
-                            <div className="whitespace-pre-wrap">{renderMessageContent(msg.content)}</div>
+                            msg.content.startsWith("Error: ") ? (
+                              <div className="flex items-center gap-2 text-red-400">
+                                <span className="whitespace-pre-wrap">{msg.content}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 hover:bg-white/10"
+                                  onClick={() => window.location.reload()}
+                                  title="Reload Chat"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="whitespace-pre-wrap">{renderMessageContent(msg.content)}</div>
+                            )
                           )}
                           {msg.created_at && !msg.isLoading && (
                             <p className="text-[10px] text-white/30 mt-2 select-none">
@@ -2926,7 +2969,7 @@ export default function NemoAIDashboard() {
                       )}
                     </div>
                   ))}
-                  {loading && (
+                  {loading && !messages.some(m => m.isLoading) && (
                     <div className="animate-slide-up">
                       <div className="text-sm text-[#E8E6E3] leading-relaxed">
                         <div className="space-y-3">
@@ -3078,7 +3121,7 @@ export default function NemoAIDashboard() {
                 {/* Filter and Action Section - Improved visual hierarchy */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-white/[0.05] to-white/[0.02] rounded-xl border border-white/[0.08]">
                   <div className="flex flex-wrap gap-2">
-                    {(["all", "pending", "in_progress", "completed", "archived"] as const).map((status) => (
+                    {(["in_progress", "pending", "completed", "archived"] as const).map((status) => (
                       <button
                         key={status}
                         onClick={() => setTaskStatusFilter(status)}
@@ -3087,15 +3130,13 @@ export default function NemoAIDashboard() {
                           : "bg-[#2A2826] text-[#B1ADA1] hover:bg-[#3A3836] hover:text-white"
                           }`}
                       >
-                        {status === "all"
-                          ? "All Tasks"
-                          : status === "in_progress"
-                            ? "In Progress"
-                            : status === "pending"
-                              ? "Pending"
-                              : status === "archived"
-                                ? "Archive"
-                                : "Completed"}
+                        {status === "in_progress"
+                          ? "In Progress"
+                          : status === "pending"
+                            ? "Pending"
+                            : status === "archived"
+                              ? "Archive"
+                              : "Completed"}
                       </button>
                     ))}
                   </div>
@@ -3115,7 +3156,7 @@ export default function NemoAIDashboard() {
                   {filteredTasks.map((task) => (
                     <Card
                       key={task.id}
-                      className={`relative p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all duration-300 group overflow-hidden
+                      className={`relative p-4 md:p-6 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all duration-300 group
                         ${task.priority === "urgent" ? "border-l-4 border-l-[#C49E9E]" :
                           task.priority === "high" ? "border-l-4 border-l-[#C15F3C]" :
                             task.status === "completed" ? "border-l-4 border-l-[#8FB996]" :
@@ -3214,7 +3255,7 @@ export default function NemoAIDashboard() {
                               </div>
                             </div>
                             <div className="relative flex items-center gap-2">
-                              {task.status !== "completed" && (
+                              {task.status !== "completed" && task.status !== "archived" && (
                                 <button
                                   onClick={() => completeTask(task.id)}
                                   className="p-2.5 hover:bg-white/[0.1] rounded-lg transition-colors group"
@@ -3230,7 +3271,7 @@ export default function NemoAIDashboard() {
                                 <MoreVertical className="w-4 h-4 text-white/60 group-hover:text-white" />
                               </button>
                               {taskMenuOpenId === task.id && (
-                                <div className="absolute right-0 top-12 bg-[#1A1918] border border-[#2A2826] rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
+                                <div className="absolute right-0 top-12 bg-[#1A1918] border border-[#2A2826] rounded-xl shadow-xl z-[60] min-w-[160px]">
                                   <button
                                     onClick={() => {
                                       setEditingTaskId(task.id)
@@ -3252,7 +3293,7 @@ export default function NemoAIDashboard() {
                                     <CheckSquare className="w-4 h-4" />
                                     Archive
                                   </button>
-                                  {task.status !== "completed" && (
+                                  {task.status !== "completed" && task.status !== "archived" && (
                                     <button
                                       onClick={() => {
                                         completeTask(task.id)
@@ -3286,9 +3327,9 @@ export default function NemoAIDashboard() {
                           )}
                           {task.due_date && (
                             <p
-                              className={`text-xs ${new Date(task.due_date) < new Date() && task.status !== "completed" ? "text-red-400" : "text-white/50"}`}
+                              className={`text-xs ${new Date(task.due_date) < new Date() && task.status !== "completed" && task.status !== "archived" ? "text-red-400" : "text-white/50"}`}
                             >
-                              Due: {new Date(task.due_date).toLocaleDateString()}
+                              Due: {new Date(task.due_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })}
                             </p>
                           )}
                         </div>
@@ -3427,6 +3468,7 @@ export default function NemoAIDashboard() {
                       <form
                         onSubmit={(e) => {
                           e.preventDefault()
+                          e.stopPropagation() // Stop propagation
                           const formData = new FormData(e.currentTarget)
                           updateTask(editingTaskId, {
                             title: formData.get("title") as string,
@@ -4445,7 +4487,7 @@ export default function NemoAIDashboard() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-white truncate">{task.title}</p>
                               <p className="text-xs text-white/40 mt-1">
-                                {new Date(task.due_date || "").toLocaleDateString()}
+                                {new Date(task.due_date || "").toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })}
                               </p>
                             </div>
                             <span
@@ -5009,7 +5051,7 @@ export default function NemoAIDashboard() {
                     value={uploadMessage}
                     onChange={(e) => setUploadMessage(e.target.value)}
                     placeholder={uploadType === 'image' ? 'e.g., Write a caption for this photo' : 'e.g., Summarize this document'}
-                    className="w-full bg-[#2A2826] border border-[#3A3836] rounded-xl p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C15F3C]/50 resize-none"
+                    className="w-full bg-[#2A2826] border border-[#3A3836] rounded-xl p-3 text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C15F3C]/50 resize-none break-all whitespace-pre-wrap"
                     rows={3}
                   />
                 </div>
