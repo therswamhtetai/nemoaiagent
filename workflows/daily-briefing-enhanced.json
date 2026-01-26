@@ -125,10 +125,10 @@
     },
     {
       "parameters": {
-        "jsCode": "// Simulate caching mechanism\nconst cachedData = $input.all();\n\n// In a real implementation, this would check Redis/in-memory cache\n// For now, we'll just log and pass through\nconsole.log('Processing data with caching simulation');\n\n// Add timestamp for cache tracking\nconst processedItems = cachedData.map(item => ({\n  ...item.json,\n  cachedAt: new Date(),\n  cacheTTL: 300000 // 5 minutes in milliseconds\n}));\n\nreturn processedItems;"
+        "jsCode": "// Process user preferences\nconst items = $input.all();\n\n// Process each item to extract and normalize preferences\nconst processedItems = items.map(item => {\n  const userPrefs = item.json;\n  \n  // If user has preferences, process them\n  if (userPrefs && Array.isArray(userPrefs)) {\n    const prefsMap = {};\n    userPrefs.forEach(pref => {\n      if (pref.preference_key && pref.preference_value) {\n        prefsMap[pref.preference_key] = pref.preference_value;\n      }\n    });\n    \n    return {\n      ...item.json,\n      user_preferences: prefsMap\n    };\n  }\n  \n  // If no preferences, provide defaults\n  return {\n    ...item.json,\n    user_preferences: {}\n  };\n});\n\nreturn processedItems;"
       },
       "id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890",
-      "name": "Cache Simulation",
+      "name": "Process User Preferences",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
@@ -151,7 +151,20 @@
     },
     {
       "parameters": {
-        "prompt": "Create a personalized daily briefing for a user. Include:\n1. Task summary (overdue, today, upcoming)\n2. Statistics (total, completed, overdue)\n3. Personalized greeting based on user preferences\n\nUser Preferences: {{ $item.json.user_preferences }}\n\nTasks: {{ $item.json.tasks }}",
+        "jsCode": "// Filter content based on user preferences\nconst items = $input.all();\n\nconst filteredItems = items.map(item => {\n  const userData = item.json;\n  const prefs = userData.user_preferences || {};\n  \n  // Create filtered task data based on preferences\n  const filteredTasks = {\n    overdue: userData.tasks.overdue || [],\n    today: userData.tasks.today || [],\n    upcoming: userData.tasks.upcoming || []\n  };\n  \n  // Apply content filtering based on preferences\n  if (prefs.content_sections) {\n    // Filter by specific content sections if user has preferences\n    const sections = prefs.content_sections.split(',').map(s => s.trim());\n    \n    if (!sections.includes('overdue')) {\n      filteredTasks.overdue = [];\n    }\n    if (!sections.includes('today')) {\n      filteredTasks.today = [];\n    }\n    if (!sections.includes('upcoming')) {\n      filteredTasks.upcoming = [];\n    }\n  }\n  \n  // Adjust briefing length based on preference\n  let maxTasks = 5; // Default\n  if (prefs.briefing_style === 'concise') {\n    maxTasks = 3;\n  } else if (prefs.briefing_style === 'detailed') {\n    maxTasks = 10;\n  }\n  \n  // Limit task counts if needed\n  filteredTasks.overdue = filteredTasks.overdue.slice(0, maxTasks);\n  filteredTasks.today = filteredTasks.today.slice(0, maxTasks);\n  filteredTasks.upcoming = filteredTasks.upcoming.slice(0, maxTasks);\n  \n  // Adjust tone based on preference\n  const adjustedStats = {\n    ...userData.stats,\n    maxTasks: maxTasks\n  };\n  \n  return {\n    ...userData,\n    tasks: filteredTasks,\n    stats: adjustedStats\n  };\n});\n\nreturn filteredItems;"
+      },
+      "id": "c5d6e7f8-a9b0-c1d2-e3f4-a5b6c7d8e9f0",
+      "name": "Filter Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "You are an AI assistant creating a personalized daily briefing for a user.\n\nINSTRUCTIONS:\n1. Use the user's preferences to tailor the briefing\n2. Maintain ZERO MARKDOWN policy in all outputs\n3. Keep responses concise yet informative\n\nUSER CONTEXT:\n- User ID: {{ $json.id }}\n- Username: {{ $json.username }}\n- Full Name: {{ $json.full_name }}\n- Email: {{ $json.email }}\n\nUSER PREFERENCES:\n{{#if $json.user_preferences.briefing_style}}\n  - Briefing Style: {{ $json.user_preferences.briefing_style }}\n{{/if}}\n{{#if $json.user_preferences.language_preference}}\n  - Language: {{ $json.user_preferences.language_preference }}\n{{/if}}\n{{#if $json.user_preferences.content_sections}}\n  - Content Sections: {{ $json.user_preferences.content_sections }}\n{{/if}}\n{{#if $json.user_preferences.notification_timing}}\n  - Preferred Timing: {{ $json.user_preferences.notification_timing }}\n{{/if}}\n\nTASK DATA:\n{{#if $json.tasks.overdue.length}}\nOVERDUE TASKS ({{ $json.tasks.overdue.length }}):\n{{#each $json.tasks.overdue}}\n- {{ title }} (Priority: {{ priority }})\n{{/each}}\n{{/if}}\n\nTODAY'S TASKS ({{ $json.tasks.today.length }}):\n{{#each $json.tasks.today}}\n- {{ title }} (Priority: {{ priority }})\n{{/each}}\n\nUPCOMING TASKS ({{ $json.tasks.upcoming.length }}):\n{{#each $json.tasks.upcoming}}\n- {{ title }} (Due: {{ due_date }})\n{{/each}}\n\nSTATISTICS:\n- Total Tasks: {{ $json.stats.total }}\n- Completed Today: {{ $json.stats.completed }}\n- Overdue Tasks: {{ $json.stats.overdue }}\n- Today's Tasks: {{ $json.stats.today }}\n\nFORMAT INSTRUCTIONS:\n1. Begin with a personalized greeting using the user's full name\n2. Provide a concise summary of today's priorities\n3. Mention any important overdue tasks\n4. End with encouraging words based on the user's preferences\n\nLANGUAGE SPECIFIC RULES:\n{{#if $json.user_preferences.language_preference}}\n- Respond in {{ $json.user_preferences.language_preference }}\n{{else}}\n- Respond in English unless otherwise specified\n{{/if}}",
         "model": "gemini-3-flash-preview",
         "temperature": 0.7,
         "maxOutputTokens": 1000
@@ -161,7 +174,7 @@
       "type": "@czlonkowski/n8n-nodes-gemini@latest",
       "typeVersion": 1,
       "position": [
-        1560,
+        1780,
         300
       ],
       "credentials": {
@@ -185,7 +198,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1780,
+        2000,
         300
       ]
     },
@@ -198,7 +211,7 @@
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
       "position": [
-        1900,
+        2120,
         300
       ]
     }
@@ -241,14 +254,14 @@
       "main": [
         [
           {
-            "node": "Cache Simulation",
+            "node": "Process User Preferences",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Cache Simulation": {
+    "Process User Preferences": {
       "main": [
         [
           {
@@ -260,6 +273,17 @@
       ]
     },
     "Categorize Tasks": {
+      "main": [
+        [
+          {
+            "node": "Filter Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Content": {
       "main": [
         [
           {
