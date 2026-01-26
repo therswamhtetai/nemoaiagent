@@ -24,7 +24,9 @@
 - Integrated with Web API Router for chat access
 - Scalable to unlimited users without workflow changes
 
-**Plans:** 5 plans in 3 waves
+**Plans:** 1 active plan (analysis), others TBD
+
+- [ ] 01-daily-briefing-v2/01-analysis-PLAN.md — Analyze and Architect V2
 
 ### Plan Structure
 
