@@ -555,6 +555,7 @@ export default function NemoAIDashboard() {
   const [currentGreeting, setCurrentGreeting] = useState("")
   const [greetingTimestamp, setGreetingTimestamp] = useState(0)
   const [greetingReady, setGreetingReady] = useState(false)
+  const [isInputFocused, setIsInputFocused] = useState(false)
 
   // Helper to render message content with markdown-like formatting
   const renderMessageContent = (content: string) => {
@@ -2605,7 +2606,7 @@ export default function NemoAIDashboard() {
 
                   {isPushToTalk ? (
                     /* Listening State - Only show "I'm listening..." with animated dots */
-                    <div className="text-center mb-4 md:mb-6 h-[280px] md:h-[360px] flex flex-col items-center justify-end">
+                    <div className={`text-center mb-4 md:mb-6 flex flex-col items-center justify-end transition-all duration-300 ${isInputFocused ? 'h-[120px] md:h-[360px]' : 'h-[280px] md:h-[360px]'}`}>
                       <h2 className="text-4xl md:text-5xl font-light tracking-wide text-white font-lettering">
                         I'm listening
                         <span className="inline-flex ml-1">
@@ -2617,16 +2618,16 @@ export default function NemoAIDashboard() {
                     </div>
                   ) : (
                     /* Normal State - Rotating greeting, username below */
-                    <div className="text-center mb-4 md:mb-6 h-[280px] md:h-[360px] flex flex-col items-center justify-end">
+                    <div className={`text-center mb-4 md:mb-6 flex flex-col items-center justify-end transition-all duration-300 ${isInputFocused ? 'h-[120px] md:h-[360px]' : 'h-[280px] md:h-[360px]'}`}>
                       <img
                         src="/icon.png"
                         alt="NemoAI"
-                        className={`w-36 h-36 md:w-44 md:h-44 object-contain mb-4 transition-opacity duration-500 ${greetingReady ? 'opacity-100' : 'opacity-0'}`}
+                        className={`object-contain transition-all duration-300 ${greetingReady ? 'opacity-100' : 'opacity-0'} ${isInputFocused ? 'w-16 h-16 mb-1' : 'w-36 h-36 md:w-44 md:h-44 mb-4'}`}
                       />
                       {/* Rotating greeting text */}
                       <h2
-                        className={`text-5xl md:text-6xl font-light tracking-wide text-white transition-opacity duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
-                          }`}
+                        className={`font-light tracking-wide text-white transition-all duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
+                          } ${isInputFocused ? 'text-2xl md:text-6xl' : 'text-5xl md:text-6xl'}`}
                       >
                         {currentGreeting.replace(userSettings.full_name || "Boss", "").replace(", ", "").replace("!", "")}
                       </h2>
@@ -2716,6 +2717,8 @@ export default function NemoAIDashboard() {
                             ref={inputRef as React.RefObject<HTMLTextAreaElement>}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
+                            onFocus={() => setIsInputFocused(true)}
+                            onBlur={() => setIsInputFocused(false)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && e.shiftKey && message.trim()) {
                                 e.preventDefault()
@@ -5509,16 +5512,19 @@ export default function NemoAIDashboard() {
                   </div>
                 )}
 
-                {/* Slide 6: Nemo AI Mascot */}
+                {/* Slide 6: Home Screen UI Update */}
                 {whatsNewSlide === 5 && (
                   <div className="space-y-3 animate-fade-in">
-                    <h3 className="text-base font-medium text-white">🐟 Meet Nemo!</h3>
+                    <h3 className="text-base font-medium text-white">✨ Home Screen UI Update</h3>
                     <p className="text-sm text-white/60 leading-relaxed">
-                      Say hello to our new mascot! The animated fish logo now greets you on the home screen.
+                      We've refreshed the home screen experience for better usability and aesthetics.
                     </p>
-                    <div className="p-3 bg-white/5 rounded-lg border border-white/10 text-center">
-                      <img src="/icon.png" alt="Nemo" className="w-16 h-16 mx-auto mb-2" />
-                      <p className="text-xs text-white/40">Tap to speak - watch for bubbles!</p>
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                      <ul className="text-xs text-white/60 space-y-1.5 list-disc pl-4">
+                        <li>Fixed Chatbox Position (No jumping!)</li>
+                        <li>Dynamic Greeting & Logo Animation</li>
+                        <li>Cleaner Mobile Layout</li>
+                      </ul>
                     </div>
                   </div>
                 )}
