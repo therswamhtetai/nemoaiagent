@@ -1230,9 +1230,9 @@ export default function NemoAIDashboard() {
       setThreads((prev) => [newThread, ...prev])
     }
 
-    try {
-      console.log("[v0] Calling webhook with thread_id:", threadId)
-      const webhookResponse = await fetch("/api/chat", {
+    // Retry logic helper
+    const sendWithRetry = async (retries = 2): Promise<Response> => {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1240,14 +1240,28 @@ export default function NemoAIDashboard() {
         body: JSON.stringify({
           message: userMessage,
           user_id: userId,
-          userId: userId, // CamelCase alias
+          userId: userId,
           thread_id: threadId,
-          threadId: threadId, // CamelCase alias
-          sessionId: threadId, // Critical for N8N Memory isolation
-          chatId: threadId, // Common alias
+          threadId: threadId,
+          sessionId: threadId,
+          chatId: threadId,
           name: userSettings.full_name || "Boss",
         }),
       })
+
+      // Retry on 502/503/504 errors
+      if (!response.ok && retries > 0 && [502, 503, 504].includes(response.status)) {
+        console.log(`[v0] Retrying... (${retries} attempts left)`)
+        await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds before retry
+        return sendWithRetry(retries - 1)
+      }
+
+      return response
+    }
+
+    try {
+      console.log("[v0] Calling webhook with thread_id:", threadId)
+      const webhookResponse = await sendWithRetry(2)
 
       console.log("[v0] Webhook status:", webhookResponse.status)
 
@@ -1270,6 +1284,20 @@ export default function NemoAIDashboard() {
             assistantContent = responseText
           }
         }
+      } else {
+        // Handle specific error codes
+        const errorData = await webhookResponse.json().catch(() => ({}))
+        const errorCode = errorData.code || ''
+
+        if (webhookResponse.status === 504 || errorCode === 'TIMEOUT') {
+          assistantContent = "Response took too long. The AI might be busy - please try again in a moment."
+        } else if (webhookResponse.status === 502 || errorCode === 'WEBHOOK_ERROR') {
+          assistantContent = "AI service is temporarily unavailable. Please try again shortly."
+        } else if (webhookResponse.status === 401) {
+          assistantContent = "Session expired. Please refresh the page and log in again."
+        } else {
+          assistantContent = "Something went wrong. Please try again."
+        }
       }
 
       const tempAssistantMsg: Message = {
@@ -1285,12 +1313,12 @@ export default function NemoAIDashboard() {
       setTimeout(() => {
         loadConversations(threadId)
         loadThreads()
-      }, 1000) // Small delay to allow backend to process
+      }, 1000)
     } catch (error) {
       console.error("[v0] Webhook error:", error)
       const errorMsg: Message = {
         id: crypto.randomUUID(),
-        content: "Sorry, I encountered an error. Please try again.",
+        content: "Network error. Please check your connection and try again.",
         role: "assistant",
         created_at: new Date().toISOString(),
         thread_id: threadId,
@@ -1939,8 +1967,12 @@ export default function NemoAIDashboard() {
   }
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    if (!userId) {
+      console.error("[v0] Cannot update task: No userId")
+      return
+    }
     try {
-      await API.UpdateTask(taskId, updates)
+      await API.UpdateTask(taskId, updates, userId)
       await loadTasks()
       setEditingTaskId(null)
       setEditingTask(null)
@@ -1951,10 +1983,14 @@ export default function NemoAIDashboard() {
   }
 
   const deleteTask = async (taskId: string) => {
+    if (!userId) {
+      console.error("[v0] Cannot delete task: No userId")
+      return
+    }
     if (!confirm("Delete this task?")) return
 
     try {
-      await API.DeleteTask(taskId)
+      await API.DeleteTask(taskId, userId)
       await loadTasks()
       console.log("[v0] Task deleted:", taskId)
     } catch (err) {
@@ -2024,10 +2060,14 @@ export default function NemoAIDashboard() {
   }
 
   const deleteIdea = async (ideaId: string) => {
+    if (!userId) {
+      console.error("[v0] Cannot delete idea: No userId")
+      return
+    }
     if (!confirm("Delete this idea?")) return
 
     try {
-      await API.DeleteIdea(ideaId)
+      await API.DeleteIdea(ideaId, userId)
       await loadIdeas()
       console.log("[v0] Idea deleted:", ideaId)
     } catch (err) {
@@ -2046,8 +2086,12 @@ export default function NemoAIDashboard() {
 
   // Added updateIdea function
   const updateIdea = async (ideaId: string, updates: Partial<Idea>) => {
+    if (!userId) {
+      console.error("[v0] Cannot update idea: No userId")
+      return
+    }
     try {
-      await API.UpdateIdea(ideaId, updates)
+      await API.UpdateIdea(ideaId, updates, userId)
       await loadIdeas()
       console.log("[v0] Idea updated:", ideaId)
     } catch (err) {

@@ -152,15 +152,23 @@ export const CreateTask = async (task: any): Promise<void> => {
     console.log("[v0-debug] API.CreateTask - Success:", data)
 }
 
-export const UpdateTask = async (id: string, updates: any): Promise<void> => {
+export const UpdateTask = async (id: string, updates: any, userId?: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('tasks').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
+    let query = supabase.from('tasks').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
+    if (userId) {
+        query = query.eq('user_id', userId)
+    }
+    const { error } = await query
     if (error) throw error
 }
 
-export const DeleteTask = async (id: string): Promise<void> => {
+export const DeleteTask = async (id: string, userId?: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('tasks').delete().eq('id', id)
+    let query = supabase.from('tasks').delete().eq('id', id)
+    if (userId) {
+        query = query.eq('user_id', userId)
+    }
+    const { error } = await query
     if (error) throw error
 }
 
@@ -184,15 +192,23 @@ export const CreateIdea = async (idea: any): Promise<void> => {
 // Wait, I saw deleteIdea and updateIdea. I didn't see createIdea in the snippet.
 // I will assume standard insert.
 
-export const UpdateIdea = async (id: string, updates: any): Promise<void> => {
+export const UpdateIdea = async (id: string, updates: any, userId?: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('ideas').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
+    let query = supabase.from('ideas').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
+    if (userId) {
+        query = query.eq('user_id', userId)
+    }
+    const { error } = await query
     if (error) throw error
 }
 
-export const DeleteIdea = async (id: string): Promise<void> => {
+export const DeleteIdea = async (id: string, userId?: string): Promise<void> => {
     const supabase = createBrowserClient()
-    const { error } = await supabase.from('ideas').delete().eq('id', id)
+    let query = supabase.from('ideas').delete().eq('id', id)
+    if (userId) {
+        query = query.eq('user_id', userId)
+    }
+    const { error } = await query
     if (error) throw error
 }
 
