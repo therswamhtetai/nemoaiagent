@@ -2599,8 +2599,8 @@ export default function NemoAIDashboard() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeModule === "home" ? (
             messages.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center md:justify-start px-5 md:px-6 py-4 overflow-y-auto bg-[#1C1917] relative">
-                <div className="w-full max-w-2xl mx-auto flex flex-col items-center md:pt-12">
+              <div className="flex-1 flex flex-col items-center justify-start px-5 md:px-6 py-4 overflow-y-auto bg-[#1C1917] relative">
+                <div className="w-full max-w-2xl mx-auto flex flex-col items-center pt-20 md:pt-12">
                   {/* Logo at top center - much bigger and higher */}
 
 
@@ -2767,7 +2767,7 @@ export default function NemoAIDashboard() {
 
                 {/* Disclaimer - Fixed at bottom */}
                 <div className="absolute bottom-4 left-0 right-0 text-center">
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-[10px] text-zinc-500/80">
                     Nemo AI can make mistakes. Please double-check responses.
                   </p>
                 </div>
@@ -4518,7 +4518,7 @@ export default function NemoAIDashboard() {
               </div>
 
               {/* Disclaimer */}
-              <p className="text-center text-xs text-zinc-500 mt-3">
+              <p className="text-center text-[10px] text-zinc-500/80 mt-3">
                 Nemo AI can make mistakes. Please double-check responses.
               </p>
             </div>
