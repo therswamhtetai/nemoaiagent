@@ -1,0 +1,1 @@
+npx supergateway --streamableHttp https://admin.orcadigital.online/mcp-server/http --header "authorization:Bearer MCP_TOKEN_HERE"

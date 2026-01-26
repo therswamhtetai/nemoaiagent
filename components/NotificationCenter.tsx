@@ -60,6 +60,8 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
   const [pushStatus, setPushStatus] = useState<string>('')
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  // New state for expanded processing
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   // Check device and push support
   useEffect(() => {
@@ -222,6 +224,14 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
 
   // Mark as read
   const markAsRead = async (notificationId: string) => {
+    // Optimistic update
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === notificationId ? { ...n, is_read: true } : n
+      )
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
+
     try {
       await fetch('/api/notifications/read', {
         method: 'POST',
@@ -231,14 +241,20 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
           notification_id: notificationId
         })
       })
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId ? { ...n, is_read: true } : n
-        )
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
     } catch (error) {
       console.error('Error marking as read:', error)
+    }
+  }
+
+  // Toggle notification expansion
+  const toggleNotification = (id: string, isRead: boolean) => {
+    if (expandedId === id) {
+      setExpandedId(null)
+    } else {
+      setExpandedId(id)
+      if (!isRead) {
+        markAsRead(id)
+      }
     }
   }
 
@@ -293,144 +309,141 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#1C1917]">
+    <div className="flex flex-col h-full bg-[#1C1917]/90 backdrop-blur-xl border-l border-white/10 shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-white/80" />
-          <h2 className="text-lg font-medium text-white">Notifications</h2>
-          {unreadCount > 0 && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-orange-500 text-white rounded-full">
-              {unreadCount}
-            </span>
-          )}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 bg-white/5">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Bell className="w-5 h-5 text-white/90" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-[#1C1917]" />
+            )}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">Notifications</h2>
+            <p className="text-xs text-white/40">{unreadCount} unread</p>
+          </div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white"
           >
-            <X className="w-5 h-5 text-white/60" />
+            <X className="w-5 h-5" />
           </button>
         )}
       </div>
 
-      {/* Push notification section */}
-      <div className="px-4 py-3 border-b border-white/10 bg-white/5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {pushEnabled ? (
-              <Bell className="w-4 h-4 text-green-400" />
-            ) : isIOS && !isStandalone ? (
-              <Smartphone className="w-4 h-4 text-yellow-400" />
-            ) : (
-              <BellOff className="w-4 h-4 text-white/40" />
-            )}
-            <span className="text-sm text-white/80">Push Notifications</span>
-          </div>
-          {pushSupported ? (
-            <button
-              onClick={pushEnabled ? disablePush : enablePush}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                pushEnabled
-                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                  : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
-              }`}
-            >
-              {pushEnabled ? 'Enabled' : 'Enable'}
-            </button>
-          ) : (
-            <span className="text-xs text-white/40">Not available</span>
-          )}
+      {/* Push notification status bar */}
+      <div className={`px-4 py-2 text-xs flex items-center justify-between border-b border-white/5 ${pushEnabled ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'
+        }`}>
+        <div className="flex items-center gap-2">
+          {pushEnabled ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+          <span>{pushStatus || (pushEnabled ? 'Push enabled' : 'Push disabled')}</span>
         </div>
-        {pushStatus && (
-          <p className="text-xs text-white/50 mt-1.5">{pushStatus}</p>
-        )}
-        {isIOS && !isStandalone && (
-          <p className="text-xs text-yellow-400/80 mt-1.5">
-            Tap Share → "Add to Home Screen" to enable push notifications
-          </p>
+        {!pushEnabled && pushSupported && (
+          <button onClick={enablePush} className="underline hover:text-white">Enable</button>
         )}
       </div>
 
       {/* Action buttons */}
       {notifications.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10">
+        <div className="flex items-center justify-end gap-1 px-2 py-2 border-b border-white/10 bg-white/[0.02]">
           <Button
             variant="ghost"
             size="sm"
             onClick={markAllAsRead}
-            className="text-xs text-white/60 hover:text-white hover:bg-white/10"
+            className="h-8 text-xs text-white/60 hover:text-white hover:bg-white/10"
           >
-            <CheckCheck className="w-3.5 h-3.5 mr-1" />
             Mark all read
           </Button>
+          <div className="w-px h-4 bg-white/10 mx-1" />
           <Button
             variant="ghost"
             size="sm"
             onClick={clearAll}
-            className="text-xs text-white/60 hover:text-red-400 hover:bg-red-500/10"
+            className="h-8 text-xs text-white/60 hover:text-red-400 hover:bg-red-500/10"
           >
-            <Trash2 className="w-3.5 h-3.5 mr-1" />
             Clear all
           </Button>
         </div>
       )}
 
       {/* Notifications list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto custom-scrollbar-dark p-2 space-y-2">
         {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-orange-500 rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center h-48 gap-3 text-white/40">
+            <div className="w-5 h-5 border-2 border-white/20 border-t-orange-500 rounded-full animate-spin" />
+            <p className="text-sm">Loading updates...</p>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-white/40">
-            <Bell className="w-12 h-12 mb-3 opacity-50" />
-            <p className="text-sm">No notifications yet</p>
+          <div className="flex flex-col items-center justify-center h-64 text-white/30 text-center px-6">
+            <div className="p-4 bg-white/5 rounded-full mb-3 ring-1 ring-white/10">
+              <BellOff className="w-8 h-8" />
+            </div>
+            <p className="text-sm font-medium text-white/50">All caught up</p>
+            <p className="text-xs mt-1">Check back later for updates</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
-            {notifications.map((notification) => {
-              const IconComponent = typeIcons[notification.type] || Bell
-              const iconColor = typeColors[notification.type] || 'text-white/60'
+          notifications.map((notification) => {
+            const IconComponent = typeIcons[notification.type] || Bell
+            const iconColor = typeColors[notification.type] || 'text-white/60'
+            const isExpanded = expandedId === notification.id
 
-              return (
-                <div
-                  key={notification.id}
-                  className={`px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer ${
-                    !notification.is_read ? 'bg-orange-500/5' : ''
+            return (
+              <div
+                key={notification.id}
+                onClick={() => toggleNotification(notification.id, notification.is_read)}
+                className={`group relative overflow-hidden rounded-xl border transition-all duration-200 cursor-pointer ${isExpanded
+                    ? 'bg-white/10 border-white/20 shadow-lg'
+                    : notification.is_read
+                      ? 'bg-transparent border-transparent hover:bg-white/5'
+                      : 'bg-white/[0.03] border-white/10 hover:border-white/20'
                   }`}
-                  onClick={() => !notification.is_read && markAsRead(notification.id)}
-                >
-                  <div className="flex gap-3">
-                    <div className={`flex-shrink-0 mt-0.5 ${iconColor}`}>
-                      <IconComponent className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-medium ${
-                          notification.is_read ? 'text-white/70' : 'text-white'
+              >
+                {!notification.is_read && (
+                  <div className="absolute top-3 right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                )}
+
+                <div className="p-3 flex gap-3">
+                  <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${isExpanded ? 'bg-white/10' : ''} ${iconColor}`}>
+                    <IconComponent className="w-4 h-4" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4 pr-4">
+                      <h3 className={`text-sm font-medium leading-tight ${notification.is_read ? 'text-white/70' : 'text-white'
                         }`}>
-                          {notification.title}
-                        </p>
+                        {notification.title}
+                      </h3>
+                      <span className="text-[10px] text-white/30 whitespace-nowrap flex-shrink-0">
+                        {formatTimeAgo(notification.created_at)}
+                      </span>
+                    </div>
+
+                    <p className={`text-xs mt-1 transition-all ${isExpanded ? 'text-white/90 whitespace-pre-wrap' : 'text-white/50 line-clamp-1'
+                      }`}>
+                      {notification.body}
+                    </p>
+
+                    {/* Expanded Content or Footer */}
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between animate-fade-in">
+                        <span className="text-[10px] uppercase tracking-wider text-white/30">
+                          {notification.type}
+                        </span>
                         {!notification.is_read && (
-                          <span className="flex-shrink-0 w-2 h-2 mt-1.5 bg-orange-500 rounded-full" />
+                          <span className="text-[10px] text-orange-400 flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Mark read
+                          </span>
                         )}
                       </div>
-                      {notification.body && (
-                        <p className="text-xs text-white/50 mt-0.5 line-clamp-2">
-                          {notification.body}
-                        </p>
-                      )}
-                      <p className="text-xs text-white/30 mt-1">
-                        {formatTimeAgo(notification.created_at)}
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })
         )}
       </div>
     </div>

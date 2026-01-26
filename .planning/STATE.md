@@ -40,7 +40,8 @@ Refactoring the Daily Briefing workflow to support dynamic user scaling and on-d
 - **Ops Secretary:** ID `M9qgqvtsa5nuHUQ3` - Task management
 - **Business Strategist:** ID `DvvZiJ0n2HvbkAax` - Business analysis
 - **Market Intel Agent:** ID `Td29kBFdqAqSxBpo` - Web search
-- **Daily Briefing (Enhanced V2):** ID `mBFd8G3ujZjK7-N` - **DEPLOYED** (Dynamic user scheduling)
+- **Daily Briefing (Legacy):** ID `mBFd8G3ujZjK7-N` - **TO BE REPLACED**
+- **Daily Briefing (Enhanced):** ID `mBFd8G3ujZjK7-N` - **DEPLOYED**
 - **Task Manager:** ID `JWwLi4Zo4Zqh7igS` - Task CRUD operations
 - **Calendar Manager:** ID `GTRv70JqhEekrbLN` - Google Calendar integration
 - **Contact Manager:** ID `M61NswfHOOsFxrL6` - Contact operations

@@ -3,14 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 // Timeout duration in milliseconds (90 seconds for AI responses)
 const WEBHOOK_TIMEOUT = 90000
 
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: '10mb',
-        },
-    },
-}
-
 export async function POST(request: NextRequest) {
     try {
         // Get user ID from session (set by middleware)

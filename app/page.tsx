@@ -58,7 +58,9 @@ import {
   CheckCircle,
   LineChart,
   ChevronDown,
-  ChevronUp,
+  Loader2,
+  Archive,
+  LayoutList,
   ChevronLeft,
   ArrowUp,
 } from "lucide-react"
@@ -116,35 +118,7 @@ const loadingStates = [
   "Almost there...",
 ]
 
-const Typewriter = ({ text, delay = 50, infinite = false }: { text: string; delay?: number; infinite?: boolean }) => {
-  const [currentText, setCurrentText] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-
-    if (currentIndex < text.length) {
-      timeout = setTimeout(() => {
-        setCurrentText((prev) => prev + text[currentIndex]);
-        setCurrentIndex((prev) => prev + 1);
-      }, delay);
-    } else if (infinite) {
-      // Optional: Reset after a pause if strictly infinite, but for this use case 
-      // we might want it to handle switching texts. 
-      // This simple implementation stops at end.
-    }
-
-    return () => clearTimeout(timeout);
-  }, [currentIndex, delay, infinite, text]);
-
-  // Reset if text prop changes
-  useEffect(() => {
-    setCurrentText("");
-    setCurrentIndex(0);
-  }, [text]);
-
-  return <span>{currentText}</span>;
-};
 
 // Component to cycle through prompts
 const TypewriterPrompts = ({ prompts, delay = 50, waitTime = 2000 }: { prompts: string[], delay?: number, waitTime?: number }) => {
@@ -307,20 +281,7 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   )
 }
 
-// Sound Effects
-// Sound Effects
-const playSound = (type: "reply" | "orb_open" | "orb_close" | "sent" | "received") => {
-  const sounds = {
-    reply: "/sounds/received.m4a", // Use received for reply default
-    orb_open: "/sounds/orb_open.mp3",
-    orb_close: "/sounds/orb_open.mp3",
-    sent: "/sounds/sent.m4a",
-    received: "/sounds/received.m4a",
-  };
-  const audio = new Audio(sounds[type]);
-  audio.volume = 0.5; // Soft sound
-  audio.play().catch(e => console.log("Audio play failed (user interaction needed likely):", e));
-};
+
 
 // What's New Version - update this when adding new changelog
 const CURRENT_VERSION = "1.1.0"
@@ -582,70 +543,102 @@ export default function NemoAIDashboard() {
   // Initialize greeting on mount to avoid hydration mismatch
   useEffect(() => {
     const generateGreeting = () => {
-      const hour = new Date().getHours()
+      const now = new Date()
+      const hour = now.getHours()
+      const minute = now.getMinutes()
 
-      // Wait until we have the actual user name loaded (not "Boss" fallback)
-      if (!userSettings.full_name) {
-        setGreetingReady(false)
-        return
-      }
-
-      const userName = userSettings.full_name
-
-      const maybeAppendName = (text: string) => {
-        return Math.random() > 0.5 ? `${text}, ${userName}!` : `${text}!`
-      }
+      // Calculate 30-minute intervals (0-1)
+      // 0 = :00-:29 minutes, 1 = :30-:59 minutes
+      const halfHourInterval = minute >= 30 ? 1 : 0
 
       const greetings = {
         morning: [
-          maybeAppendName("Good morning"),
-          "Morning brew?",
-          "Ready to start?",
-          maybeAppendName("Let’s win the day"),
-          maybeAppendName("Rise and grind"),
+          // 0-29 min greetings
+          [
+            "Good morning",
+            "Morning brew?",
+            "Early riser?",
+            "Sunrise spark",
+            "Dawn ready"
+          ],
+          // 30-59 min greetings
+          [
+            "Morning momentum",
+            "Ready to start?",
+            "Let's win the day",
+            "Rise and grind",
+            "Morning focus"
+          ]
         ],
         afternoon: [
-          maybeAppendName("Stay focused"),
-          maybeAppendName("Afternoon check-in"),
-          maybeAppendName("Keep moving"),
-          maybeAppendName("Back to work"),
-          maybeAppendName("Momentum is key"),
+          // 0-29 min greetings
+          [
+            "Stay focused",
+            "Afternoon check-in",
+            "Fresh afternoon start"
+          ],
+          // 30-59 min greetings
+          [
+            "Keep moving",
+            "Back to work",
+            "Momentum is key",
+            "Afternoon drive"
+          ]
         ],
         evening: [
-          maybeAppendName("Evening wrap-up"),
-          maybeAppendName("Good evening"),
-          maybeAppendName("Day in review"),
-          maybeAppendName("Time to reflect"),
+          // 0-29 min greetings
+          [
+            "Evening wrap-up",
+            "Good evening",
+            "Day drawing to close"
+          ],
+          // 30-59 min greetings
+          [
+            "Day in review",
+            "Time to reflect",
+            "Evening calm",
+            "Wind down time"
+          ]
         ],
         night: [
-          "Still awake?",
-          maybeAppendName("Midnight ideas"),
-          maybeAppendName("Quiet hours"),
-          maybeAppendName("Late night grind"),
+          // 0-29 min greetings
+          [
+            "Still awake?",
+            "Midnight ideas",
+            "Quiet hours",
+            "Late inspiration"
+          ],
+          // 30-59 min greetings
+          [
+            "Night thoughts",
+            "Dream planning",
+            "Midnight grind",
+            "Owls and ideas"
+          ]
         ],
         action: [
           "Shall we begin?",
-          maybeAppendName("Your command"),
-          maybeAppendName("Ready to build"),
-          maybeAppendName("Systems online"),
-          maybeAppendName("At your service"),
+          "Your command",
+          "Ready to build",
+          "Systems online",
+          "At your service",
           "Coffee and Nemo?",
           "What are we building?",
-          maybeAppendName("Ready to create"),
-          maybeAppendName("Let’s get to work"),
-          "What’s on your mind?",
-          maybeAppendName("Good to see you"),
-          maybeAppendName("Time to execute"),
-          maybeAppendName("Imagine the possibilities"),
-          maybeAppendName("Let’s make it happen"),
-          maybeAppendName("Ready for launch"),
-          maybeAppendName("Design your future"),
-          maybeAppendName("Awaiting your command"),
-          maybeAppendName("Let’s solve this"),
-          maybeAppendName("Create something new"),
-          maybeAppendName("Welcome back"),
+          "Ready to create",
+          "Let's get to work",
+          "What's on your mind?",
+          "Good to see you",
+          "Time to execute",
+          "Imagine the possibilities",
+          "Let's make it happen",
+          "Ready for launch",
+          "Design your future",
+          "Awaiting your command",
+          "Let's solve this",
+          "Create something new",
+          "Welcome back",
           "Focus mode on.",
-          maybeAppendName("Let's dive in"),
+          "Let's dive in",
           "Your Pocket CEO is ready.",
           "Turn ideas into reality."
         ]
@@ -658,12 +651,12 @@ export default function NemoAIDashboard() {
       else period = "night"
 
       // Selection logic: 60% chance for Time-Based, 40% chance for Action
-      // This ensures time-based greetings appear frequently despite the shorter list
       const useTimeBased = Math.random() < 0.6
 
       let selectedList: string[]
       if (useTimeBased) {
-        selectedList = greetings[period as keyof typeof greetings] as string[]
+        // Use the 30-minute interval greeting set
+        selectedList = greetings[period as keyof typeof greetings][halfHourInterval] as string[]
       } else {
         selectedList = greetings.action
       }
@@ -677,8 +670,14 @@ export default function NemoAIDashboard() {
       setTimeout(() => setGreetingReady(true), 100)
     }
 
+    // Generate initial greeting
     generateGreeting()
-  }, [userSettings.full_name]) // Dependencies
+
+    // Update every 30 minutes
+    const interval = setInterval(generateGreeting, 30 * 60 * 1000) // 30 minutes in milliseconds
+
+    return () => clearInterval(interval)
+  }, []) // Dependencies
 
   useEffect(() => {
     const updateTimeAndWeather = () => {
@@ -774,14 +773,7 @@ export default function NemoAIDashboard() {
     }
   }, [activeModule, messages.length])
 
-  // CHANGE: Remove font size localStorage loading
-  // Remove: useEffect(() => {
-  //   const savedFontSize = localStorage.getItem("fontSizeScale") as "small" | "medium" | "large" | null
-  //   if (savedFontSize) {
-  //     setFontSizeScale(savedFontSize)
-  //     document.documentElement.setAttribute("data-font-size", savedFontSize)
-  //   }
-  // }, [])
+
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -1218,7 +1210,7 @@ export default function NemoAIDashboard() {
     setLoadingStateIndex(0)
 
     console.log("[v0] Sending message:", userMessage)
-    playSound("sent")
+
     setShowQuickPrompts(false)
 
     let threadId = currentThreadId
@@ -1328,8 +1320,6 @@ export default function NemoAIDashboard() {
         thread_id: threadId,
       }
       setMessages((prev) => [...prev, tempAssistantMsg])
-      playSound("received")
-
       setTimeout(() => {
         loadConversations(threadId)
         loadThreads()
@@ -1450,10 +1440,10 @@ export default function NemoAIDashboard() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'document' | 'image') => {
     const file = e.target.files?.[0]
     if (file) {
-      // 5MB Limit
+      // 5MB Limit for reliable processing and analysis
       const MAX_FILE_SIZE = 5 * 1024 * 1024
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum allowed size is 5MB.`)
+        alert(`File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 5MB for uploads. Please choose a smaller file.`)
         return
       }
 
@@ -1770,7 +1760,7 @@ export default function NemoAIDashboard() {
       // START RECORDING - First tap
       try {
         setIsProcessing(true)
-        playSound("orb_open")
+        setOrbAnimating(true)
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         const mediaRecorder = new MediaRecorder(stream)
         mediaRecorderRef.current = mediaRecorder
@@ -1811,7 +1801,7 @@ export default function NemoAIDashboard() {
         setIsRecording(false)
         setIsRecording(false)
         setOrbAnimating(false) // Deactivate orb animation
-        playSound("sent") // Play sent sound when recording stops
+        // Play sent sound when recording stops
 
         // IMMEDIATE UI UPDATE:
         // 1. Ensure we have a thread
@@ -1948,10 +1938,10 @@ export default function NemoAIDashboard() {
       }
 
       if (data.audio_base64) {
-        playSound("received")
+
         playAudioResponse(data.audio_base64)
       } else {
-        playSound("received")
+
       }
 
       console.log("[v0] Voice response received - backend handled conversation updates")
@@ -2405,12 +2395,7 @@ export default function NemoAIDashboard() {
     }
   }
 
-  // CHANGE: Remove font size handling logic
-  // Remove: const handleFontSizeChange = (size: "small" | "medium" | "large") => {
-  //   setFontSizeScale(size)
-  //   document.documentElement.setAttribute("data-font-size", size)
-  //   localStorage.setItem("fontSizeScale", size)
-  // }
+
 
   // Main Render
   if (isAuthChecking) {
@@ -2713,7 +2698,10 @@ export default function NemoAIDashboard() {
                         className="w-36 h-36 md:w-44 md:h-44 object-contain -mb-3"
                       />
                       {/* Static greeting text */}
-                      <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white font-lettering">
+                      <h2
+                        key={currentGreeting}
+                        className="text-5xl md:text-6xl font-bold tracking-tight text-white font-lettering"
+                      >
                         {currentGreeting.replace(userSettings.full_name || "Boss", "").replace(", ", "").replace("!", "")}
                       </h2>
                     </div>
@@ -2747,11 +2735,14 @@ export default function NemoAIDashboard() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    const input = document.createElement('input')
-                                    input.type = 'file'
-                                    input.accept = '.pdf,.doc,.docx,.txt'
-                                    input.onchange = (ev) => handleFileUpload(ev as unknown as React.ChangeEvent<HTMLInputElement>, 'document')
-                                    input.click()
+                                    fileInputRef.current?.setAttribute("accept", ".pdf,.doc,.docx,.txt")
+                                    // Hack to distinguish type in single handler or use separate state?
+                                    // Better: just trigger click and handle type checking in change event if possible, 
+                                    // or store intended type in a ref/state before clicking.
+                                    // Let's use a simpler approach: multiple hidden inputs or just one shared one.
+                                    // Shared one is already there: fileInputRef used for nothing?
+                                    // Actually let's just make two hidden inputs properly.
+                                    document.getElementById('hidden-doc-input')?.click()
                                     setShowAttachmentMenu(false)
                                   }}
                                   className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all"
@@ -2762,11 +2753,7 @@ export default function NemoAIDashboard() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    const input = document.createElement('input')
-                                    input.type = 'file'
-                                    input.accept = 'image/*'
-                                    input.onchange = (ev) => handleFileUpload(ev as unknown as React.ChangeEvent<HTMLInputElement>, 'image')
-                                    input.click()
+                                    document.getElementById('hidden-image-input')?.click()
                                     setShowAttachmentMenu(false)
                                   }}
                                   className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:bg-white/[0.08] hover:text-white rounded-xl w-full transition-all mt-1"
@@ -2776,6 +2763,20 @@ export default function NemoAIDashboard() {
                                 </button>
                               </div>
                             )}
+                            <input
+                              type="file"
+                              id="hidden-doc-input"
+                              className="hidden"
+                              accept=".pdf,.doc,.docx,.txt"
+                              onChange={(e) => handleFileUpload(e, 'document')}
+                            />
+                            <input
+                              type="file"
+                              id="hidden-image-input"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) => handleFileUpload(e, 'image')}
+                            />
                           </div>
                         </div>
 
@@ -3022,138 +3023,31 @@ export default function NemoAIDashboard() {
                 </div>
 
                 {/* Task Stats - Enhanced cards with better spacing */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card
-                    className="p-6 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all duration-300 group cursor-pointer"
-                    onClick={() => setActiveTaskPopup("pending")}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-white/70 uppercase tracking-wide">In Progress</p>
-                        <p className="text-4xl font-bold text-white">
-                          {remainingTasksCount}
-                        </p>
-                        <p className="text-xs text-white/50 mt-2">Active tasks</p>
-                      </div>
-                      <div className="p-3 bg-white/[0.08] rounded-lg group-hover:bg-white/[0.12] transition-colors">
-                        <Target className="w-6 h-6 text-white/60" />
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card
-                    className="p-6 bg-[#1A4535] border border-[#2A5545] hover:bg-[#1F5040] transition-all duration-300 group cursor-pointer"
-                    onClick={() => setActiveTaskPopup("completed")}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-emerald-300/80 uppercase tracking-wide">Completed</p>
-                        <p className="text-4xl font-bold text-emerald-300">
-                          {tasks.filter((t) => t.status === "completed").length}
-                        </p>
-                        <p className="text-xs text-emerald-300/50 mt-2">Finished tasks</p>
-                      </div>
-                      <div className="p-3 bg-emerald-500/[0.15] rounded-lg group-hover:bg-emerald-500/[0.25] transition-colors">
-                        <Check className="w-6 h-6 text-emerald-400" />
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card
-                    className="p-6 bg-[#3E1A1A] border border-[#5E2828] hover:bg-[#4E2020] transition-all duration-300 group cursor-pointer"
-                    onClick={() => setActiveTaskPopup("overdue")}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-red-300/80 uppercase tracking-wide">Overdue</p>
-                        <p className="text-4xl font-bold text-red-300">
-                          {overdueTasks}
-                        </p>
-                        <p className="text-xs text-red-300/50 mt-2">Past due tasks</p>
-                      </div>
-                      <div className="p-3 bg-red-500/[0.15] rounded-lg group-hover:bg-red-500/[0.25] transition-colors">
-                        <Calendar className="w-6 h-6 text-red-400" />
-                      </div>
-                    </div>
-                  </Card>
-
-                  {/* Urgent Tasks Card */}
-                  <Card
-                    className="p-6 bg-[#3C2A14] border border-[#5C3A24] hover:bg-[#4C3520] transition-all duration-300 group cursor-pointer"
-                    onClick={() => setActiveTaskPopup("urgent")}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-orange-300/80 uppercase tracking-wide">Urgent Tasks</p>
-                        <p className="text-4xl font-bold text-orange-300">
-                          {tasks.filter((t) => t.priority === "urgent" && t.status !== "archived" && t.status !== "completed").length}
-                        </p>
-                        <p className="text-xs text-orange-300/50 mt-2">High priority items</p>
-                      </div>
-                      <div className="p-3 bg-orange-500/[0.15] rounded-lg group-hover:bg-orange-500/[0.25] transition-colors">
-                        <Zap className="w-6 h-6 text-orange-400" />
-                      </div>
-                    </div>
-                  </Card>
-
-                  {/* Today's Tasks Card */}
-                  <Card
-                    className="p-6 bg-[#1A2838] border border-[#2A3848] hover:bg-[#202F45] transition-all duration-300 group cursor-pointer"
-                    onClick={() => setActiveTaskPopup("today")}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-blue-300/80 uppercase tracking-wide">Today</p>
-                        <p className="text-4xl font-bold text-blue-300">
-                          {todayTasksCount}
-                        </p>
-                        <p className="text-xs text-blue-300/50 mt-2">Due today</p>
-                      </div>
-                      <div className="p-3 bg-blue-500/[0.15] rounded-lg group-hover:bg-blue-500/[0.25] transition-colors">
-                        <Clock className="w-6 h-6 text-blue-400" />
-                      </div>
-                    </div>
-                  </Card>
-
-                  {/* Archived Tasks Card */}
-                  <Card
-                    className="p-6 bg-[#2A1A38] border border-[#3A2A48] hover:bg-[#351F45] transition-all duration-300 group cursor-pointer"
-                    onClick={() => setActiveTaskPopup("archived")}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-purple-300/80 uppercase tracking-wide">Archived</p>
-                        <p className="text-4xl font-bold text-purple-300">
-                          {archivedTasksCount}
-                        </p>
-                        <p className="text-xs text-purple-300/50 mt-2">Hidden from lists</p>
-                      </div>
-                      <div className="p-3 bg-purple-500/[0.15] rounded-lg group-hover:bg-purple-500/[0.25] transition-colors">
-                        <CheckSquare className="w-6 h-6 text-purple-400" />
-                      </div>
-                    </div>
-                  </Card>
-                </div>
+                {/* Task Stats - Temporarily Removed */}
+                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  ...Cards removed as requested...
+                </div> */}
 
                 {/* Filter and Action Section - Improved visual hierarchy */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 md:p-6 bg-gradient-to-r from-white/[0.05] to-white/[0.02] rounded-xl border border-white/[0.08]">
-                  <div className="flex flex-wrap gap-2">
-                    {(["in_progress", "pending", "completed", "archived"] as const).map((status) => (
+                  <div className="bg-white/[0.03] p-1 rounded-xl flex gap-1 border border-white/[0.05] overflow-x-auto w-full md:w-auto hide-scrollbar">
+                    {(["in_progress", "completed", "archived"] as const).map((status) => (
                       <button
                         key={status}
                         onClick={() => setTaskStatusFilter(status)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${taskStatusFilter === status
-                          ? "bg-[#F4F3EE] text-[#0D0C0B]"
-                          : "bg-[#2A2826] text-[#B1ADA1] hover:bg-[#3A3836] hover:text-white"
+                        className={`flex-1 flex items-center justify-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${taskStatusFilter === status
+                          ? "bg-[#F4F3EE] text-[#0D0C0B] shadow-sm"
+                          : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
                           }`}
+                        title={status.replace("_", " ")}
                       >
-                        {status === "in_progress"
-                          ? "In Progress"
-                          : status === "pending"
-                            ? "Pending"
-                            : status === "archived"
-                              ? "Archive"
-                              : "Completed"}
+                        {status === "in_progress" ? (
+                          <Clock className="w-5 h-5" />
+                        ) : status === "archived" ? (
+                          <Archive className="w-5 h-5" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5" />
+                        )}
                       </button>
                     ))}
                   </div>
@@ -4357,15 +4251,7 @@ export default function NemoAIDashboard() {
                         newDate.setMonth(currentDate.getMonth() + 1)
                         setCurrentDate(newDate)
                       }}
-                      // Actually, let's fix the logic right now.
-                      // onClick={() => {
-                      //   const newDate = new Date(currentDate)
-                      //   newDate.setMonth(currentDate.getMonth() + 1)
-                      //   setCurrentDate(newDate)
-                      // }}
-                      // But I cannot easily inject complex logic change in a simple replace. 
-                      // I'll stick to button UI update first. 
-                      // Retaining original onClick but updating UI.
+
                       variant="outline"
                       size="icon"
                       className="bg-white/5 border-white/10 hover:bg-white/10 w-9 h-9 rounded-full transition-colors"
@@ -4428,8 +4314,12 @@ export default function NemoAIDashboard() {
                       const cellDateStr = `${year}-${month}-${day}`
 
                       const dayTasks = tasks.filter(
-                        (task) =>
-                          task.due_date && task.due_date.split("T")[0] === cellDateStr && task.status !== "completed",
+                        (task) => {
+                          if (!task.due_date || task.status === "completed" || task.status === "archived") return false
+                          const taskDate = new Date(task.due_date)
+                          const taskDateStr = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, "0")}-${String(taskDate.getDate()).padStart(2, "0")}`
+                          return taskDateStr === cellDateStr
+                        }
                       )
 
                       const isToday = cellDate.toDateString() === new Date().toDateString()
@@ -4488,7 +4378,7 @@ export default function NemoAIDashboard() {
                   <h3 className="text-lg font-semibold text-white mb-4">Upcoming Tasks</h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {tasks
-                      .filter((t) => t.due_date && t.status !== "completed")
+                      .filter((t) => t.due_date && t.status !== "completed" && t.status !== "archived")
                       .sort((a, b) => new Date(a.due_date || 0).getTime() - new Date(b.due_date || 0).getTime())
                       .slice(0, 10)
                       .map((task) => (
@@ -4769,6 +4659,20 @@ export default function NemoAIDashboard() {
                   <Button type="submit" className="flex-1 bg-white/10 hover:bg-white/20">
                     {selectedContact ? "Save Changes" : "Add Contact"}
                   </Button>
+                  {selectedContact && (
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        deleteContact(selectedContact.id)
+                        setShowContactModal(false)
+                        setSelectedContact(null)
+                      }}
+                      variant="destructive"
+                      className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 border border-red-500/20"
+                    >
+                      Delete
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     onClick={() => {
@@ -5212,7 +5116,7 @@ export default function NemoAIDashboard() {
             <Card className="w-full md:max-w-2xl h-full md:h-auto md:max-h-[80vh] flex flex-col bg-zinc-900 border-0 md:border md:border-white/10 shadow-2xl rounded-none md:rounded-xl">
               <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <h2 className="text-xl font-semibold text-white capitalize">
-                  {activeTaskPopup === "today" ? "Tasks due today" : `${activeTaskPopup} Tasks`}
+                  {activeTaskPopup === "today" ? "Tasks due today" : activeTaskPopup === "in_progress" ? "In Progress Tasks" : `${activeTaskPopup} Tasks`}
                 </h2>
                 <button
                   onClick={() => setActiveTaskPopup(null)}
@@ -5227,9 +5131,9 @@ export default function NemoAIDashboard() {
                     if (activeTaskPopup === "archived") return t.status === "archived"
                     if (t.status === "archived") return false // Exclude archived from other views
 
-                    if (activeTaskPopup === "pending") return t.status === "pending" || t.status === "in_progress"
+                    if (activeTaskPopup === "in_progress") return t.status !== "completed" && t.status !== "archived"
                     if (activeTaskPopup === "completed") return t.status === "completed"
-                    if (activeTaskPopup === "urgent") return t.priority === "urgent"
+                    if (activeTaskPopup === "urgent") return t.priority === "urgent" && t.status !== "completed" && t.status !== "archived"
                     if (activeTaskPopup === "overdue") {
                       if (!t.due_date || t.status === "completed") return false
                       const today = new Date()
@@ -5273,7 +5177,7 @@ export default function NemoAIDashboard() {
                             {task.due_date && (
                               <span className="text-xs text-white/40 flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
-                                {new Date(task.due_date).toLocaleDateString()}
+                                {new Date(task.due_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })}
                               </span>
                             )}
                           </div>
@@ -5284,9 +5188,9 @@ export default function NemoAIDashboard() {
                 {tasks.filter(t => {
                   if (activeTaskPopup === "archived") return t.status === "archived"
                   if (t.status === "archived") return false
-                  if (activeTaskPopup === "pending") return t.status === "pending" || t.status === "in_progress"
+                  if (activeTaskPopup === "in_progress") return t.status !== "completed" && t.status !== "archived"
                   if (activeTaskPopup === "completed") return t.status === "completed"
-                  if (activeTaskPopup === "urgent") return t.priority === "urgent"
+                  if (activeTaskPopup === "urgent") return t.priority === "urgent" && t.status !== "completed" && t.status !== "archived"
                   if (activeTaskPopup === "overdue") {
                     if (!t.due_date || t.status === "completed") return false
                     const today = new Date()

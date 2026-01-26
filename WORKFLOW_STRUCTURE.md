@@ -284,30 +284,22 @@
 
 ---
 
-### 12. DAILY BRIEFING (ENHANCED V2)
-**ID**: `mBFd8G3ujZjK7-N` (Enhanced V2)
-**Type**: Standalone with Webhook Trigger
-**Triggers**: Schedule (daily), Webhook (on-demand)
+### 12. DAILY BRIEFING
+**ID**: `mBFd8G3ujZjK7-N`
+**Type**: Standalone (Scheduled)
+**Triggers**: Schedule (8 AM, 9 AM per user)
 
-**Key Improvements**:
-- Dynamic user iteration (no hardcoded user_ids)
-- Webhook trigger for on-demand briefings
-- ~15 nodes regardless of user count
-- Better error handling and performance monitoring
+**Current Problems**:
+- Hardcoded user_ids (duplicate nodes per user)
+- Not callable from chat
+- ~30 nodes for 5 users
 
-**Core Nodes**:
-- `Webhook` - On-demand trigger
-- `Get Active Users` - Fetches all active users
-- `Get User Tasks` - Retrieves user tasks
-- `Get User Preferences` - User-specific settings
-- `Process User Preferences` - Normalize preferences
-- `Categorize Tasks` - Organize by timeframe
-- `Filter Content` - Apply user preferences
-- `Generate Briefing` - LLM-generated content
-- `Error Handler` & `Circuit Breaker` - Reliability features
-- `Monitor Performance` - Performance tracking
-- `Alerting System` - Critical issue notification
-- `Respond to Webhook` - Return response
+**Nodes per user**:
+- `Schedule Trigger` - Time-based
+- `Supabase` - Get tasks
+- `Code Node` - Categorize tasks
+- `Basic LLM Chain` - Generate briefing
+- `HTTP Request` - Send via ntfy
 
 ---
 

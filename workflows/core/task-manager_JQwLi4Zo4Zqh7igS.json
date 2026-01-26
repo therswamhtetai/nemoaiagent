@@ -1,0 +1,1 @@
+{"name": "Task Manager", "description": "Creates tasks in database and manages task lifecycle", "workflowId": "JWwLi4Zo4Zqh7igS", "status": "active", "triggerType": "sub-workflow", "exported": false, "notes": "Specialized task creation workflow linked to Supabase tasks table", "nodes": "4-6 nodes typically", "lastModified": "Unknown - needs export from n8n"}

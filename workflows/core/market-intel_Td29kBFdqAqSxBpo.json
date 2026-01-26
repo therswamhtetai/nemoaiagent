@@ -1,0 +1,1 @@
+{"name": "Market Intel Agent", "description": "Real-time web search for prices, news, and market information", "workflowId": "Td29kBFdqAqSxBpo", "status": "active", "triggerType": "sub-workflow", "exported": false, "notes": "Uses Tavily API for web search and data gathering", "nodes": "5-8 nodes typically", "lastModified": "Unknown - needs export from n8n"}

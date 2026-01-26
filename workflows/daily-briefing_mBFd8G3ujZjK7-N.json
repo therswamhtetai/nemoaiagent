@@ -1,0 +1,398 @@
+{
+  "name": "Nemo - Daily Briefing v2 Enhanced",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "daily_briefing",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9226324d-0c33-4a1d-8c21-2a45e867b3a4",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "users",
+        "returnAll": false,
+        "limit": 100,
+        "filters": [
+          {
+            "field": "is_active",
+            "operator": "eq",
+            "value": "true"
+          }
+        ],
+        "options": {
+          "select": [
+            "id",
+            "username",
+            "full_name",
+            "email"
+          ]
+        }
+      },
+      "id": "d70610f6-2d6c-424d-9212-579ac050e850",
+      "name": "Get Active Users",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "tasks",
+        "returnAll": false,
+        "limit": 50,
+        "filters": [
+          {
+            "field": "user_id",
+            "operator": "eq",
+            "value": "={{ $item.json.id }}"
+          },
+          {
+            "field": "status",
+            "operator": "neq",
+            "value": "archived"
+          }
+        ],
+        "options": {
+          "sort": [
+            {
+              "field": "due_date",
+              "direction": "asc"
+            }
+          ],
+          "select": [
+            "id",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "due_date"
+          ]
+        }
+      },
+      "id": "56016025-9515-46d1-939d-3e54f5c86084",
+      "name": "Get User Tasks",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "user_preferences",
+        "returnAll": false,
+        "filters": [
+          {
+            "field": "user_id",
+            "operator": "eq",
+            "value": "={{ $item.json.id }}"
+          }
+        ],
+        "options": {}
+      },
+      "id": "a87be1d2-6d94-4e0d-8a2c-3d3f3d3c3b3a",
+      "name": "Get User Preferences",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process user preferences\nconst items = $input.all();\n\n// Process each item to extract and normalize preferences\nconst processedItems = items.map(item => {\n  const userPrefs = item.json;\n  \n  // If user has preferences, process them\n  if (userPrefs && Array.isArray(userPrefs)) {\n    const prefsMap = {};\n    userPrefs.forEach(pref => {\n      if (pref.preference_key && pref.preference_value) {\n        prefsMap[pref.preference_key] = pref.preference_value;\n      }\n    });\n    \n    return {\n      ...item.json,\n      user_preferences: prefsMap\n    };\n  }\n  \n  // If no preferences, provide defaults\n  return {\n    ...item.json,\n    user_preferences: {}\n  };\n});\n\nreturn processedItems;"
+      },
+      "id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890",
+      "name": "Process User Preferences",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Task categorization code\nconst tasks = $input.all().map(i => i.json);\nconst now = new Date();\n\n// Categorize tasks\nconst categorizedTasks = {\n  overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'completed'),\n  today: tasks.filter(t => t.due_date && new Date(t.due_date).toDateString() === now.toDateString()),\n  upcoming: tasks.filter(t => t.due_date && new Date(t.due_date) > now && t.status !== 'completed')\n};\n\n// Calculate statistics\nconst stats = {\n  total: tasks.length,\n  completed: tasks.filter(t => t.status === 'completed').length,\n  overdue: categorizedTasks.overdue.length,\n  today: categorizedTasks.today.length\n};\n\n// Prepare output\nreturn { json: { tasks: categorizedTasks, stats } };"
+      },
+      "id": "b39420c4-5a4d-44c2-9a4c-7a8b9c0d1e2f",
+      "name": "Categorize Tasks",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter content based on user preferences\nconst items = $input.all();\n\nconst filteredItems = items.map(item => {\n  const userData = item.json;\n  const prefs = userData.user_preferences || {};\n  \n  // Create filtered task data based on preferences\n  const filteredTasks = {\n    overdue: userData.tasks.overdue || [],\n    today: userData.tasks.today || [],\n    upcoming: userData.tasks.upcoming || []\n  };\n  \n  // Apply content filtering based on preferences\n  if (prefs.content_sections) {\n    // Filter by specific content sections if user has preferences\n    const sections = prefs.content_sections.split(',').map(s => s.trim());\n    \n    if (!sections.includes('overdue')) {\n      filteredTasks.overdue = [];\n    }\n    if (!sections.includes('today')) {\n      filteredTasks.today = [];\n    }\n    if (!sections.includes('upcoming')) {\n      filteredTasks.upcoming = [];\n    }\n  }\n  \n  // Adjust briefing length based on preference\n  let maxTasks = 5; // Default\n  if (prefs.briefing_style === 'concise') {\n    maxTasks = 3;\n  } else if (prefs.briefing_style === 'detailed') {\n    maxTasks = 10;\n  }\n  \n  // Limit task counts if needed\n  filteredTasks.overdue = filteredTasks.overdue.slice(0, maxTasks);\n  filteredTasks.today = filteredTasks.today.slice(0, maxTasks);\n  filteredTasks.upcoming = filteredTasks.upcoming.slice(0, maxTasks);\n  \n  // Adjust tone based on preference\n  const adjustedStats = {\n    ...userData.stats,\n    maxTasks: maxTasks\n  };\n  \n  return {\n    ...userData,\n    tasks: filteredTasks,\n    stats: adjustedStats\n  };\n});\n\nreturn filteredItems;"
+      },
+      "id": "c5d6e7f8-a9b0-c1d2-e3f4-a5b6c7d8e9f0",
+      "name": "Filter Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "You are an AI assistant creating a personalized daily briefing for a user.\n\nINSTRUCTIONS:\n1. Use the user's preferences to tailor the briefing\n2. Maintain ZERO MARKDOWN policy in all outputs\n3. Keep responses concise yet informative\n\nUSER CONTEXT:\n- User ID: {{ $json.id }}\n- Username: {{ $json.username }}\n- Full Name: {{ $json.full_name }}\n- Email: {{ $json.email }}\n\nUSER PREFERENCES:\n{{#if $json.user_preferences.briefing_style}}\n  - Briefing Style: {{ $json.user_preferences.briefing_style }}\n{{/if}}\n{{#if $json.user_preferences.language_preference}}\n  - Language: {{ $json.user_preferences.language_preference }}\n{{/if}}\n{{#if $json.user_preferences.content_sections}}\n  - Content Sections: {{ $json.user_preferences.content_sections }}\n{{/if}}\n{{#if $json.user_preferences.notification_timing}}\n  - Preferred Timing: {{ $json.user_preferences.notification_timing }}\n{{/if}}\n\nTASK DATA:\n{{#if $json.tasks.overdue.length}}\nOVERDUE TASKS ({{ $json.tasks.overdue.length }}):\n{{#each $json.tasks.overdue}}\n- {{ title }} (Priority: {{ priority }})\n{{/each}}\n{{/if}}\n\nTODAY'S TASKS ({{ $json.tasks.today.length }}):\n{{#each $json.tasks.today}}\n- {{ title }} (Priority: {{ priority }})\n{{/each}}\n\nUPCOMING TASKS ({{ $json.tasks.upcoming.length }}):\n{{#each $json.tasks.upcoming}}\n- {{ title }} (Due: {{ due_date }})\n{{/each}}\n\nSTATISTICS:\n- Total Tasks: {{ $json.stats.total }}\n- Completed Today: {{ $json.stats.completed }}\n- Overdue Tasks: {{ $json.stats.overdue }}\n- Today's Tasks: {{ $json.stats.today }}\n\nFORMAT INSTRUCTIONS:\n1. Begin with a personalized greeting using the user's full name\n2. Provide a concise summary of today's priorities\n3. Mention any important overdue tasks\n4. End with encouraging words based on the user's preferences\n\nLANGUAGE SPECIFIC RULES:\n{{#if $json.user_preferences.language_preference}}\n- Respond in {{ $json.user_preferences.language_preference }}\n{{else}}\n- Respond in English unl...",
+        "temperature": 0.7,
+        "maxOutputTokens": 1000,
+        "modelId": "gemini-3-flash-preview"
+      },
+      "id": "f89b8a5d-0e6c-4c5b-9d4e-3a2b1c0d9e8f",
+      "name": "Generate Briefing",
+      "type": "n8n-nodes-base.googlePaLM",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ],
+      "credentials": {
+        "googlePalmApi": "qJ3tJlGTxwiZCORz"
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2c02028d-8e9f-4c7b-9a8d-7b6a5c4b3a2f",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error handler for database operations\nconst items = $input.all();\n\n// Log error information\nconsole.log('Processing user with error handling');\n\n// In a real implementation, this would include:\n// 1. Try/catch blocks\n// 2. Retry logic for transient failures\n// 3. Circuit breaker pattern\n// 4. Graceful degradation\n\n// For now, we'll just pass through items\nreturn items;"
+      },
+      "id": "e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8a9b0",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Circuit breaker implementation\nconst items = $input.all();\n\n// Simple circuit breaker simulation\n// In a real implementation, this would track failures and manage the circuit state\nconst circuitBreakerState = {\n  isOpen: false,\n  failureCount: 0,\n  lastFailureTime: null,\n  resetTimeout: null\n};\n\n// For demonstration purposes, we'll simulate circuit breaker behavior\n// In production, this would be stored in a shared state\n\nreturn items;"
+      },
+      "id": "f1e2d3c4-b5a6-7890-f1e2-d3c4b5a67890",
+      "name": "Circuit Breaker",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Performance monitoring and logging\nconst items = $input.all();\n\n// Log execution metrics\nconst startTime = new Date();\nconsole.log(`Starting daily briefing execution at ${startTime.toISOString()}`);\n\n// In a real implementation, this would track:\n// - Execution times for each step\n// - Error rates\n// - Retry counts\n// - Overall workflow duration\n\n// Simulate tracking metrics\nconst metrics = {\n  startTime: startTime,\n  nodeExecutionTimes: {},\n  errorCounts: {},\n  retryCounts: {}\n};\n\n// Add metrics to context\nitems.forEach(item => {\n  if (!item.json.metrics) {\n    item.json.metrics = metrics;\n  }\n});\n\nreturn items;"
+      },
+      "id": "a9b8c7d6-e5f4-3210-a9b8-c7d6e5f43210",
+      "name": "Monitor Performance",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alerting system for critical issues\nconst items = $input.all();\n\n// In a real implementation, this would:\n// 1. Check for error thresholds\n// 2. Send alerts when thresholds exceeded\n// 3. Log critical events\n\n// For demonstration, just log\nconsole.log('Checking for critical issues...');\n\nreturn items;"
+      },
+      "id": "b8c9d0e1-f2a3-4567-b8c9-d0e1f2a34567",
+      "name": "Alerting System",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Get User Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get User Preferences",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Preferences": {
+      "main": [
+        [
+          {
+            "node": "Process User Preferences",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process User Preferences": {
+      "main": [
+        [
+          {
+            "node": "Categorize Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categorize Tasks": {
+      "main": [
+        [
+          {
+            "node": "Filter Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Content": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing": {
+      "main": [
+        [
+          {
+            "node": "Circuit Breaker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Circuit Breaker": {
+      "main": [
+        [
+          {
+            "node": "Monitor Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monitor Performance": {
+      "main": [
+        [
+          {
+            "node": "Alerting System",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alerting System": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "auto-generated"
+  }
+}

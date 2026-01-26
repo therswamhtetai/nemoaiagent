@@ -161,7 +161,7 @@ Use slash command `/n8n-workflow` to access the complete workflow guide for crea
 | `wNgClCaTC4qSw4er` | Save to Memory Tool | Vector embedding + Supabase storage |
 | `volKVoT9R96UigzM` | Memory Retrieval Tool | Semantic search via pgvector |
 | `HCV-51qLaCdcxHGx2yBcO` | Social Scout | Facebook page scraping + analysis |
-| `mBFd8G3ujZjK7-N` | Daily Briefing (Enhanced) | Dynamic user scheduling + on-demand briefings |
+| `mBFd8G3ujZjK7-N` | Daily Briefing | Scheduled task summaries |
 | `JuKoBjeKk5F-e6KNVtR4t` | Voice Pipeline | Audio transcription → Router |
 | `OPF7ii_KCDkOlZiJqT-BE` | Auth System | User login validation |
 | `rk_RR1SePy-TNVo68mZRu` | Idea Manager | Ideas CRUD operations |

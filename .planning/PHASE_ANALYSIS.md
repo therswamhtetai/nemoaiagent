@@ -11,7 +11,7 @@
 ## Current State Assessment
 
 ### Existing Daily Briefing Workflow
-- **Workflow ID**: `vyxpQ5_WIpneleTOCUKRX`
+- **Workflow ID**: `mBFd8G3ujZjK7-N`
 - **Type**: Standalone scheduled workflow
 - **Trigger**: Schedule (8 AM, 9 AM per user)
 - **Architecture**: Hardcoded user_id chains
@@ -330,7 +330,7 @@ ORDER BY priority DESC, due_date ASC;
 
 ### Immediate Rollback (< 5 minutes)
 1. Deactivate new daily briefing workflow
-2. Reactivate original workflow (ID: vyxpQ5_WIpneleTOCUKRX)
+2. Reactivate original workflow (ID: mBFd8G3ujZjK7-N)
 3. Remove daily briefing tool from Web API Router
 4. Verify scheduled execution resumes
 

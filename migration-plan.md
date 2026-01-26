@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This migration plan documents the successful transition from the hardcoded daily briefing workflow to the new dynamic architecture (ID: `mBFd8G3ujZjK7-N`). The migration has eliminated hardcoded user chains while maintaining all existing functionality and improving system scalability.
+This migration plan outlines the safe transition from the current hardcoded daily briefing workflow (ID: `mBFd8G3ujZjK7-N`) to the new dynamic architecture. The migration will eliminate hardcoded user chains while maintaining all existing functionality and improving system scalability.
 
 ### Key Benefits
 - **Scalability:** Support unlimited users without workflow changes
@@ -18,16 +18,16 @@ This migration plan documents the successful transition from the hardcoded daily
 - **Performance:** Optimized database queries and processing
 
 ### Migration Strategy
-- **Parallel Testing:** Validated new workflow alongside existing system
-- **Zero Downtime:** Successfully completed trigger switching
-- **Comprehensive Monitoring:** Implemented real-time validation during migration
-- **Documentation:** Complete update of all system documentation
+- **Parallel Testing:** Validate new workflow alongside existing system
+- **Zero Downtime:** Carefully timed trigger switching
+- **Instant Rollback:** Pre-configured rollback procedures
+- **Comprehensive Monitoring:** Real-time validation during migration
 
 ---
 
 ## Current vs New Architecture Comparison
 
-### Previous System (Legacy Architecture)
+### Current System (mBFd8G3ujZjK7-N)
 ```
 Schedule Trigger (8 AM) → [User 1 Chain] → ntfy
                     → [User 2 Chain] → ntfy  
@@ -40,10 +40,9 @@ Schedule Trigger (8 AM) → [User 1 Chain] → ntfy
 - **Maintenance:** Manual workflow updates for user changes
 - **Flexibility:** Schedule-only execution
 
-### Current System (mBFd8G3ujZjK7-N - Enhanced V2)
+### New System (dynamic-daily-briefing)
 ```
-Schedule Trigger (8 AM) → Get Active Users → Webhook → Process User → ntfy
-                    → Loop → Process User → ntfy
+Schedule Trigger (8 AM) → Get Active Users → Split In Batches → Process User → ntfy
                     → Loop → Process User → ntfy
                     → Loop → Process User → ntfy
                     → Loop → Process User → ntfy
@@ -52,7 +51,6 @@ Schedule Trigger (8 AM) → Get Active Users → Webhook → Process User → nt
 - **Scalability:** Dynamic (unlimited users without changes)
 - **Maintenance:** Automatic (database-driven)
 - **Flexibility:** Schedule + Manual + Webhook triggers
-- **Additional Features:** Error handling, performance monitoring, alerting system
 
 ---
 
@@ -76,23 +74,23 @@ Schedule Trigger (8 AM) → Get Active Users → Webhook → Process User → nt
 
 ### Phase 2: Parallel Testing (Day 3-4)
 **Duration:** 2 days  
-**Status:** Complete
+**Status:** Planned
 
 **Activities:**
-- Deployed new workflow in parallel mode
-- Executed comprehensive validation testing
-- Compared outputs with existing system
+- Deploy new workflow in parallel mode
+- Execute comprehensive validation testing
+- Compare outputs with existing system
 - Performance benchmarking
 
-**Results:**
-- ✅ 100% content accuracy validation
-- ✅ Performance meets or exceeds existing system
-- ✅ All error scenarios handled correctly
-- ✅ User experience maintained
+**Success Criteria:**
+- 100% content accuracy validation
+- Performance meets or exceeds existing system
+- All error scenarios handled correctly
+- User experience maintained
 
 ### Phase 3: Migration Execution (Day 5)
 **Duration:** 4 hours (migration window)  
-**Status:** Complete
+**Status:** Planned
 
 **Activities:**
 - Pre-migration checks and monitoring setup
@@ -105,12 +103,6 @@ Schedule Trigger (8 AM) → Get Active Users → Webhook → Process User → nt
 - **7:00-8:00:** Disable old schedule, enable new schedule
 - **8:00-9:00:** Monitor first new execution
 - **9:00-10:00:** Validation and stabilization
-
-**Results:**
-- ✅ Zero downtime during migration
-- ✅ All users receive notifications correctly
-- ✅ On-demand functionality working
-- ✅ Performance meets or exceeds targets
 
 ---
 
@@ -174,16 +166,16 @@ n8n workflow execute dynamic-daily-briefing --test-users
 
 #### Step 3: Trigger Migration (7:00-8:00)
 ```bash
-# 1. Updated the existing workflow (mBFd8G3ujZjK7-N) to the new architecture
-n8n workflow update mBFd8G3ujZjK7-N --enable-webhook
+# 1. Disable old schedule trigger
+n8n workflow update mBFd8G3ujZjK7-N --disable-schedule
 
-# 2. Configured schedule trigger
-n8n workflow update mBFd8G3ujZjK7-N --enable-schedule
+# 2. Enable new schedule trigger
+n8n workflow update dynamic-daily-briefing --enable-schedule
 
-# 3. Verified trigger configuration
+# 3. Verify trigger configuration
 # Check schedule timing
 # Validate timezone settings
-# Confirmed webhook endpoints
+# Confirm webhook endpoints
 ```
 
 #### Step 4: First Execution Monitoring (8:00-9:00)
@@ -224,20 +216,31 @@ n8n workflow executions watch dynamic-daily-briefing
 
 ## Rollback Procedures
 
-### Post-Migration Status
-**Status:** Successfully Completed (No Rollback Required)
+### Immediate Rollback (< 5 minutes)
+**Trigger Conditions:**
+- Critical errors in new workflow
+- Missed briefings for multiple users
+- System performance degradation
+- User complaints or issues
 
-The migration was completed successfully with no critical errors or issues. All users continue to receive their daily briefings as expected, and the new on-demand functionality is working correctly.
+**Rollback Steps:**
+```bash
+# 1. Disable new workflow immediately
+n8n workflow update dynamic-daily-briefing --disable-all
 
-**Migration Results:**
-- All users received their briefings on schedule
-- Briefing content quality maintained or improved
-- On-demand briefing functionality working correctly
-- Chat integration seamless and functional
-- Zero downtime during migration
-- Performance meets or exceeds existing system
-- Error rates below 1%
-- Resource usage within acceptable limits
+# 2. Re-enable old workflow schedule
+n8n workflow update mBFd8G3ujZjK7-N --enable-schedule
+
+# 3. Verify old system is working
+# Check next scheduled execution
+# Monitor for issues
+# Validate user notifications
+
+# 4. Document rollback
+# Record issues encountered
+# Note time to resolution
+# Update migration procedures
+```
 
 ### Full Rollback (< 30 minutes)
 **Trigger Conditions:**
@@ -458,6 +461,6 @@ The migration was completed successfully with no critical errors or issues. All 
 
 ---
 
-*Migration Plan Complete: Successfully Executed*  
+*Migration Plan Complete: Ready for Execution*  
 *Prepared by: NemoAI Development Team*  
-*Approved: [Migration Completed January 27, 2026]*
+*Approved: [Pending Migration Approval]*

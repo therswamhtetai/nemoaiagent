@@ -1,0 +1,83 @@
+{
+  "name": "Image Analysis URL Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "image_analyze_url",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node-id",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "prompt": "Analyze this image URL and provide a detailed description: {{$json.imageUrl}}",
+        "model": "@czlonkowski/n8n-nodes-gemini.gemini"
+      },
+      "id": "gemini-node-id",
+      "name": "Gemini AI",
+      "type": "@czlonkowski/n8n-nodes-gemini",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "googlePalmApi": "qJ3tJlGTxwiZCORz"
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "respond-node-id",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Gemini AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini AI": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "0997dd86-6cf2-4c69-9cca-312f9664ee7e"
+  },
+  "pinData": {},
+  "versionId": "cf82b17e-950c-4d59-9db4-4b1e17b60bbf"
+}
