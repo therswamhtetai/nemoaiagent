@@ -788,13 +788,26 @@ export default function NemoAIDashboard() {
     const urlThreadId = params.get("thread_id")
 
     if (!urlThreadId) {
-      const newThreadId = crypto.randomUUID()
-      setCurrentThreadId(newThreadId)
-      window.history.pushState({}, "", "/")
-      console.log("[v0] Auto-created thread on home:", newThreadId)
+      // Check localStorage for last active thread
+      const lastActiveThread = localStorage.getItem("nemo_last_active_thread")
+      if (lastActiveThread) {
+        console.log("[v0] Restoring last active thread:", lastActiveThread)
+        setCurrentThreadId(lastActiveThread)
+        // Update URL without reload
+        const newUrl = new URL(window.location.href)
+        newUrl.searchParams.set("thread_id", lastActiveThread)
+        window.history.pushState({}, "", newUrl.toString())
+      } else {
+        const newThreadId = crypto.randomUUID()
+        setCurrentThreadId(newThreadId)
+        window.history.pushState({}, "", "/")
+        console.log("[v0] Auto-created thread on home:", newThreadId)
+      }
     } else {
       console.log("[v0] Thread ID from URL:", urlThreadId)
       setCurrentThreadId(urlThreadId)
+      // Save it as last active too
+      localStorage.setItem("nemo_last_active_thread", urlThreadId)
     }
 
     const defaultPrompts = [
@@ -804,6 +817,13 @@ export default function NemoAIDashboard() {
     ]
     setPromptCards(defaultPrompts)
   }, [])
+
+  // Persist current thread ID whenever it changes
+  useEffect(() => {
+    if (currentThreadId) {
+      localStorage.setItem("nemo_last_active_thread", currentThreadId)
+    }
+  }, [currentThreadId])
 
   useEffect(() => {
     if (userId && supabase && !useFallbackMode) {
@@ -2685,18 +2705,15 @@ export default function NemoAIDashboard() {
                       </h2>
                     </div>
                   ) : (
-                    /* Normal State - Rotating greeting, username below */
+                    /* Normal State - Static greeting, username below */
                     <div className="text-center mb-8 md:mb-10 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
                       <img
                         src="/icon.png"
                         alt="NemoAI"
-                        className={`w-36 h-36 md:w-44 md:h-44 object-contain -mb-3 transition-opacity duration-500 ${greetingReady ? 'opacity-100' : 'opacity-0'}`}
+                        className="w-36 h-36 md:w-44 md:h-44 object-contain -mb-3"
                       />
-                      {/* Rotating greeting text */}
-                      <h2
-                        className={`text-5xl md:text-6xl font-bold tracking-tight text-white transition-opacity duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
-                          }`}
-                      >
+                      {/* Static greeting text */}
+                      <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white font-lettering">
                         {currentGreeting.replace(userSettings.full_name || "Boss", "").replace(", ", "").replace("!", "")}
                       </h2>
                     </div>
