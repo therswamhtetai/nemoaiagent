@@ -1,0 +1,306 @@
+{
+  "name": "Nemo - Daily Briefing v2 Enhanced",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "daily_briefing",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9226324d-0c33-4a1d-8c21-2a45e867b3a4",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "users",
+        "returnAll": false,
+        "limit": 100,
+        "filters": [
+          {
+            "field": "is_active",
+            "operator": "eq",
+            "value": "true"
+          }
+        ],
+        "options": {
+          "select": [
+            "id",
+            "username",
+            "full_name",
+            "email"
+          ]
+        }
+      },
+      "id": "d70610f6-2d6c-424d-9212-579ac050e850",
+      "name": "Get Active Users",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "tasks",
+        "returnAll": false,
+        "limit": 50,
+        "filters": [
+          {
+            "field": "user_id",
+            "operator": "eq",
+            "value": "={{ $item.json.id }}"
+          },
+          {
+            "field": "status",
+            "operator": "neq",
+            "value": "archived"
+          }
+        ],
+        "options": {
+          "sort": [
+            {
+              "field": "due_date",
+              "direction": "asc"
+            }
+          ],
+          "select": [
+            "id",
+            "title",
+            "description",
+            "status",
+            "priority",
+            "due_date"
+          ]
+        }
+      },
+      "id": "56016025-9515-46d1-939d-3e54f5c86084",
+      "name": "Get User Tasks",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "user_preferences",
+        "returnAll": false,
+        "filters": [
+          {
+            "field": "user_id",
+            "operator": "eq",
+            "value": "={{ $item.json.id }}"
+          }
+        ],
+        "options": {}
+      },
+      "id": "a87be1d2-6d94-4e0d-8a2c-3d3f3d3c3b3a",
+      "name": "Get User Preferences",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulate caching mechanism\nconst cachedData = $input.all();\n\n// In a real implementation, this would check Redis/in-memory cache\n// For now, we'll just log and pass through\nconsole.log('Processing data with caching simulation');\n\n// Add timestamp for cache tracking\nconst processedItems = cachedData.map(item => ({\n  ...item.json,\n  cachedAt: new Date(),\n  cacheTTL: 300000 // 5 minutes in milliseconds\n}));\n\nreturn processedItems;"
+      },
+      "id": "a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890",
+      "name": "Cache Simulation",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Task categorization code\nconst tasks = $input.all().map(i => i.json);\nconst now = new Date();\n\n// Categorize tasks\nconst categorizedTasks = {\n  overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'completed'),\n  today: tasks.filter(t => t.due_date && new Date(t.due_date).toDateString() === now.toDateString()),\n  upcoming: tasks.filter(t => t.due_date && new Date(t.due_date) > now && t.status !== 'completed')\n};\n\n// Calculate statistics\nconst stats = {\n  total: tasks.length,\n  completed: tasks.filter(t => t.status === 'completed').length,\n  overdue: categorizedTasks.overdue.length,\n  today: categorizedTasks.today.length\n};\n\n// Prepare output\nreturn { json: { tasks: categorizedTasks, stats } };"
+      },
+      "id": "b39420c4-5a4d-44c2-9a4c-7a8b9c0d1e2f",
+      "name": "Categorize Tasks",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "Create a personalized daily briefing for a user. Include:\n1. Task summary (overdue, today, upcoming)\n2. Statistics (total, completed, overdue)\n3. Personalized greeting based on user preferences\n\nUser Preferences: {{ $item.json.user_preferences }}\n\nTasks: {{ $item.json.tasks }}",
+        "model": "gemini-3-flash-preview",
+        "temperature": 0.7,
+        "maxOutputTokens": 1000
+      },
+      "id": "f89b8a5d-0e6c-4c5b-9d4e-3a2b1c0d9e8f",
+      "name": "Generate Briefing",
+      "type": "@czlonkowski/n8n-nodes-gemini@latest",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ],
+      "credentials": {
+        "googlePalmApi": "qJ3tJlGTxwiZCORz"
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2c02028d-8e9f-4c7b-9a8d-7b6a5c4b3a2f",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error handler for database operations\nconst items = $input.all();\n\n// Log error information\nconsole.log('Processing user with error handling');\n\n// In a real implementation, this would include:\n// 1. Try/catch blocks\n// 2. Retry logic for transient failures\n// 3. Circuit breaker pattern\n// 4. Graceful degradation\n\n// For now, we'll just pass through items\nreturn items;"
+      },
+      "id": "e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8a9b0",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Get User Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get User Preferences",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Preferences": {
+      "main": [
+        [
+          {
+            "node": "Cache Simulation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache Simulation": {
+      "main": [
+        [
+          {
+            "node": "Categorize Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categorize Tasks": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "auto-generated"
+  },
+  "pinData": {},
+  "versionId": "auto-generated"
+}
