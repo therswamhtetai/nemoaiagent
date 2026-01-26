@@ -2599,14 +2599,14 @@ export default function NemoAIDashboard() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {activeModule === "home" ? (
             messages.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center px-5 md:px-6 py-4 overflow-y-auto bg-[#1C1917] relative">
-                <div className="w-full max-w-2xl mx-auto flex flex-col items-center pt-8 md:pt-8">
+              <div className="flex-1 flex flex-col items-center justify-center md:justify-start px-5 md:px-6 py-4 overflow-y-auto bg-[#1C1917] relative">
+                <div className="w-full max-w-2xl mx-auto flex flex-col items-center md:pt-12">
                   {/* Logo at top center - much bigger and higher */}
 
 
                   {isPushToTalk ? (
                     /* Listening State - Only show "I'm listening..." with animated dots */
-                    <div className={`text-center mb-4 md:mb-6 flex flex-col items-center justify-end transition-all duration-300 ${isInputFocused ? 'h-[120px] md:h-[360px]' : 'h-[280px] md:h-[360px]'}`}>
+                    <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
                       <h2 className="text-4xl md:text-5xl font-light tracking-wide text-white font-lettering">
                         I'm listening
                         <span className="inline-flex ml-1">
@@ -2618,16 +2618,16 @@ export default function NemoAIDashboard() {
                     </div>
                   ) : (
                     /* Normal State - Rotating greeting, username below */
-                    <div className={`text-center mb-4 md:mb-6 flex flex-col items-center justify-end transition-all duration-300 ${isInputFocused ? 'h-[120px] md:h-[360px]' : 'h-[280px] md:h-[360px]'}`}>
+                    <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
                       <img
                         src="/icon.png"
                         alt="NemoAI"
-                        className={`object-contain transition-all duration-300 ${greetingReady ? 'opacity-100' : 'opacity-0'} ${isInputFocused ? 'w-16 h-16 mb-1' : 'w-36 h-36 md:w-44 md:h-44 mb-4'}`}
+                        className={`w-36 h-36 md:w-44 md:h-44 object-contain mb-4 transition-opacity duration-500 ${greetingReady ? 'opacity-100' : 'opacity-0'}`}
                       />
                       {/* Rotating greeting text */}
                       <h2
-                        className={`font-light tracking-wide text-white transition-all duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
-                          } ${isInputFocused ? 'text-2xl md:text-6xl' : 'text-5xl md:text-6xl'}`}
+                        className={`text-5xl md:text-6xl font-light tracking-wide text-white transition-opacity duration-500 font-lettering ${greetingReady ? 'opacity-100' : 'opacity-0'
+                          }`}
                       >
                         {currentGreeting.replace(userSettings.full_name || "Boss", "").replace(", ", "").replace("!", "")}
                       </h2>
@@ -2717,8 +2717,6 @@ export default function NemoAIDashboard() {
                             ref={inputRef as React.RefObject<HTMLTextAreaElement>}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            onFocus={() => setIsInputFocused(true)}
-                            onBlur={() => setIsInputFocused(false)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && e.shiftKey && message.trim()) {
                                 e.preventDefault()
@@ -5517,14 +5515,12 @@ export default function NemoAIDashboard() {
                   <div className="space-y-3 animate-fade-in">
                     <h3 className="text-base font-medium text-white">✨ Home Screen UI Update</h3>
                     <p className="text-sm text-white/60 leading-relaxed">
-                      We've refreshed the home screen experience for better usability and aesthetics.
+                      Based on your feedback, we've refreshed the home screen with a cleaner, simpler design.
                     </p>
                     <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                      <ul className="text-xs text-white/60 space-y-1.5 list-disc pl-4">
-                        <li>Fixed Chatbox Position (No jumping!)</li>
-                        <li>Dynamic Greeting & Logo Animation</li>
-                        <li>Cleaner Mobile Layout</li>
-                      </ul>
+                      <p className="text-xs text-white/50 italic text-center">
+                        Simple, fast, and focused on you.
+                      </p>
                     </div>
                   </div>
                 )}
