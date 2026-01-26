@@ -55,6 +55,8 @@ import {
   Phone,
   Globe,
   Check,
+  CheckCircle,
+  LineChart,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
@@ -2763,6 +2765,31 @@ export default function NemoAIDashboard() {
                     </div>
 
                   </div>
+                </div>
+
+                {/* Quick Shortcuts */}
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-6 px-4">
+                  <button
+                    onClick={() => handleModuleClick("tasks")}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/10 rounded-2xl transition-all group hover:border-white/20"
+                  >
+                    <Briefcase className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
+                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200">Tasks</span>
+                  </button>
+                  <button
+                    onClick={() => handleModuleClick("ideas")}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/10 rounded-2xl transition-all group hover:border-white/20"
+                  >
+                    <Lightbulb className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
+                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200">Ideas</span>
+                  </button>
+                  <button
+                    onClick={() => handleModuleClick("market")}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/10 rounded-2xl transition-all group hover:border-white/20"
+                  >
+                    <TrendingUp className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
+                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200">Market</span>
+                  </button>
                 </div>
 
                 {/* Disclaimer - Fixed at bottom */}
