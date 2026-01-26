@@ -1,0 +1,338 @@
+{
+  "name": "Daily Briefing V2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 8
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-node",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "users",
+        "returnAll": true,
+        "filters": [
+          {
+            "field": "is_active",
+            "operator": "eq",
+            "value": "true"
+          }
+        ]
+      },
+      "id": "get-users-node",
+      "name": "Get All Users",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-in-batches-node",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "table": "tasks",
+        "returnAll": true,
+        "filters": [
+          {
+            "field": "user_id",
+            "operator": "eq",
+            "value": "={{ $('Split In Batches').item.json.id }}"
+          },
+          {
+            "field": "status",
+            "operator": "neq",
+            "value": "completed"
+          }
+        ]
+      },
+      "id": "get-tasks-node",
+      "name": "Get User Tasks",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": "JbItbwVcQiGCLFAC"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $('Split In Batches').item.json;\nconst tasks = items.map(i => i.json);\nuser.tasks = tasks;\nreturn [{json: user}];"
+      },
+      "id": "aggregate-tasks-node",
+      "name": "Aggregate Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
+        },
+        "timeMin": "={{ $today.format() }}",
+        "timeMax": "={{ $today.endOf('day').format() }}",
+        "options": {}
+      },
+      "id": "get-calendar-node",
+      "name": "Get Calendar Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": "Tg4EGHG42FxepYAW"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $('Split In Batches').item.json;\nconst tasks = $('Aggregate Tasks').first().json.tasks;\nconst events = items.map(i => i.json);\nuser.tasks = tasks;\nuser.events = events;\nreturn [{json: user}];"
+      },
+      "id": "aggregate-events-node",
+      "name": "Aggregate Events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=16.84&longitude=96.17&current=temperature_2m,weather_code",
+        "options": {}
+      },
+      "id": "get-weather-node",
+      "name": "Get Weather",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $('Split In Batches').item.json;\nconst tasks = $('Aggregate Tasks').first().json.tasks;\nconst events = $('Aggregate Events').first().json.events;\nconst weather = items[0].json;\nuser.tasks = tasks;\nuser.events = events;\nuser.weather = weather;\nreturn [{json: user}];"
+      },
+      "id": "merge-weather-node",
+      "name": "Merge Weather",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": "gemini-3-flash-preview",
+        "prompt": "={{ \"Generate a friendly daily briefing for \" + $json.full_name + \".\\n\\nTasks: \" + JSON.stringify($json.tasks) + \"\\nEvents: \" + JSON.stringify($json.events) + \"\\nWeather: \" + JSON.stringify($json.weather) + \"\\n\\nKeep it concise.\" }}"
+      },
+      "id": "generate-briefing-node",
+      "name": "Generate Briefing",
+      "type": "n8n-nodes-base.googlePaLM",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        300
+      ],
+      "credentials": {
+        "googlePalmApi": "qJ3tJlGTxwiZCORz"
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": "OPqleYbWDbxnuHa6",
+        "workflowInputs": {
+          "mapping": [
+            {
+              "name": "user_id",
+              "value": "={{ $('Split In Batches').item.json.id }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        }
+      },
+      "id": "send-notification-node",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get All Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Users": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Get User Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Tasks": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get Calendar Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Calendar Events": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Events": {
+      "main": [
+        [
+          {
+            "node": "Get Weather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weather": {
+      "main": [
+        [
+          {
+            "node": "Merge Weather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Weather": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notification": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
