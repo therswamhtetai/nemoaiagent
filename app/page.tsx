@@ -229,8 +229,8 @@ const LoginScreen = ({ onLogin }: { onLogin: (userId: string) => void }) => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0D0C0B] text-white p-4 font-sans">
-      <div className="w-full max-w-md z-10">
+    <div className="flex min-h-screen items-center justify-center bg-[#0D0C0B] text-white px-10 py-8 font-sans">
+      <div className="w-full max-w-md z-10 px-8">
         <div className="text-center mb-12">
           {/* Fish Logo with Bubble Animation */}
           <div className="relative w-32 h-32 mx-auto mb-6">
@@ -2620,11 +2620,11 @@ export default function NemoAIDashboard() {
                     </div>
                   ) : (
                     /* Normal State - Rotating greeting, username below */
-                    <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
+                    <div className="text-center mb-8 md:mb-10 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
                       <img
                         src="/icon.png"
                         alt="NemoAI"
-                        className={`w-36 h-36 md:w-44 md:h-44 object-contain mb-4 transition-opacity duration-500 ${greetingReady ? 'opacity-100' : 'opacity-0'}`}
+                        className={`w-36 h-36 md:w-44 md:h-44 object-contain -mb-3 transition-opacity duration-500 ${greetingReady ? 'opacity-100' : 'opacity-0'}`}
                       />
                       {/* Rotating greeting text */}
                       <h2
@@ -2696,7 +2696,7 @@ export default function NemoAIDashboard() {
                           </div>
                         </div>
 
-                        {/* Textarea field */}
+                        {/* Textarea field with cycling placeholder */}
                         <div className="flex-1 relative min-h-[52px]">
                           {!message.trim() && (
                             <div className="absolute top-4 left-2 pointer-events-none">
@@ -2765,31 +2765,31 @@ export default function NemoAIDashboard() {
                     </div>
 
                   </div>
-                </div>
 
-                {/* Quick Shortcuts */}
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-6 px-4">
-                  <button
-                    onClick={() => handleModuleClick("tasks")}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/10 rounded-2xl transition-all group hover:border-white/20"
-                  >
-                    <Briefcase className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
-                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200">Tasks</span>
-                  </button>
-                  <button
-                    onClick={() => handleModuleClick("ideas")}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/10 rounded-2xl transition-all group hover:border-white/20"
-                  >
-                    <Lightbulb className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
-                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200">Ideas</span>
-                  </button>
-                  <button
-                    onClick={() => handleModuleClick("market")}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-transparent hover:bg-white/5 border border-white/10 rounded-2xl transition-all group hover:border-white/20"
-                  >
-                    <TrendingUp className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
-                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200">Market</span>
-                  </button>
+                  {/* Quick Shortcuts */}
+                  <div className="flex flex-wrap items-center justify-center gap-3 mt-6 px-4">
+                    <button
+                      onClick={() => handleModuleClick("tasks")}
+                      className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-white/5 border border-[#3A3836] rounded-full text-sm text-zinc-400 hover:text-white transition-all"
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      <span>Tasks</span>
+                    </button>
+                    <button
+                      onClick={() => handleModuleClick("ideas")}
+                      className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-white/5 border border-[#3A3836] rounded-full text-sm text-zinc-400 hover:text-white transition-all"
+                    >
+                      <Lightbulb className="w-4 h-4" />
+                      <span>Ideas</span>
+                    </button>
+                    <button
+                      onClick={() => handleModuleClick("market")}
+                      className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-white/5 border border-[#3A3836] rounded-full text-sm text-zinc-400 hover:text-white transition-all"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Market</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Disclaimer - Fixed at bottom */}
@@ -4494,7 +4494,7 @@ export default function NemoAIDashboard() {
                   {/* Textarea field with cycling placeholder - Enter for new line, Shift+Enter to send */}
                   <div className="flex-1 relative min-h-[52px]">
                     <textarea
-                      placeholder="Reply .."
+                      placeholder="Reply..."
                       ref={inputRef as React.RefObject<HTMLTextAreaElement>}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
@@ -5613,6 +5613,16 @@ export default function NemoAIDashboard() {
           </div>
         )
       }
-    </div >
+      {/* Floating Back to Home Button (Visible inside modules) */}
+      {["tasks", "ideas", "market"].includes(activeModule) && (
+        <button
+          onClick={() => setActiveModule("home")}
+          className="fixed bottom-6 right-6 md:bottom-8 md:right-8 p-3 bg-[#2A2826] hover:bg-[#3A3836] text-white rounded-full shadow-lg border border-white/10 z-50 transition-all hover:scale-110 active:scale-95 animate-fade-in"
+          title="Back to Home"
+        >
+          <Home className="w-5 h-5" />
+        </button>
+      )}
+    </div>
   )
 }
