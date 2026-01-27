@@ -2,135 +2,149 @@
 phase: 02-response-speed-optimization
 plan: 01
 subsystem: workflows
-tags: [n8n, optimization, async-io, pre-classification, latency]
+tags: [n8n, optimization, context-window, expression-fix]
 
 requires:
   - phase: 01-daily-briefing-v2
     provides: working Web API Router baseline
 
 provides:
-  - async message saving (user and AI)
-  - pre-classification fast path for greetings
   - reduced context window (6 turns)
-  - optimized router workflow JSON
+  - fixed expression syntax in Save to Long-term Memory
+  - validated sequential workflow flow
 
 affects: [web-api-router, chat-response-time, user-experience]
 
 tech-stack:
   added: []
-  patterns: [async-io, pre-classification, parallel-execution]
+  patterns: [sequential-io]
 
 key-files:
   created:
     - workflows/web-api-router-backup.json
+  modified:
     - workflows/web-api-router.json
-  modified: []
 
 key-decisions:
-  - "Use parallel branches for async saves instead of sub-workflows"
-  - "Response format unified: {reply, agent} for both fast and full paths"
+  - "Reverted async pattern - incompatible with frontend architecture"
+  - "Frontend reads messages from Supabase, not webhook response"
   - "Context window set to 6 (balance between quality and speed)"
-  - "Simple greetings regex: ^(hi|hello|hey|test|ping)$ case-insensitive"
+  - "Sequential DB saves required for frontend compatibility"
 
 patterns-established:
-  - "Async I/O: Fork execution for non-blocking saves"
-  - "Pre-Classification: Route trivial requests to fast path"
+  - "Frontend-aware optimization: understand data flow before optimizing"
 
-duration: 2min
-completed: 2026-01-27
+duration: 15min
+completed: 2026-01-28
 ---
 
-# Phase 02 Plan 01: Async Architecture & Optimization Summary
+# Phase 02 Plan 01: Response Speed Optimization Summary
 
-**Async I/O patterns and pre-classification switch added to Web API Router for 3-5x latency reduction**
+**Context window reduced to 6 turns; async pattern reverted due to frontend architecture constraints**
 
 ## Performance
 
-- **Duration:** 2 min
-- **Started:** 2026-01-27T19:38:48Z
-- **Completed:** 2026-01-27T19:40:44Z
-- **Tasks:** 5 (Steps 1-4 + bug fixes)
-- **Files modified:** 2
+- **Duration:** 15 min (including debugging and fix iteration)
+- **Completed:** 2026-01-28
+- **Tasks:** 6 (original 5 + fix iteration)
+- **Files modified:** 1
 
-## Accomplishments
+## Final Accomplishments
 
-- Implemented async "Save User Msg" - Agent starts thinking immediately without waiting for DB write
-- Implemented async "Save AI Msg" - Response sent to user immediately without waiting for DB write
-- Reduced context window from 10 to 6 turns for faster token processing
-- Added Pre-Classification switch for instant response to simple greetings (hi/hello/hey/test/ping)
+- ✓ Reduced context window from 10 to 6 turns for faster token processing
+- ✓ Fixed Save to Long-term Memory expression: `.item.json` → `.first().json`
+- ✓ Verified complete sequential flow integrity
+- ✗ Async I/O pattern reverted (incompatible with frontend)
+- ✗ Pre-classification removed (requires DB save before response)
 
 ## Task Commits
 
-1. **All optimization tasks** - `1a75d25` (feat: async I/O + pre-classification + bug fixes)
+1. **Initial optimization attempt** - `1a75d25` (async I/O + pre-classification)
+2. **Fix iteration** - `8d6614c` (reverted async, fixed expressions, restored sequential flow)
 
-Note: This was a consolidated commit because the workflow JSON file already contained the optimization changes with minor bugs that needed fixing.
+## Files Modified
 
-## Files Created/Modified
-
-- `workflows/web-api-router.json` - Optimized workflow with async patterns and pre-classification
-- `workflows/web-api-router-backup.json` - Backup of original workflow for safety
+- `workflows/web-api-router.json` - Optimized workflow with context window = 6
+- `workflows/web-api-router-backup.json` - Backup of original workflow
 
 ## Decisions Made
 
-1. **Parallel branches for async saves** - Used n8n's native parallel connection capability instead of separate sub-workflows. Simpler and faster.
-2. **Unified response format** - Both fast path and full path return `{reply, agent}` JSON structure for frontend compatibility.
-3. **Context window = 6** - Reduced from default to balance conversation quality with processing speed.
-4. **Simple regex for pre-classification** - `^(hi|hello|hey|test|ping)$` covers common trivial inputs without false positives.
+1. **Reverted async pattern** - Frontend reads AI messages from Supabase, not webhook response. Async saves caused messages to not appear in chat (race condition).
+
+2. **Removed pre-classification** - Fast path would require saving to Supabase before responding, adding complexity without significant benefit.
+
+3. **Context window = 6** - Reduced from 10 to balance conversation quality with processing speed. This is the only safe optimization that doesn't affect data flow.
+
+4. **Fixed expression syntax** - Save to Long-term Memory used `.item.json` which is incorrect n8n syntax. Changed to `.first().json`.
 
 ## Deviations from Plan
 
+### Major Architectural Discovery
+
+**[Rule 4 - Architecture] Frontend reads from Supabase, not webhook**
+
+- **Found during:** User testing after initial deployment
+- **Issue:** Async "Save AI Msg" pattern caused race condition - webhook responded before message was saved to Supabase, so frontend couldn't display the message
+- **Root cause:** Misunderstanding of frontend architecture. Frontend uses Supabase for message display, webhook only triggers skeleton loader dismissal
+- **Resolution:** Reverted to sequential flow: `Clean Response → Save AI Msg → Respond to Webhook`
+- **Impact:** Async optimization not possible with current frontend architecture
+
 ### Auto-fixed Issues
 
-**1. [Rule 1 - Bug] Fixed response format inconsistency**
-- **Found during:** Step 4 verification
-- **Issue:** Simple Response node used `{output}` format but main flow uses `{reply, agent}` format - would break frontend
-- **Fix:** Changed Simple Response to return `{"reply": "...", "agent": "fast_response"}`
-- **Files modified:** workflows/web-api-router.json
-- **Verification:** JSON validated, response format matches main flow
-- **Committed in:** 1a75d25
+**1. [Rule 1 - Bug] Fixed expression syntax in Save to Long-term Memory**
+- **Issue:** Used `.item.json` instead of `.first().json`
+- **Fix:** Changed to correct n8n expression syntax
+- **Committed in:** 8d6614c
 
-**2. [Rule 1 - Bug] Fixed n8n expression syntax in Switch node**
-- **Found during:** Step 4 verification
-- **Issue:** leftValue used `.item.json.content` which is incorrect n8n syntax
-- **Fix:** Changed to `$json.content` for proper n8n expression
-- **Files modified:** workflows/web-api-router.json
-- **Verification:** JSON validated
-- **Committed in:** 1a75d25
-
-**3. [Rule 1 - Bug] Fixed node positions**
-- **Found during:** Workflow review
-- **Issue:** Pre-Classification and Simple Response nodes were at y=300 while main flow is at y=-1216
-- **Fix:** Moved nodes to proper positions in the workflow canvas
-- **Files modified:** workflows/web-api-router.json
-- **Committed in:** 1a75d25
+**2. [Rule 3 - Blocking] Broken workflow connections**
+- **Issue:** Pre-Classification node broke the flow after Merge User
+- **Fix:** Restored original connection: `Merge User → Get Thread Name`
+- **Committed in:** 8d6614c
 
 ---
 
-**Total deviations:** 3 auto-fixed bugs
-**Impact on plan:** All fixes necessary for correct frontend operation. No scope creep.
+**Total deviations:** 1 architectural discovery, 2 bug fixes
+**Impact on plan:** Async optimization reverted. Only context window optimization retained.
 
 ## Issues Encountered
 
-None - all issues were pre-existing bugs in the workflow JSON that were fixed during execution.
+1. **Async pattern incompatible with frontend** - Discovered during user testing
+2. **Broken workflow flow** - Pre-Classification node disconnected main flow
+3. **JSON response in chat** - Simple Response output format was wrong
+4. **Expression syntax error** - `.item.json` incorrect for n8n
 
-## User Setup Required
+All issues resolved by reverting to backup and applying only safe optimizations.
 
-**Manual deployment required.** The optimized workflow JSON file needs to be imported into n8n:
+## Verified Flow
 
-1. Open n8n at https://admin.orcadigital.online
-2. Navigate to the Web API Router workflow
-3. Import the updated `workflows/web-api-router.json` or copy-paste the JSON
+```
+Webhook → Merge User → Get Thread Name → Find Name Logic → Save User Msg → Jarvis Brain → Clean Response → Save AI Msg → Respond to Webhook
+```
 
-Alternatively, if n8n API access is restored, the workflow can be deployed via API.
+## Optimization Retained
+
+| Optimization | Status | Impact |
+|-------------|--------|--------|
+| Context window 10→6 | ✓ Applied | Reduces token processing time |
+| Async Save User Msg | ✗ Reverted | Incompatible with frontend |
+| Async Save AI Msg | ✗ Reverted | Incompatible with frontend |
+| Pre-classification | ✗ Removed | Requires DB save for frontend |
+
+## Lessons Learned
+
+1. **Understand frontend architecture first** - The async optimization assumed webhook response displays in chat, but frontend actually reads from Supabase
+2. **Test with real frontend** - JSON validation alone doesn't catch data flow issues
+3. **Keep backups** - `web-api-router-backup.json` saved the day
 
 ## Next Phase Readiness
 
-- Optimized workflow JSON ready for deployment
-- All verification checks passed (JSON valid, connections correct, response formats unified)
-- Ready for testing once deployed to n8n
-
-**Note:** Actual latency improvement (10-20s -> 3-5s) can only be verified after deployment and real-world testing.
+- Workflow deployed and verified working
+- Context window optimization active
+- For further speed improvements, consider:
+  - LLM model optimization (faster model)
+  - Caching common queries at n8n level
+  - Frontend-side optimizations (optimistic UI)
 
 ---
 *Phase: 02-response-speed-optimization*
-*Completed: 2026-01-27*
+*Completed: 2026-01-28*
