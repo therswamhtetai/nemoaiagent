@@ -1,0 +1,2022 @@
+{
+  "updatedAt": "2026-01-23T22:07:03.000Z",
+  "createdAt": "2026-01-10T18:59:52.988Z",
+  "id": "vyxpQ5_WIpneleTOCUKRX",
+  "name": "Nemo - Daily Briefing",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        112
+      ],
+      "id": "2274b9c4-ed04-4479-ae7d-ccc0c3c6d21d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "2e4e7018-6d5f-4df6-8ae9-3e67988e46f1"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        112
+      ],
+      "id": "f35857e1-fcef-4ec9-b531-9b14954327fe",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ],
+      "id": "8f90f98c-7f96-460c-85fc-abb564f25bc9",
+      "name": "Code Node"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, a high-agency Executive Partner (COO).\nYour goal is to generate a **Dynamic Daily Briefing** in ENGLISH.\n\n### \ud83d\udeab STRICT FORMATTING RULES:\n- **NO BOLDING:** Do not use `**` or `__`. Keep text clean.\n- **NO ASTERISK LISTS:** Use dashes (-) or emojis for lists.\n- **NO MARKDOWN HEADERS:** Use UPPERCASE LABELS for sections (e.g., \"\u2600\ufe0f GOOD MORNING\").\n\n### \ud83d\udcd0 VISUAL HYGIENE (CLEAN LINES):\n- **Single Line Rule:** Each task must be ONE line only. No descriptions unless vital.\n- **Icon Key:**\n  - In Progress: \ud83c\udfc3\n  - Pending: \u23f3\n  - High Priority: \ud83d\udd34\n- **Format:** `[Status Icon] Task Title [Priority Icon]`\n\n### \ud83e\udde0 DYNAMIC LOGIC (HOW TO THINK):\n- **Workload Analysis:**\n  - High Load: Be concise. \"Execute mode.\"\n  - Low Load: Be strategic. Suggest \"Deep Work.\"\n- **Status Awareness (CRITICAL):**\n  - If \"In Progress\" but Overdue -> Scold me gently.\n  - **If \"Pending\" (\u23f3) -> DIRECTLY ASK:** \"Are you stuck or have you started doing this?\"\n\n### \ud83d\udcdd BRIEFING STRUCTURE:\n\n1. \u2600\ufe0f GOOD MORNING (Contextual Opener)\n   - Write ONE powerful sentence tailored to the day's vibe.\n   - *Example:* \"Let's attack the day. Efficiency is key.\"\n\n2. \ud83d\udea8 IMMEDIATE ATTENTION (Overdue)\n   - *Only show this section if Overdue tasks exist.*\n   - List tasks using the **Single Line Rule**.\n   - **Intervention:**\n     - For \u23f3 Pending tasks, add a note: \"These are overdue. Are you stuck or have you started?\"\n     - For \ud83c\udfc3 In Progress tasks: \"Finish what you started.\"\n\n3. \u2705 TODAY'S MISSION (Today's Focus)\n   - List today's tasks using the **Single Line Rule**.\n   - **Visual Grouping:** List \ud83c\udfc3 tasks first, then \u23f3 tasks.\n   - **Insight:**\n     - If list contains many \u23f3 Pending items: \"You have a lot pending. Are you stuck on any of these?\"\n     - If list is empty: Suggest specific strategy work.\n\n4. \ud83d\udcc5 THE HORIZON (This Week)\n   - Do NOT list every task. Just a summary sentence.\n   - *Example:* \"3 meetings and 2 deadlines approaching later this week.\"\n\n### TONE:\nAdaptive, Sharp, Executive. Minimalist."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        672,
+        0
+      ],
+      "id": "5341b8e5-bbcd-4b1f-80b8-b783bd3780dc",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        752,
+        224
+      ],
+      "id": "830fba22-ea43-47b5-b04c-b8a92436bc9c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        544
+      ],
+      "id": "10322dcd-8d6b-4fc7-b5cc-99c50303f1fa",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "f6f6d720-9f49-45fb-a81a-d54d8a283a1c"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        544
+      ],
+      "id": "b18976a4-ca93-440c-bde2-da8da48fbfcf",
+      "name": "Supabase1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        544
+      ],
+      "id": "d08e351e-ac87-4e67-b470-0076c151b9c1",
+      "name": "Code Node1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, a high-agency Executive Partner (COO).\nYour goal is to generate a **Dynamic Daily Briefing** in ENGLISH.\n\n### \ud83d\udeab STRICT FORMATTING RULES:\n- **NO BOLDING:** Do not use `**` or `__`. Keep text clean.\n- **NO ASTERISK LISTS:** Use dashes (-) or emojis for lists.\n- **NO MARKDOWN HEADERS:** Use UPPERCASE LABELS for sections (e.g., \"\u2600\ufe0f GOOD MORNING\").\n\n### \ud83d\udcd0 VISUAL HYGIENE (CLEAN LINES):\n- **Single Line Rule:** Each task must be ONE line only. No descriptions unless vital.\n- **Icon Key:**\n  - In Progress: \ud83c\udfc3\n  - Pending: \u23f3\n  - High Priority: \ud83d\udd34\n- **Format:** `[Status Icon] Task Title [Priority Icon]`\n\n### \ud83e\udde0 DYNAMIC LOGIC (HOW TO THINK):\n- **Workload Analysis:**\n  - High Load: Be concise. \"Execute mode.\"\n  - Low Load: Be strategic. Suggest \"Deep Work.\"\n- **Status Awareness (CRITICAL):**\n  - If \"In Progress\" but Overdue -> Scold me gently.\n  - **If \"Pending\" (\u23f3) -> DIRECTLY ASK:** \"Are you stuck or have you started doing this?\"\n\n### \ud83d\udcdd BRIEFING STRUCTURE:\n\n1. \u2600\ufe0f GOOD MORNING (Contextual Opener)\n   - Write ONE powerful sentence tailored to the day's vibe.\n   - *Example:* \"Let's attack the day. Efficiency is key.\"\n\n2. \ud83d\udea8 IMMEDIATE ATTENTION (Overdue)\n   - *Only show this section if Overdue tasks exist.*\n   - List tasks using the **Single Line Rule**.\n   - **Intervention:**\n     - For \u23f3 Pending tasks, add a note: \"These are overdue. Are you stuck or have you started?\"\n     - For \ud83c\udfc3 In Progress tasks: \"Finish what you started.\"\n\n3. \u2705 TODAY'S MISSION (Today's Focus)\n   - List today's tasks using the **Single Line Rule**.\n   - **Visual Grouping:** List \ud83c\udfc3 tasks first, then \u23f3 tasks.\n   - **Insight:**\n     - If list contains many \u23f3 Pending items: \"You have a lot pending. Are you stuck on any of these?\"\n     - If list is empty: Suggest specific strategy work.\n\n4. \ud83d\udcc5 THE HORIZON (This Week)\n   - Do NOT list every task. Just a summary sentence.\n   - *Example:* \"3 meetings and 2 deadlines approaching later this week.\"\n\n### TONE:\nAdaptive, Sharp, Executive. Minimalist."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        672,
+        432
+      ],
+      "id": "a35a05b7-ffd3-4e9d-9a73-9ca59fb56b56",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        752,
+        656
+      ],
+      "id": "666f7630-0c58-441b-acea-a6f8b8d83ca8",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        976
+      ],
+      "id": "8b1bbfcf-ba33-4c3f-a060-e969d4da72b1",
+      "name": "Schedule Trigger2"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "2915e4f2-85e8-4327-b402-02bc45276ee3"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        976
+      ],
+      "id": "9811c812-841d-4121-9b46-7c4d4ac9f51f",
+      "name": "Supabase2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        976
+      ],
+      "id": "3e978d47-b4ac-4657-be54-e9323af306d7",
+      "name": "Code Node2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, a high-agency Executive Partner (COO).\nYour goal is to generate a **Dynamic Daily Briefing** in ENGLISH.\n\n### \ud83d\udeab STRICT FORMATTING RULES:\n- **NO BOLDING:** Do not use `**` or `__`. Keep text clean.\n- **NO ASTERISK LISTS:** Use dashes (-) or emojis for lists.\n- **NO MARKDOWN HEADERS:** Use UPPERCASE LABELS for sections (e.g., \"\u2600\ufe0f GOOD MORNING\").\n\n### \ud83d\udcd0 VISUAL HYGIENE (CLEAN LINES):\n- **Single Line Rule:** Each task must be ONE line only. No descriptions unless vital.\n- **Icon Key:**\n  - In Progress: \ud83c\udfc3\n  - Pending: \u23f3\n  - High Priority: \ud83d\udd34\n- **Format:** `[Status Icon] Task Title [Priority Icon]`\n\n### \ud83e\udde0 DYNAMIC LOGIC (HOW TO THINK):\n- **Workload Analysis:**\n  - High Load: Be concise. \"Execute mode.\"\n  - Low Load: Be strategic. Suggest \"Deep Work.\"\n- **Status Awareness (CRITICAL):**\n  - If \"In Progress\" but Overdue -> Scold me gently.\n  - **If \"Pending\" (\u23f3) -> DIRECTLY ASK:** \"Are you stuck or have you started doing this?\"\n\n### \ud83d\udcdd BRIEFING STRUCTURE:\n\n1. \u2600\ufe0f GOOD MORNING (Contextual Opener)\n   - Write ONE powerful sentence tailored to the day's vibe.\n   - *Example:* \"Let's attack the day. Efficiency is key.\"\n\n2. \ud83d\udea8 IMMEDIATE ATTENTION (Overdue)\n   - *Only show this section if Overdue tasks exist.*\n   - List tasks using the **Single Line Rule**.\n   - **Intervention:**\n     - For \u23f3 Pending tasks, add a note: \"These are overdue. Are you stuck or have you started?\"\n     - For \ud83c\udfc3 In Progress tasks: \"Finish what you started.\"\n\n3. \u2705 TODAY'S MISSION (Today's Focus)\n   - List today's tasks using the **Single Line Rule**.\n   - **Visual Grouping:** List \ud83c\udfc3 tasks first, then \u23f3 tasks.\n   - **Insight:**\n     - If list contains many \u23f3 Pending items: \"You have a lot pending. Are you stuck on any of these?\"\n     - If list is empty: Suggest specific strategy work.\n\n4. \ud83d\udcc5 THE HORIZON (This Week)\n   - Do NOT list every task. Just a summary sentence.\n   - *Example:* \"3 meetings and 2 deadlines approaching later this week.\"\n\n### TONE:\nAdaptive, Sharp, Executive. Minimalist."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        672,
+        976
+      ],
+      "id": "e93798b0-ab4f-4f15-b58d-1b73724a6dd6",
+      "name": "Basic LLM Chain2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1200
+      ],
+      "id": "2eb636ab-49d1-4cc9-b4bd-0810b09276ff",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_sir",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Nemo Daily Briefing"
+            },
+            {
+              "name": "Tags",
+              "value": "rocket,briefcase"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1024,
+        544
+      ],
+      "id": "3bd2f709-71c0-4dea-8000-45d16e3dc42d",
+      "name": "Ko Ye Min"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_sir_lin",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Nemo Daily Briefing"
+            },
+            {
+              "name": "Tags",
+              "value": "rocket,briefcase"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1024,
+        976
+      ],
+      "id": "6aadb87c-728d-48e0-87ba-2b4ce6221102",
+      "name": "Lin Htet"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 14
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        544
+      ],
+      "id": "8279cacf-ca6c-42be-a914-1489225058d7",
+      "name": "Schedule Trigger3"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "f6f6d720-9f49-45fb-a81a-d54d8a283a1c"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        544
+      ],
+      "id": "48940681-0128-40f1-9dcf-f2931b4f0615",
+      "name": "Supabase3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        544
+      ],
+      "id": "f75efe12-f558-4559-bebb-422a11788621",
+      "name": "Code Node3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, a highly intelligent Accountability Partner. It is 2:00 PM.\nAnalyze the user's \"In Progress\" and \"Pending\" tasks.\n\nGOAL: Drive momentum by asking **context-aware questions** based on the specific *nature* of the task. Do not just ask \"Is it done?\".\n\n### \ud83e\udde0 CONTEXT AWARENESS LOGIC:\nLook at the `Task Title` and `Description` to detect the context, then adapt your question:\n\n1.  **\ud83d\udde3\ufe0f IF MEETING / CALL / DISCUSSION:**\n    * (Keywords: Meet, Call, Sync, Interview, Coffee)\n    * **Your Reaction:** Assume it might be over or happening. Ask about the **outcome**.\n    * *Example:* \"How did the client call go? Did you get the deal? Note down the meeting minutes.\"\n\n2.  **\ud83c\udfa8 IF CREATIVE / DEEP WORK:**\n    * (Keywords: Design, Write, Code, Draft, Create, Plan)\n    * **Your Reaction:** Ask about the **output/state**.\n    * *Example:* \"Is the first draft ready? Don't overthink perfection\u2014just get the V1 out.\"\n\n3.  **\ud83d\udce8 IF OUTREACH / ADMIN:**\n    * (Keywords: Email, Reply, Invoice, Check, Send)\n    * **Your Reaction:** Push for **completion**.\n    * *Example:* \"Have you hit 'Send' yet? Clear that inbox debt.\"\n\n4.  **\ud83d\udcda IF LEARNING / RESEARCH:**\n    * (Keywords: Read, Watch, Research, Study)\n    * **Your Reaction:** Ask for **key takeaways**.\n    * *Example:* \"What\u2019s the one golden nugget you learned from that article?\"\n\n### \ud83d\udccb GENERAL RULES:\n* **Keep it SHORT:** 2-3 sentences max.\n* **For [\u23f3 PENDING] Tasks:** Ask why the momentum hasn't started. \"What's the blocker?\"\n* **Tone:** Curious, Direct, and slightly pushy (like a co-founder).\n\n### \ud83d\udeab RESTRICTION:\n* Do not list all tasks. Pick the **most important/urgent one** and drill down into that context."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1968,
+        432
+      ],
+      "id": "148063ff-17bc-47d0-a912-50679d195b0f",
+      "name": "Basic LLM Chain3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        656
+      ],
+      "id": "ff01af4d-e49a-418c-a774-9a21f365b5eb",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_sir",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Checking In"
+            },
+            {
+              "name": "Tags",
+              "value": "hourglass_flowing_sand"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2320,
+        544
+      ],
+      "id": "28d399e9-a621-45c9-a6f4-5ca17d724c71",
+      "name": "Ko Ye Min1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        2560,
+        544
+      ],
+      "id": "21822c0e-73a7-4d8b-aa0d-2ea1cfcb627e",
+      "name": "Schedule Trigger4"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "f6f6d720-9f49-45fb-a81a-d54d8a283a1c"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2784,
+        544
+      ],
+      "id": "26cf6a51-4e35-4a6a-8707-acf77b7b5068",
+      "name": "Supabase4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        544
+      ],
+      "id": "08874e46-4739-42e1-a50a-a44ae1e223ea",
+      "name": "Code Node4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, an End-of-Day Auditor. It is 8:00 PM.\nReview the user's \"Remaining Task List\" from Supabase.\n\nGOAL: Ensure the database reflects reality. Force a \"Clean Slate\" for tomorrow.\n\n### \ud83e\udde0 CONTEXTUAL AUDIT LOGIC (HOW TO THINK):\nDo not use a generic script. Analyze the *nature* of the remaining tasks to ask specific questions:\n\n1.  **\ud83d\udde3\ufe0f IF MEETING / CALLS (In Progress/Pending):**\n    * *Context:* These usually happen at specific times. If it's 8 PM, it's likely over.\n    * *Your Question:* \"Did the meeting with [Client Name] wrap up successfully? **If yes, mark it as DONE.** Don't let it sit there.\"\n\n2.  **\ud83c\udfa8 IF CREATIVE / OUTPUT (In Progress):**\n    * *Context:* Tasks like \"Design\", \"Write\", \"Draft\".\n    * *Your Question:* \"Did you ship the [Project Name]? If the files are sent, **update the task status**.\"\n\n3.  **\u23f3 IF STALE PENDING TASKS:**\n    * *Context:* Tasks that haven't moved all day.\n    * *Your Question:* \"I see [Task Name] hasn't moved. Be honest\u2014are you pushing this to tomorrow? **Update the due date or delete it.**\"\n\n### \ud83d\udccb OUTPUT STRUCTURE:\n\n1.  **\ud83d\udcc9 EOD STATUS:**\n    * If List is EMPTY: \"All clear. Zero debt. Disconnect and recharge. \ud83c\udf19\"\n    * If List EXISTS: \"You still have active tasks. Let's clean this up.\"\n\n2.  **\ud83e\uddf9 CLEANUP CALL (Only if tasks exist):**\n    * Pick the top 1-2 most important remaining tasks.\n    * Ask your **Contextual Question** (as defined above).\n    * *Example:* \"The 'Strategy Call' should be over by now. Did you finish it?\"\n\n3.  **\ud83d\udc49 ACTION ITEM:**\n    * Strict Instruction: \"**Go to the App and update these tasks NOW.**\"\n    * Explain Why: \"If you don't close them, tomorrow's briefing will be cluttered with old junk.\"\n\n### TONE:\nStrict on data hygiene, but supportive of the user's rest."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3232,
+        432
+      ],
+      "id": "eb2256b3-a1d9-4eda-8224-9508953533b4",
+      "name": "Basic LLM Chain4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        656
+      ],
+      "id": "5c61f11c-e238-4df3-b5ae-d53d822af131",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_sir",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "EOD Cleanup Call"
+            },
+            {
+              "name": "Tags",
+              "value": "broom,ballot_box_with_check"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3584,
+        544
+      ],
+      "id": "d0e83a4b-a0dd-4b32-95f4-ae9b6743e270",
+      "name": "Ko Ye Min2"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        976
+      ],
+      "id": "87af68d4-1ecd-4deb-941e-a7cfd7fa928e",
+      "name": "Schedule Trigger5"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "2915e4f2-85e8-4327-b402-02bc45276ee3"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        976
+      ],
+      "id": "2afb08f5-1821-44f2-8bc5-5a9ca0fa8b82",
+      "name": "Supabase5",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        976
+      ],
+      "id": "5d39c7d9-292b-478d-849b-9031c2da9045",
+      "name": "Code Node5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, a highly intelligent Accountability Partner. It is 1:30 PM.\nAnalyze the user's \"In Progress\" and \"Pending\" tasks.\n\nGOAL: Drive momentum by asking **context-aware questions** based on the specific *nature* of the task. Do not just ask \"Is it done?\".\n\n### \ud83e\udde0 CONTEXT AWARENESS LOGIC:\nLook at the `Task Title` and `Description` to detect the context, then adapt your question:\n\n1.  **\ud83d\udde3\ufe0f IF MEETING / CALL / DISCUSSION:**\n    * (Keywords: Meet, Call, Sync, Interview, Coffee)\n    * **Your Reaction:** Assume it might be over or happening. Ask about the **outcome**.\n    * *Example:* \"How did the client call go? Did you get the deal? Note down the meeting minutes.\"\n\n2.  **\ud83c\udfa8 IF CREATIVE / DEEP WORK:**\n    * (Keywords: Design, Write, Code, Draft, Create, Plan)\n    * **Your Reaction:** Ask about the **output/state**.\n    * *Example:* \"Is the first draft ready? Don't overthink perfection\u2014just get the V1 out.\"\n\n3.  **\ud83d\udce8 IF OUTREACH / ADMIN:**\n    * (Keywords: Email, Reply, Invoice, Check, Send)\n    * **Your Reaction:** Push for **completion**.\n    * *Example:* \"Have you hit 'Send' yet? Clear that inbox debt.\"\n\n4.  **\ud83d\udcda IF LEARNING / RESEARCH:**\n    * (Keywords: Read, Watch, Research, Study)\n    * **Your Reaction:** Ask for **key takeaways**.\n    * *Example:* \"What\u2019s the one golden nugget you learned from that article?\"\n\n### \ud83d\udccb GENERAL RULES:\n* **Keep it SHORT:** 2-3 sentences max.\n* **For [\u23f3 PENDING] Tasks:** Ask why the momentum hasn't started. \"What's the blocker?\"\n* **Tone:** Curious, Direct, and slightly pushy (like a co-founder).\n\n### \ud83d\udeab RESTRICTION:\n* Do not list all tasks. Pick the **most important/urgent one** and drill down into that context."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1968,
+        976
+      ],
+      "id": "dcb66db6-cbad-4a50-9269-fa5fd7138185",
+      "name": "Basic LLM Chain5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        1200
+      ],
+      "id": "f775e66c-3686-4a91-a244-291c7e927e92",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_sir_lin",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Checking In"
+            },
+            {
+              "name": "Tags",
+              "value": "hourglass_flowing_sand"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2320,
+        976
+      ],
+      "id": "2ca1305f-3838-4740-a047-9cd71fa14e9b",
+      "name": "Lin Htet1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        2560,
+        976
+      ],
+      "id": "ea1d3ce0-a3d6-4b69-b023-547b9db91fb4",
+      "name": "Schedule Trigger6"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "2915e4f2-85e8-4327-b402-02bc45276ee3"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2784,
+        976
+      ],
+      "id": "d99e6bac-0e9f-42ec-bdb3-39c343cee91e",
+      "name": "Supabase6",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        976
+      ],
+      "id": "c25d4f14-79fe-41e2-a574-8a9e17074d53",
+      "name": "Code Node6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, an End-of-Day Auditor. It is 8:30 PM.\nReview the user's \"Remaining Task List\" from Supabase.\n\nGOAL: Ensure the database reflects reality. Force a \"Clean Slate\" for tomorrow.\n\n### \ud83e\udde0 CONTEXTUAL AUDIT LOGIC (HOW TO THINK):\nDo not use a generic script. Analyze the *nature* of the remaining tasks to ask specific questions:\n\n1.  **\ud83d\udde3\ufe0f IF MEETING / CALLS (In Progress/Pending):**\n    * *Context:* These usually happen at specific times. If it's 8 PM, it's likely over.\n    * *Your Question:* \"Did the meeting with [Client Name] wrap up successfully? **If yes, mark it as DONE.** Don't let it sit there.\"\n\n2.  **\ud83c\udfa8 IF CREATIVE / OUTPUT (In Progress):**\n    * *Context:* Tasks like \"Design\", \"Write\", \"Draft\".\n    * *Your Question:* \"Did you ship the [Project Name]? If the files are sent, **update the task status**.\"\n\n3.  **\u23f3 IF STALE PENDING TASKS:**\n    * *Context:* Tasks that haven't moved all day.\n    * *Your Question:* \"I see [Task Name] hasn't moved. Be honest\u2014are you pushing this to tomorrow? **Update the due date or delete it.**\"\n\n### \ud83d\udccb OUTPUT STRUCTURE:\n\n1.  **\ud83d\udcc9 EOD STATUS:**\n    * If List is EMPTY: \"All clear. Zero debt. Disconnect and recharge. \ud83c\udf19\"\n    * If List EXISTS: \"You still have active tasks. Let's clean this up.\"\n\n2.  **\ud83e\uddf9 CLEANUP CALL (Only if tasks exist):**\n    * Pick the top 1-2 most important remaining tasks.\n    * Ask your **Contextual Question** (as defined above).\n    * *Example:* \"The 'Strategy Call' should be over by now. Did you finish it?\"\n\n3.  **\ud83d\udc49 ACTION ITEM:**\n    * Strict Instruction: \"**Go to the App and update these tasks NOW.**\"\n    * Explain Why: \"If you don't close them, tomorrow's briefing will be cluttered with old junk.\"\n\n### TONE:\nStrict on data hygiene, but supportive of the user's rest."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3232,
+        976
+      ],
+      "id": "1762c11b-e34c-4166-842f-f0cc74d91040",
+      "name": "Basic LLM Chain6"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        1200
+      ],
+      "id": "51a2b829-ac8d-4a8e-a3a1-0030380c24d7",
+      "name": "Google Gemini Chat Model6",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_sir_lin",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "EOD Cleanup Call"
+            },
+            {
+              "name": "Tags",
+              "value": "broom,ballot_box_with_check"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3584,
+        976
+      ],
+      "id": "222218db-5dea-469b-9f3c-694380286be1",
+      "name": "Lin Htet2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_akari",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Nemo Daily Briefing"
+            },
+            {
+              "name": "Tags",
+              "value": "rocket,briefcase"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1024,
+        112
+      ],
+      "id": "50d12533-9084-4186-ac65-6b4362c203f1",
+      "name": "Ma Akari"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13,
+              "triggerAtMinute": 14
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        112
+      ],
+      "id": "7420b8a5-8ea3-4607-b959-940f2746eea9",
+      "name": "Schedule Trigger7"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "2e4e7018-6d5f-4df6-8ae9-3e67988e46f1"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        112
+      ],
+      "id": "b405c2b7-b3ab-46fe-be62-b6020eb1adfd",
+      "name": "Supabase7",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        112
+      ],
+      "id": "c294c171-d5e6-4b8b-910d-bca1747d1d13",
+      "name": "Code Node7"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, a highly intelligent Accountability Partner. It is 1:14 PM.\nAnalyze the user's \"In Progress\" and \"Pending\" tasks.\n\nGOAL: Drive momentum by asking **context-aware questions** based on the specific *nature* of the task. Do not just ask \"Is it done?\".\n\n### \ud83e\udde0 CONTEXT AWARENESS LOGIC:\nLook at the `Task Title` and `Description` to detect the context, then adapt your question:\n\n1.  **\ud83d\udde3\ufe0f IF MEETING / CALL / DISCUSSION:**\n    * (Keywords: Meet, Call, Sync, Interview, Coffee)\n    * **Your Reaction:** Assume it might be over or happening. Ask about the **outcome**.\n    * *Example:* \"How did the client call go? Did you get the deal? Note down the meeting minutes.\"\n\n2.  **\ud83c\udfa8 IF CREATIVE / DEEP WORK:**\n    * (Keywords: Design, Write, Code, Draft, Create, Plan)\n    * **Your Reaction:** Ask about the **output/state**.\n    * *Example:* \"Is the first draft ready? Don't overthink perfection\u2014just get the V1 out.\"\n\n3.  **\ud83d\udce8 IF OUTREACH / ADMIN:**\n    * (Keywords: Email, Reply, Invoice, Check, Send)\n    * **Your Reaction:** Push for **completion**.\n    * *Example:* \"Have you hit 'Send' yet? Clear that inbox debt.\"\n\n4.  **\ud83d\udcda IF LEARNING / RESEARCH:**\n    * (Keywords: Read, Watch, Research, Study)\n    * **Your Reaction:** Ask for **key takeaways**.\n    * *Example:* \"What\u2019s the one golden nugget you learned from that article?\"\n\n### \ud83d\udccb GENERAL RULES:\n* **Keep it SHORT:** 2-3 sentences max.\n* **For [\u23f3 PENDING] Tasks:** Ask why the momentum hasn't started. \"What's the blocker?\"\n* **Tone:** Curious, Direct, and slightly pushy (like a co-founder).\n\n### \ud83d\udeab RESTRICTION:\n* Do not list all tasks. Pick the **most important/urgent one** and drill down into that context."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1968,
+        0
+      ],
+      "id": "9f8830af-05cd-4766-a3c9-4c04a720ca1c",
+      "name": "Basic LLM Chain7"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        224
+      ],
+      "id": "b2c6cf9a-9c4d-4850-9756-37c19eba1a4d",
+      "name": "Google Gemini Chat Model7",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_akari",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Checking In"
+            },
+            {
+              "name": "Tags",
+              "value": "hourglass_flowing_sand"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2320,
+        112
+      ],
+      "id": "912d4009-13fd-47d3-b1ca-4203ec9a8357",
+      "name": "Ma Akari1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 22
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        2560,
+        112
+      ],
+      "id": "68497835-6a0a-418b-b610-514415f54129",
+      "name": "Schedule Trigger8"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "2e4e7018-6d5f-4df6-8ae9-3e67988e46f1"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2784,
+        112
+      ],
+      "id": "f873e36d-0e51-44c1-ba11-a654dbd9b34e",
+      "name": "Supabase8",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(i => i.json);\nconst now = new Date();\nconst todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());\nconst todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);\n\n// Helpers\nconst getEndOfWeek = (d) => {\n  const date = new Date(d);\n  const day = date.getDay(); \n  const diff = date.getDate() - day + (day === 0 ? -6 : 1) + 6; \n  return new Date(date.setDate(diff));\n};\nconst endOfWeek = getEndOfWeek(todayStart);\nconst endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);\n\n// Buckets\nconst overdue = [];\nconst today = [];\nconst thisWeek = [];\nconst thisMonth = [];\nconst backlog = []; // No Due Date tasks\n\n// Status Counters\nlet inProgressCount = 0;\nlet pendingCount = 0;\n\ntasks.forEach(t => {\n  // Count Status\n  if (t.status === 'in_progress') inProgressCount++;\n  if (t.status === 'pending') pendingCount++;\n\n  // Create Tag\n  const statusIcon = t.status === 'in_progress' ? '\ud83c\udfc3' : '\u23f3';\n  const statusTag = `[${statusIcon} ${t.status.toUpperCase().replace('_', ' ')}]`;\n  \n  // Combine Title + Status\n  const taskString = `${t.title} ${statusTag}`;\n\n  if (!t.due_date) {\n     backlog.push(taskString);\n     return;\n  }\n\n  const due = new Date(t.due_date);\n\n  if (due < todayStart) {\n    overdue.push(`${taskString} (Due: ${t.due_date.split('T')[0]})`);\n  } else if (due >= todayStart && due < todayEnd) {\n    today.push(`${taskString} [${t.priority.toUpperCase()}]`);\n  } else if (due >= todayEnd && due <= endOfWeek) {\n    thisWeek.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  } else if (due > endOfWeek && due <= endOfMonth) {\n    thisMonth.push(`${taskString} (${t.due_date.split('T')[0]})`);\n  }\n});\n\nreturn {\n  json: {\n    date: now.toDateString(),\n    stats: {\n      overdue_count: overdue.length,\n      today_count: today.length,\n      total_pending: tasks.length,\n      status_summary: {\n          in_progress: inProgressCount,\n          pending: pendingCount\n      }\n    },\n    lists: {\n      overdue,\n      today,\n      this_week: thisWeek,\n      this_month: thisMonth,\n      backlog\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        112
+      ],
+      "id": "db3f4eff-b986-4050-bb8e-1841a12b1331",
+      "name": "Code Node8"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date: {{ $json.date }}\n\nDATA SUMMARY:\n{{ JSON.stringify($json.lists) }}\n\nSTATS:\n{{ JSON.stringify($json.stats) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are NemoAI, an End-of-Day Auditor. It is 10:00 PM.\nReview the user's \"Remaining Task List\" from Supabase.\n\nGOAL: Ensure the database reflects reality. Force a \"Clean Slate\" for tomorrow.\n\n### \ud83e\udde0 CONTEXTUAL AUDIT LOGIC (HOW TO THINK):\nDo not use a generic script. Analyze the *nature* of the remaining tasks to ask specific questions:\n\n1.  **\ud83d\udde3\ufe0f IF MEETING / CALLS (In Progress/Pending):**\n    * *Context:* These usually happen at specific times. If it's 8 PM, it's likely over.\n    * *Your Question:* \"Did the meeting with [Client Name] wrap up successfully? **If yes, mark it as DONE.** Don't let it sit there.\"\n\n2.  **\ud83c\udfa8 IF CREATIVE / OUTPUT (In Progress):**\n    * *Context:* Tasks like \"Design\", \"Write\", \"Draft\".\n    * *Your Question:* \"Did you ship the [Project Name]? If the files are sent, **update the task status**.\"\n\n3.  **\u23f3 IF STALE PENDING TASKS:**\n    * *Context:* Tasks that haven't moved all day.\n    * *Your Question:* \"I see [Task Name] hasn't moved. Be honest\u2014are you pushing this to tomorrow? **Update the due date or delete it.**\"\n\n### \ud83d\udccb OUTPUT STRUCTURE:\n\n1.  **\ud83d\udcc9 EOD STATUS:**\n    * If List is EMPTY: \"All clear. Zero debt. Disconnect and recharge. \ud83c\udf19\"\n    * If List EXISTS: \"You still have active tasks. Let's clean this up.\"\n\n2.  **\ud83e\uddf9 CLEANUP CALL (Only if tasks exist):**\n    * Pick the top 1-2 most important remaining tasks.\n    * Ask your **Contextual Question** (as defined above).\n    * *Example:* \"The 'Strategy Call' should be over by now. Did you finish it?\"\n\n3.  **\ud83d\udc49 ACTION ITEM:**\n    * Strict Instruction: \"**Go to the App and update these tasks NOW.**\"\n    * Explain Why: \"If you don't close them, tomorrow's briefing will be cluttered with old junk.\"\n\n### TONE:\nStrict on data hygiene, but supportive of the user's rest."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3232,
+        0
+      ],
+      "id": "776c033a-3e20-41f0-9df5-e10cf6d5e96d",
+      "name": "Basic LLM Chain8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        224
+      ],
+      "id": "c1417e38-e980-42ef-85a0-9ecff8f86f79",
+      "name": "Google Gemini Chat Model8",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://18.143.133.236/morning_akari",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "EOD Cleanup Call"
+            },
+            {
+              "name": "Tags",
+              "value": "broom,ballot_box_with_check"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            },
+            {
+              "name": "Markdown",
+              "value": "yes"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3584,
+        112
+      ],
+      "id": "64d6df33-a7f6-4238-837b-431b7fda9872",
+      "name": "Ma Akari2"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "main": [
+        [
+          {
+            "node": "Code Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Ma Akari",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase1": {
+      "main": [
+        [
+          {
+            "node": "Code Node1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Ko Ye Min",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Supabase2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase2": {
+      "main": [
+        [
+          {
+            "node": "Code Node2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node2": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain2": {
+      "main": [
+        [
+          {
+            "node": "Lin Htet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger3": {
+      "main": [
+        [
+          {
+            "node": "Supabase3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase3": {
+      "main": [
+        [
+          {
+            "node": "Code Node3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node3": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain3": {
+      "main": [
+        [
+          {
+            "node": "Ko Ye Min1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger4": {
+      "main": [
+        [
+          {
+            "node": "Supabase4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase4": {
+      "main": [
+        [
+          {
+            "node": "Code Node4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node4": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain4": {
+      "main": [
+        [
+          {
+            "node": "Ko Ye Min2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger5": {
+      "main": [
+        [
+          {
+            "node": "Supabase5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase5": {
+      "main": [
+        [
+          {
+            "node": "Code Node5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node5": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain5": {
+      "main": [
+        [
+          {
+            "node": "Lin Htet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain5",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger6": {
+      "main": [
+        [
+          {
+            "node": "Supabase6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase6": {
+      "main": [
+        [
+          {
+            "node": "Code Node6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node6": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain6": {
+      "main": [
+        [
+          {
+            "node": "Lin Htet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain6",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger7": {
+      "main": [
+        [
+          {
+            "node": "Supabase7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase7": {
+      "main": [
+        [
+          {
+            "node": "Code Node7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node7": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain7": {
+      "main": [
+        [
+          {
+            "node": "Ma Akari1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain7",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger8": {
+      "main": [
+        [
+          {
+            "node": "Supabase8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase8": {
+      "main": [
+        [
+          {
+            "node": "Code Node8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Node8": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain8": {
+      "main": [
+        [
+          {
+            "node": "Ma Akari2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain8",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2026-01-22T23:34:42.935+06:30",
+          "Readable date": "January 22nd 2026, 11:34:42 pm",
+          "Readable time": "11:34:42 pm",
+          "Day of week": "Thursday",
+          "Year": "2026",
+          "Month": "January",
+          "Day of month": "22",
+          "Hour": "23",
+          "Minute": "34",
+          "Second": "42",
+          "Timezone": "Asia/Yangon (UTC+06:30)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Schedule Trigger7": [
+      {
+        "json": {
+          "timestamp": "2026-01-22T23:34:42.935+06:30",
+          "Readable date": "January 22nd 2026, 11:34:42 pm",
+          "Readable time": "11:34:42 pm",
+          "Day of week": "Thursday",
+          "Year": "2026",
+          "Month": "January",
+          "Day of month": "22",
+          "Hour": "23",
+          "Minute": "34",
+          "Second": "42",
+          "Timezone": "Asia/Yangon (UTC+06:30)"
+        }
+      }
+    ],
+    "Schedule Trigger8": [
+      {
+        "json": {
+          "timestamp": "2026-01-22T23:34:42.935+06:30",
+          "Readable date": "January 22nd 2026, 11:34:42 pm",
+          "Readable time": "11:34:42 pm",
+          "Day of week": "Thursday",
+          "Year": "2026",
+          "Month": "January",
+          "Day of month": "22",
+          "Hour": "23",
+          "Minute": "34",
+          "Second": "42",
+          "Timezone": "Asia/Yangon (UTC+06:30)"
+        }
+      }
+    ]
+  },
+  "versionId": "48ab8d4d-a04f-45f4-a3d7-c44884543ad4",
+  "activeVersionId": null,
+  "versionCounter": 80,
+  "triggerCount": 9,
+  "shared": [
+    {
+      "updatedAt": "2026-01-10T18:59:52.993Z",
+      "createdAt": "2026-01-10T18:59:52.993Z",
+      "role": "workflow:owner",
+      "workflowId": "vyxpQ5_WIpneleTOCUKRX",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
+}

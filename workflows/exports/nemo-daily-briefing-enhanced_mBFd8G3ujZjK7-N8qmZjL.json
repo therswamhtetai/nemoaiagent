@@ -1,0 +1,942 @@
+{
+  "updatedAt": "2026-01-27T10:41:29.145Z",
+  "createdAt": "2026-01-26T21:45:28.125Z",
+  "id": "mBFd8G3ujZjK7-N8qmZjL",
+  "name": "Nemo -Daily Briefing Enhanced",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        -112
+      ],
+      "id": "27c158b9-939e-491c-b82e-05b8a04f0488",
+      "name": "Morning Trigger (8 AM)",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        48
+      ],
+      "id": "d3729936-0569-4e93-a708-3b52bfcc5ba5",
+      "name": "Noon Trigger (12 PM)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data\nconst inputData = $input.first().json || {};\nconst triggerType = inputData.trigger_type;\n\n// Get which trigger node executed this (check the node name)\nconst triggerNodeName = $input.first().$node?.name || '';\n\nlet timePeriod, ntfyTitle, briefingStyle;\n\n// Determine time period based on trigger node name or explicit trigger_type\nif (triggerType) {\n  // On-demand with specified type\n  timePeriod = triggerType;\n} else if (triggerNodeName.toLowerCase().includes('Morning')) {\n  timePeriod = 'morning';\n} else if (triggerNodeName.toLowerCase().includes('Noon')) {\n  timePeriod = 'noon';\n} else if (triggerNodeName.toLowerCase().includes('Evening')) {\n  timePeriod = 'evening';\n} else {\n  // Fallback: Calculate from current hour with Myanmar timezone (+6:30)\n  const now = new Date();\n  const utcHour = now.getUTCHours();\n  const utcMinutes = now.getUTCMinutes();\n  // Myanmar is UTC+6:30\n  const myanmarHour = (utcHour + 6 + Math.floor((utcMinutes + 30) / 60)) % 24;\n  \n  if (myanmarHour >= 5 && myanmarHour < 11) {\n    timePeriod = 'morning';\n  } else if (myanmarHour >= 11 && myanmarHour < 17) {\n    timePeriod = 'noon';\n  } else {\n    timePeriod = 'evening';\n  }\n}\n\n// Set title and style (NO EMOJIS - ntfy header restriction)\nswitch(timePeriod) {\n  case 'morning':\n    ntfyTitle = 'Morning Briefing';\n    briefingStyle = 'Start the day strong. Focus on priorities and urgent tasks.';\n    break;\n  case 'noon':\n    ntfyTitle = 'Midday Check-in';\n    briefingStyle = 'Quick progress check. What needs attention before end of day?';\n    break;\n  case 'evening':\n    ntfyTitle = 'Evening Cleanup';\n    briefingStyle = 'Wrap up the day. Review what got done and plan for tomorrow.';\n    break;\n  default:\n    ntfyTitle = 'Task Update';\n    briefingStyle = 'Here is your current task status.';\n}\n\nreturn {\n  json: {\n    time_period: timePeriod,\n    ntfy_title: ntfyTitle,\n    briefing_style: briefingStyle,\n    trigger_node: triggerNodeName,\n    user_id: inputData.user_id || null,\n    is_on_demand: !!inputData.user_id\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        96
+      ],
+      "id": "144ec02e-efdc-4cae-acc5-a89187ff71ea",
+      "name": "Set Time Context"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "users",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        464,
+        96
+      ],
+      "id": "018b5d1f-734e-4d92-a6b5-12a8d4bd5537",
+      "name": "Get Active Users",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        704,
+        96
+      ],
+      "id": "a727a711-7e2c-43b2-ab91-7a5057d07a0d",
+      "name": "Loop Users"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "neq",
+              "keyValue": "archived"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        960,
+        96
+      ],
+      "id": "4820df89-d337-4207-a73b-7abc23566f35",
+      "name": "Get User Tasks",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = $input.all().map(item => item.json);\nconst timeContext = $('Set Time Context').first().json;\nconst user = $('Loop Users').first().json;\n\n// Categorize tasks\nconst overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed');\nconst today = tasks.filter(t => {\n  if (!t.due_date) return false;\n  const due = new Date(t.due_date);\n  const now = new Date();\n  return due.toDateString() === now.toDateString() && t.status !== 'completed';\n});\nconst pending = tasks.filter(t => t.status === 'pending');\nconst inProgress = tasks.filter(t => t.status === 'in_progress');\n\nreturn {\n  json: {\n    user_id: user.id,\n    username: user.username || user.full_name || 'User',\n    ntfy_title: timeContext.ntfy_title,\n    briefing_style: timeContext.briefing_style,\n    time_period: timeContext.time_period,\n    task_summary: {\n      total: tasks.length,\n      overdue: overdue.length,\n      today: today.length,\n      pending: pending.length,\n      in_progress: inProgress.length\n    },\n    overdue_tasks: overdue.slice(0, 3).map(t => t.title),\n    today_tasks: today.slice(0, 3).map(t => t.title),\n    top_priority: tasks.filter(t => t.priority === 'high' && t.status !== 'completed').slice(0, 2).map(t => t.title)\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        96
+      ],
+      "id": "a1dc2ecc-06b9-42fe-96c2-e82bf67b0ef4",
+      "name": "Prepare Briefing Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are NemoAI, a high-agency Executive Partner (COO).\nCurrent Time: {{ $json.time_period }} (Context: {{ $json.briefing_style }})\n\nUSER DATA:\nUser: {{ $('Loop Users').first().json.full_name }}\nTask Summary: Total {{ $json.task_summary.total }} | Overdue {{ $json.task_summary.overdue }} | Today {{ $json.task_summary.today }}\nOverdue Tasks: {{ $json.overdue_tasks.join(\", \") || \"None\" }}\nToday Tasks: {{ $json.today_tasks.join(\", \") || \"None\" }}\nIn Progress Tasks: {{ $json.task_summary.in_progress }}\nHigh Priority: {{ $json.top_priority.join(\", \") || \"None\" }}\n\n### GOAL:\nGenerate a **{{ $json.time_period }} Briefing** that is Minimal, Strategic, and Context-Aware.\nCombine clean visuals with high-level accountability.\n\n### \ud83e\udde0 LOGIC BY TIME PERIOD:\n\n**IF MORNING (Briefing):**\n- Focus: Strategy & Efficiency.\n- Structure:\n  1. \u2600\ufe0f ONE powerful sentence setting the day context.\n  2. \ud83d\udea8 IMMEDIATE (Only if Overdue exists): List tasks (One line each). Ask: \"Stuck or started?\"\n  3. \u2705 MISSION (Today): List top 3 priorities. Group by \ud83c\udfc3 (In Progress) and \u23f3 (Pending).\n- Rule: Keep it crisp. No fluff.\n\n**IF AFTERNOON (Check-in):**\n- Focus: Momentum & Unblocking.\n- Logic: Pick the **single most important active task**. analyze its context:\n  - Meeting? -> \"Did it wrap up? Outcome?\"\n  - Creative? -> \"Is the draft ready?\"\n  - Admin? -> \"Did you hit send?\"\n- Output: 2-3 sentences. Ask that specific question. Don't list everything.\n\n**IF EVENING (Audit):**\n- Focus: Audit & Cleanup.\n- Logic: Check remaining tasks.\n  - If empty: \"All clear. Recharge. \ud83c\udf19\"\n  - If tasks remain: Ask specific cleanup questions (e.g., \"The meeting at 3 PM should be over. Mark it done?\").\n- Call to Action: \"Update status now to clear the board.\"\n\n### \ud83d\udcd0 VISUAL RULES (ALL TIMES):\n1. **NO MARKDOWN BOLD/ITALIC.** Keep text plain and clean.\n2. **Single Line Rule:** Lists must be compact.\n3. **Icons:** Use \ud83c\udfc3, \u23f3, \ud83d\udd34 sparingly.\n4. **Tone:** {{ $json.briefing_style }} (Friendly/Direct/Executive).\n\nOutput ONLY the briefing message. No JSON artifacts."
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1456,
+        96
+      ],
+      "id": "e357fdc5-f43c-4352-b5d7-ec09ed5b6d3a",
+      "name": "Generate Briefing"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        288
+      ],
+      "id": "4aa08b87-96fe-42c5-8805-0cbd08106173",
+      "name": "Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Prepare Briefing Data').first().json;\nconst aiOutput = $input.first().json;\nconst userId = data.user_id;\n\n// Extract clean message - handle various AI output formats\nlet message = '';\nif (typeof aiOutput === 'string') {\n  message = aiOutput;\n} else if (aiOutput.text) {\n  message = aiOutput.text;\n} else if (aiOutput.output) {\n  message = aiOutput.output;\n} else if (aiOutput.message) {\n  message = aiOutput.message;\n} else if (aiOutput.response) {\n  message = aiOutput.response;\n} else {\n  // Try to stringify and extract\n  const str = JSON.stringify(aiOutput);\n  const match = str.match(/\"(?:text|message|output|response)\":\\s*\"([^\"]+)\"/);\n  message = match ? match[1] : 'Task update available';\n}\n\n// If message is still a JSON string, try to parse it\nif (typeof message === 'string' && message.trim().startsWith('{')) {\n  try {\n    const parsed = JSON.parse(message);\n    message = parsed.message || parsed.text || parsed.output || parsed.response || message;\n  } catch (e) {\n    // Not valid JSON, keep as is\n  }\n}\n\n// Clean up any JSON artifacts or escape characters\nmessage = message\n  .replace(/^\\s*\\{\\s*\"message\"\\s*:\\s*\"/i, '')  // Remove {\"message\":\" at start\n  .replace(/\"\\s*\\}\\s*$/i, '')                   // Remove \"} at end\n  .replace(/^[{\\[\"]|[}\\]\"]$/g, '')\n  .replace(/\\\\n/g, ' ')\n  .replace(/\\n/g, ' ')\n  .replace(/\\\\\"/g, '\"')\n  .replace(/\\\"/g, '\"')\n  .trim();\n\n// ntfy topic mapping (CORRECTED)\nconst topicMap = {\n  '2e4e7018-6d5f-4df6-8ae9-3e67988e46f1': 'morning_akari',\n  'f6f6d720-9f49-45fb-a81a-d54d8a283a1c': 'morning_sir',\n  '2915e4f2-85e8-4327-b402-02bc45276ee3': 'morning_sir_lin',\n  'fd5834eb-6141-4081-81d9-be36a0ced5dd': 'nemoai-owner'\n};\n\nconst topic = topicMap[userId] || `nemoai-${data.username.toLowerCase().replace(/\\s+/g, '')}`;\n\n// Clean title - remove any non-ASCII chars for HTTP header\nconst cleanTitle = data.ntfy_title.replace(/[^\\x00-\\x7F]/g, '').trim();\n\nreturn {\n  json: {\n    topic: topic,\n    title: cleanTitle,\n    message: message,\n    user_id: userId\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        96
+      ],
+      "id": "2b7b7074-7eb6-415d-a601-c03ee5c84df7",
+      "name": "Map ntfy Topic"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        96
+      ],
+      "id": "50aeb6ae-a3b2-4e73-bec8-2f5e83273cc3",
+      "name": "Continue Loop"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        224
+      ],
+      "id": "9fce9e43-92f2-4c07-81f3-ad1fb3087814",
+      "name": "Evening Trigger (8 PM)"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OPqleYbWDbxnuHa6",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/OPqleYbWDbxnuHa6",
+          "cachedResultName": "Nemo - Push Notification Sender"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $('Loop Users').first().json.id }}",
+            "title": "={{ $('Map ntfy Topic').first().json.title || 'Daily Briefing' }}",
+            "message": "={{ $('Map ntfy Topic').first().json.message || $('Generate Briefing').first().json.text }}",
+            "type": "system"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        96
+      ],
+      "id": "f3aba82b-10bc-4519-8354-80873a8241e9",
+      "name": "Send Push Notification"
+    }
+  ],
+  "connections": {
+    "Morning Trigger (8 AM)": {
+      "main": [
+        [
+          {
+            "node": "Set Time Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Noon Trigger (12 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Time Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evening Trigger (8 PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Time Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Time Context": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Loop Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Users": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get User Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Tasks": {
+      "main": [
+        [
+          {
+            "node": "Prepare Briefing Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Briefing Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing": {
+      "main": [
+        [
+          {
+            "node": "Map ntfy Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Briefing",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map ntfy Topic": {
+      "main": [
+        [
+          {
+            "node": "Send Push Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Push Notification": {
+      "main": [
+        [
+          {
+            "node": "Continue Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Loop": {
+      "main": [
+        [
+          {
+            "node": "Loop Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "Evening Trigger (8 PM)": [
+      {
+        "json": {
+          "timestamp": "2026-01-24T20:00:36.017+06:30",
+          "Readable date": "January 24th 2026, 8:00:36 pm",
+          "Readable time": "8:00:36 pm",
+          "Day of week": "Saturday",
+          "Year": "2026",
+          "Month": "January",
+          "Day of month": "24",
+          "Hour": "20",
+          "Minute": "00",
+          "Second": "36",
+          "Timezone": "Asia/Yangon (UTC+06:30)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Morning Trigger (8 AM)": [
+      {
+        "json": {
+          "timestamp": "2026-01-27T06:11:55.133+06:30",
+          "Readable date": "January 27th 2026, 6:11:55 am",
+          "Readable time": "6:11:55 am",
+          "Day of week": "Tuesday",
+          "Year": "2026",
+          "Month": "January",
+          "Day of month": "27",
+          "Hour": "06",
+          "Minute": "11",
+          "Second": "55",
+          "Timezone": "Asia/Yangon (UTC+06:30)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "b3774aa4-1cb9-473d-9b0e-37ecd206069d",
+  "activeVersionId": "b3774aa4-1cb9-473d-9b0e-37ecd206069d",
+  "versionCounter": 13,
+  "triggerCount": 3,
+  "shared": [
+    {
+      "updatedAt": "2026-01-26T21:45:28.129Z",
+      "createdAt": "2026-01-26T21:45:28.129Z",
+      "role": "workflow:owner",
+      "workflowId": "mBFd8G3ujZjK7-N8qmZjL",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-26T23:43:43.000Z",
+    "createdAt": "2026-01-26T23:43:40.278Z",
+    "versionId": "b3774aa4-1cb9-473d-9b0e-37ecd206069d",
+    "workflowId": "mBFd8G3ujZjK7-N8qmZjL",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 8
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -48,
+          -112
+        ],
+        "id": "27c158b9-939e-491c-b82e-05b8a04f0488",
+        "name": "Morning Trigger (8 AM)",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 12
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -48,
+          48
+        ],
+        "id": "d3729936-0569-4e93-a708-3b52bfcc5ba5",
+        "name": "Noon Trigger (12 PM)"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Get input data\nconst inputData = $input.first().json || {};\nconst triggerType = inputData.trigger_type;\n\n// Get which trigger node executed this (check the node name)\nconst triggerNodeName = $input.first().$node?.name || '';\n\nlet timePeriod, ntfyTitle, briefingStyle;\n\n// Determine time period based on trigger node name or explicit trigger_type\nif (triggerType) {\n  // On-demand with specified type\n  timePeriod = triggerType;\n} else if (triggerNodeName.toLowerCase().includes('Morning')) {\n  timePeriod = 'morning';\n} else if (triggerNodeName.toLowerCase().includes('Noon')) {\n  timePeriod = 'noon';\n} else if (triggerNodeName.toLowerCase().includes('Evening')) {\n  timePeriod = 'evening';\n} else {\n  // Fallback: Calculate from current hour with Myanmar timezone (+6:30)\n  const now = new Date();\n  const utcHour = now.getUTCHours();\n  const utcMinutes = now.getUTCMinutes();\n  // Myanmar is UTC+6:30\n  const myanmarHour = (utcHour + 6 + Math.floor((utcMinutes + 30) / 60)) % 24;\n  \n  if (myanmarHour >= 5 && myanmarHour < 11) {\n    timePeriod = 'morning';\n  } else if (myanmarHour >= 11 && myanmarHour < 17) {\n    timePeriod = 'noon';\n  } else {\n    timePeriod = 'evening';\n  }\n}\n\n// Set title and style (NO EMOJIS - ntfy header restriction)\nswitch(timePeriod) {\n  case 'morning':\n    ntfyTitle = 'Morning Briefing';\n    briefingStyle = 'Start the day strong. Focus on priorities and urgent tasks.';\n    break;\n  case 'noon':\n    ntfyTitle = 'Midday Check-in';\n    briefingStyle = 'Quick progress check. What needs attention before end of day?';\n    break;\n  case 'evening':\n    ntfyTitle = 'Evening Cleanup';\n    briefingStyle = 'Wrap up the day. Review what got done and plan for tomorrow.';\n    break;\n  default:\n    ntfyTitle = 'Task Update';\n    briefingStyle = 'Here is your current task status.';\n}\n\nreturn {\n  json: {\n    time_period: timePeriod,\n    ntfy_title: ntfyTitle,\n    briefing_style: briefingStyle,\n    trigger_node: triggerNodeName,\n    user_id: inputData.user_id || null,\n    is_on_demand: !!inputData.user_id\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          208,
+          96
+        ],
+        "id": "144ec02e-efdc-4cae-acc5-a89187ff71ea",
+        "name": "Set Time Context"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "users",
+          "returnAll": true,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "is_active",
+                "condition": "eq",
+                "keyValue": "true"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          464,
+          96
+        ],
+        "id": "018b5d1f-734e-4d92-a6b5-12a8d4bd5537",
+        "name": "Get Active Users",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          704,
+          96
+        ],
+        "id": "a727a711-7e2c-43b2-ab91-7a5057d07a0d",
+        "name": "Loop Users"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "tasks",
+          "returnAll": true,
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.id }}"
+              },
+              {
+                "keyName": "status",
+                "condition": "neq",
+                "keyValue": "archived"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          960,
+          96
+        ],
+        "id": "4820df89-d337-4207-a73b-7abc23566f35",
+        "name": "Get User Tasks",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const tasks = $input.all().map(item => item.json);\nconst timeContext = $('Set Time Context').first().json;\nconst user = $('Loop Users').first().json;\n\n// Categorize tasks\nconst overdue = tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed');\nconst today = tasks.filter(t => {\n  if (!t.due_date) return false;\n  const due = new Date(t.due_date);\n  const now = new Date();\n  return due.toDateString() === now.toDateString() && t.status !== 'completed';\n});\nconst pending = tasks.filter(t => t.status === 'pending');\nconst inProgress = tasks.filter(t => t.status === 'in_progress');\n\nreturn {\n  json: {\n    user_id: user.id,\n    username: user.username || user.full_name || 'User',\n    ntfy_title: timeContext.ntfy_title,\n    briefing_style: timeContext.briefing_style,\n    time_period: timeContext.time_period,\n    task_summary: {\n      total: tasks.length,\n      overdue: overdue.length,\n      today: today.length,\n      pending: pending.length,\n      in_progress: inProgress.length\n    },\n    overdue_tasks: overdue.slice(0, 3).map(t => t.title),\n    today_tasks: today.slice(0, 3).map(t => t.title),\n    top_priority: tasks.filter(t => t.priority === 'high' && t.status !== 'completed').slice(0, 2).map(t => t.title)\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1216,
+          96
+        ],
+        "id": "a1dc2ecc-06b9-42fe-96c2-e82bf67b0ef4",
+        "name": "Prepare Briefing Data"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=You are NemoAI, a high-agency Executive Partner (COO).\nCurrent Time: {{ $json.time_period }} (Context: {{ $json.briefing_style }})\n\nUSER DATA:\nUser: {{ $('Loop Users').first().json.full_name }}\nTask Summary: Total {{ $json.task_summary.total }} | Overdue {{ $json.task_summary.overdue }} | Today {{ $json.task_summary.today }}\nOverdue Tasks: {{ $json.overdue_tasks.join(\", \") || \"None\" }}\nToday Tasks: {{ $json.today_tasks.join(\", \") || \"None\" }}\nIn Progress Tasks: {{ $json.task_summary.in_progress }}\nHigh Priority: {{ $json.top_priority.join(\", \") || \"None\" }}\n\n### GOAL:\nGenerate a **{{ $json.time_period }} Briefing** that is Minimal, Strategic, and Context-Aware.\nCombine clean visuals with high-level accountability.\n\n### \ud83e\udde0 LOGIC BY TIME PERIOD:\n\n**IF MORNING (Briefing):**\n- Focus: Strategy & Efficiency.\n- Structure:\n  1. \u2600\ufe0f ONE powerful sentence setting the day context.\n  2. \ud83d\udea8 IMMEDIATE (Only if Overdue exists): List tasks (One line each). Ask: \"Stuck or started?\"\n  3. \u2705 MISSION (Today): List top 3 priorities. Group by \ud83c\udfc3 (In Progress) and \u23f3 (Pending).\n- Rule: Keep it crisp. No fluff.\n\n**IF AFTERNOON (Check-in):**\n- Focus: Momentum & Unblocking.\n- Logic: Pick the **single most important active task**. analyze its context:\n  - Meeting? -> \"Did it wrap up? Outcome?\"\n  - Creative? -> \"Is the draft ready?\"\n  - Admin? -> \"Did you hit send?\"\n- Output: 2-3 sentences. Ask that specific question. Don't list everything.\n\n**IF EVENING (Audit):**\n- Focus: Audit & Cleanup.\n- Logic: Check remaining tasks.\n  - If empty: \"All clear. Recharge. \ud83c\udf19\"\n  - If tasks remain: Ask specific cleanup questions (e.g., \"The meeting at 3 PM should be over. Mark it done?\").\n- Call to Action: \"Update status now to clear the board.\"\n\n### \ud83d\udcd0 VISUAL RULES (ALL TIMES):\n1. **NO MARKDOWN BOLD/ITALIC.** Keep text plain and clean.\n2. **Single Line Rule:** Lists must be compact.\n3. **Icons:** Use \ud83c\udfc3, \u23f3, \ud83d\udd34 sparingly.\n4. **Tone:** {{ $json.briefing_style }} (Friendly/Direct/Executive).\n\nOutput ONLY the briefing message. No JSON artifacts."
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.4,
+        "position": [
+          1456,
+          96
+        ],
+        "id": "e357fdc5-f43c-4352-b5d7-ec09ed5b6d3a",
+        "name": "Generate Briefing"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash",
+          "options": {
+            "temperature": 0.7
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          1456,
+          288
+        ],
+        "id": "4aa08b87-96fe-42c5-8805-0cbd08106173",
+        "name": "Google Gemini",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const data = $('Prepare Briefing Data').first().json;\nconst aiOutput = $input.first().json;\nconst userId = data.user_id;\n\n// Extract clean message - handle various AI output formats\nlet message = '';\nif (typeof aiOutput === 'string') {\n  message = aiOutput;\n} else if (aiOutput.text) {\n  message = aiOutput.text;\n} else if (aiOutput.output) {\n  message = aiOutput.output;\n} else if (aiOutput.message) {\n  message = aiOutput.message;\n} else if (aiOutput.response) {\n  message = aiOutput.response;\n} else {\n  // Try to stringify and extract\n  const str = JSON.stringify(aiOutput);\n  const match = str.match(/\"(?:text|message|output|response)\":\\s*\"([^\"]+)\"/);\n  message = match ? match[1] : 'Task update available';\n}\n\n// If message is still a JSON string, try to parse it\nif (typeof message === 'string' && message.trim().startsWith('{')) {\n  try {\n    const parsed = JSON.parse(message);\n    message = parsed.message || parsed.text || parsed.output || parsed.response || message;\n  } catch (e) {\n    // Not valid JSON, keep as is\n  }\n}\n\n// Clean up any JSON artifacts or escape characters\nmessage = message\n  .replace(/^\\s*\\{\\s*\"message\"\\s*:\\s*\"/i, '')  // Remove {\"message\":\" at start\n  .replace(/\"\\s*\\}\\s*$/i, '')                   // Remove \"} at end\n  .replace(/^[{\\[\"]|[}\\]\"]$/g, '')\n  .replace(/\\\\n/g, ' ')\n  .replace(/\\n/g, ' ')\n  .replace(/\\\\\"/g, '\"')\n  .replace(/\\\"/g, '\"')\n  .trim();\n\n// ntfy topic mapping (CORRECTED)\nconst topicMap = {\n  '2e4e7018-6d5f-4df6-8ae9-3e67988e46f1': 'morning_akari',\n  'f6f6d720-9f49-45fb-a81a-d54d8a283a1c': 'morning_sir',\n  '2915e4f2-85e8-4327-b402-02bc45276ee3': 'morning_sir_lin',\n  'fd5834eb-6141-4081-81d9-be36a0ced5dd': 'nemoai-owner'\n};\n\nconst topic = topicMap[userId] || `nemoai-${data.username.toLowerCase().replace(/\\s+/g, '')}`;\n\n// Clean title - remove any non-ASCII chars for HTTP header\nconst cleanTitle = data.ntfy_title.replace(/[^\\x00-\\x7F]/g, '').trim();\n\nreturn {\n  json: {\n    topic: topic,\n    title: cleanTitle,\n    message: message,\n    user_id: userId\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1776,
+          96
+        ],
+        "id": "2b7b7074-7eb6-415d-a601-c03ee5c84df7",
+        "name": "Map ntfy Topic"
+      },
+      {
+        "parameters": {
+          "jsCode": "return $input.all();"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2208,
+          96
+        ],
+        "id": "50aeb6ae-a3b2-4e73-bec8-2f5e83273cc3",
+        "name": "Continue Loop"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 20
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -48,
+          224
+        ],
+        "id": "9fce9e43-92f2-4c07-81f3-ad1fb3087814",
+        "name": "Evening Trigger (8 PM)"
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "OPqleYbWDbxnuHa6",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/OPqleYbWDbxnuHa6",
+            "cachedResultName": "Nemo - Push Notification Sender"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "user_id": "={{ $('Loop Users').first().json.id }}",
+              "title": "={{ $('Map ntfy Topic').first().json.title || 'Daily Briefing' }}",
+              "message": "={{ $('Map ntfy Topic').first().json.message || $('Generate Briefing').first().json.text }}",
+              "type": "system"
+            }
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          1984,
+          96
+        ],
+        "id": "f3aba82b-10bc-4519-8354-80873a8241e9",
+        "name": "Send Push Notification"
+      }
+    ],
+    "connections": {
+      "Morning Trigger (8 AM)": {
+        "main": [
+          [
+            {
+              "node": "Set Time Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Noon Trigger (12 PM)": {
+        "main": [
+          [
+            {
+              "node": "Set Time Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Evening Trigger (8 PM)": {
+        "main": [
+          [
+            {
+              "node": "Set Time Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Time Context": {
+        "main": [
+          [
+            {
+              "node": "Get Active Users",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Active Users": {
+        "main": [
+          [
+            {
+              "node": "Loop Users",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Users": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Get User Tasks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get User Tasks": {
+        "main": [
+          [
+            {
+              "node": "Prepare Briefing Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Briefing Data": {
+        "main": [
+          [
+            {
+              "node": "Generate Briefing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Briefing": {
+        "main": [
+          [
+            {
+              "node": "Map ntfy Topic",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Generate Briefing",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Map ntfy Topic": {
+        "main": [
+          [
+            {
+              "node": "Send Push Notification",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Push Notification": {
+        "main": [
+          [
+            {
+              "node": "Continue Loop",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Continue Loop": {
+        "main": [
+          [
+            {
+              "node": "Loop Users",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version b3774aa4",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-26T23:43:43.770Z",
+        "id": 406,
+        "workflowId": "mBFd8G3ujZjK7-N8qmZjL",
+        "versionId": "b3774aa4-1cb9-473d-9b0e-37ecd206069d",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1178 @@
+{
+  "updatedAt": "2026-01-26T19:34:54.000Z",
+  "createdAt": "2026-01-16T12:42:00.620Z",
+  "id": "jGRfjeR5Bm3nV3Jv",
+  "name": "Nemo - Web API Router copy",
+  "description": "The central intelligence gateway for NemoAI. Accepts natural language queries and routes them to specialized sub-agents (Strategy, Market Research, Ops, CRM). Use this workflow as the primary entry point for general chat, complex reasoning, or when the user's intent is mixed.",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content }}",
+        "options": {
+          "systemMessage": "=You are NemoAI, a high-agency Chief Operating Officer (COO) and Strategic Business Partner.\n\n## \ud83d\udeab CRITICAL FORMATTING RULES (ZERO MARKDOWN POLICY):\n1. **PLAIN TEXT ONLY:** Do NOT use asterisks (**), hashes (##), or underscores (__). The output must be raw, clean text.\n2. **NO BOLDING:** Never bold any words. Use CAPITALIZATION if you need to emphasize a header.\n3. **VISUALS:** Use emojis to separate sections, but keep the text clean.\n4. **SPACING:** Leave one empty line between sections for readability.\n\n## \ud83d\udde3\ufe0f TONE & PERSONA (DYNAMIC & HUMAN):\n- **Adapt Your Vibe:**\n  - If the news is GOOD: Be energetic and high-momentum. (e.g., \"Great news,\" \"We are crushing this.\")\n  - If the news is BAD: Be serious, direct, and solution-oriented. (e.g., \"We have a problem,\" \"This looks risky.\")\n- **No Robot Speak:** Never say \"I have analyzed the data\" or \"Here is the report.\" Just start talking like a partner.\n- **Brutal Honesty:** Do not sugarcoat. If an idea is bad, say it.\n\n---\n\n## \ud83d\udee0\ufe0f TOOL USAGE INSTRUCTIONS:\n\n1. social_scout (Competitor Spy)\n   - Use for: Checking Facebook/TikTok pages.\n   - Logic: Identify if they are winning (High Viral Score) or losing (Low Viral Score). Check for fake followers.\n\n2. research_market (Real-time Intel)\n   - Use for: Gold price, Dollar rate, News.\n   - Logic: Always separate Official vs. Market rates. Flag risks if prices swing wildly.\n\n3. analyze_business (Strategy)\n   - Use for: ROI calculation, SWOT, Business Models.\n   - Logic: Use First Principles. Be critical of costs.\n\n4. ops_secretary (Task Manager)\n   - Use for: Reminders, Scheduling, Calendar.\n   - Logic: Confirm specific dates/times. Flag conflicts.\n\n5. manage_contact (CRM)\n   - Use for: Saving phone numbers or contact info.\n   - Logic: Keep it short. \"Saved him to the list.\"\n\n6. manage_ideas (Idea Vault)\n   - Use for: Storing thoughts or content ideas.\n   - Logic: Capture the core concept quickly.\n\n7. manage_preferences (Memory)\n   - Use for: Learning user habits (likes/dislikes).\n   - Logic: Remember this for future context.\n\n8. search_memory (Recall)\n   - Use for: Asking \"What did we discuss about X?\"\n   - Logic: Summarize previous decisions. Don't dump chat history.\n\n---\n\n## \ud83d\udcdd RESPONSE STRUCTURE (FLEXIBLE FLOW):\n\nDo not use a rigid template every time. Structure your response logically based on the context:\n\n1. THE HOOK (The Bottom Line)\nStart with the most important thing. Don't say \"Executive Summary\". Just say it.\nExample: \"I checked the competitor, and honestly, they are struggling.\"\n\n2. THE DETAILS (Key Data)\nList the facts clearly using standard bullets.\n\u2022 Use emojis for visual cues.\n\u2022 Keep it readable.\n\n3. THE INSIGHT (Why It Matters)\nConnect the dots. Why should the user care? Is this a threat or an opportunity?\n\n4. THE PLAN (Action Items)\nTell the user exactly what to do next. Be bossy but helpful.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1024,
+        -896
+      ],
+      "id": "4a7d7d98-ca87-433c-9de7-3e9b6389d3d0",
+      "name": "Jarvis Brain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-pro-preview",
+        "options": {
+          "maxOutputTokens": 3000,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -672
+      ],
+      "id": "06f83c66-40aa-4bf6-8d6f-0ca8366af8d4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Merge User').first().json.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        -672
+      ],
+      "id": "a1075f25-2283-44df-b61c-afdd6a5a336e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -672
+      ],
+      "id": "39212d74-9c4c-4387-a306-79a5882735ca",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wNgClCaTC4qSw4er",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/wNgClCaTC4qSw4er",
+          "cachedResultName": "Nemo - Save to Memory Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "content": "=User: {{ $json.user_id }} Assistant: {{ $('Jarvis Brain').item.json.output }}",
+            "user_id": "={{ $('Merge User').first().json.id }}",
+            "content_type": "conversation"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "content_type",
+              "displayName": "content_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1936,
+        -896
+      ],
+      "id": "5a1e36ad-954f-4a4e-9404-76c27f5e4c94",
+      "name": "Save to Long-term Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $('Jarvis Brain').first().json.output || '';\nlet finalMessage = rawOutput;\n\n// \u1041. Tool Log \u1019\u103b\u102c\u1038\u1000\u102d\u102f \u1016\u101a\u103a\u101b\u103e\u102c\u1038\u1001\u103c\u1004\u103a\u1038\nfinalMessage = finalMessage.replace(/\\[Used tools:[\\s\\S]*?\\]/g, '').trim();\n\n// \u1042. JSON Artifacts (\u1019\u101c\u102d\u102f\u1021\u1015\u103a\u1010\u1032\u1037 \u1000\u102f\u1012\u103a\u1010\u103d\u1031) \u1015\u102b\u101c\u102c\u101b\u1004\u103a \u101e\u1014\u1037\u103a\u101b\u103e\u1004\u103a\u1038\u101b\u1031\u1038\u101c\u102f\u1015\u103a\u1019\u101a\u103a\n// \u1025\u1015\u1019\u102c: \"{\"data\": ...\" \u1005\u1010\u102c\u1010\u103d\u1031\u1000\u102d\u102f \u1016\u101a\u103a\u1019\u101a\u103a\nif (finalMessage.includes('\\\"data\\\":') || finalMessage.includes('\\\"summary\\\":')) {\n    // \u1010\u103d\u1014\u1037\u103a\u1000\u103d\u1004\u103a\u1038 {} \u1000\u103c\u102c\u1038\u1000 \u1005\u102c\u1010\u103d\u1031\u1000\u102d\u102f \u101b\u103e\u102c\u1015\u103c\u102e\u1038 \u1016\u101a\u103a\u1011\u102f\u1010\u103a\u1016\u102d\u102f\u1037 \u1000\u103c\u102d\u102f\u1038\u1005\u102c\u1038\u1019\u101a\u103a (Text \u101e\u102e\u1038\u101e\u1014\u1037\u103a\u101a\u1030\u101b\u1014\u103a)\n    // \u1012\u102b\u1019\u103e\u1019\u101f\u102f\u1010\u103a \u101b\u102d\u102f\u1038\u101b\u102d\u102f\u1038\u101b\u103e\u1004\u103a\u1038\u101b\u103e\u1004\u103a\u1038 JSON syntax \u1010\u103d\u1031\u1000\u102d\u102f replace \u101c\u102f\u1015\u103a\u1019\u101a\u103a\n    finalMessage = finalMessage\n        .replace(/^{\"analysis_type\":.*?}/s, '') // JSON object \u1021\u1015\u103c\u100a\u1037\u103a\u1015\u102b\u101b\u1004\u103a \u1016\u103b\u1000\u103a\u1019\u101a\u103a\n        .replace(/\\\\n/g, '\\n') // Line break \u1010\u103d\u1031\u1000\u102d\u102f \u1015\u103c\u1014\u103a\u1019\u103e\u1014\u103a\u1021\u1031\u102c\u1004\u103a\u101c\u102f\u1015\u103a\u1019\u101a\u103a\n        .replace(/\\\\\"/g, '\"'); // Quote \u1010\u103d\u1031\u1000\u102d\u102f \u1015\u103c\u1014\u103a\u1019\u103e\u1014\u103a\u1021\u1031\u102c\u1004\u103a\u101c\u102f\u1015\u103a\u1019\u101a\u103a\n}\n\n// \u1043. Formatting \u1005\u1005\u103a\u1006\u1031\u1038\u1001\u103c\u1004\u103a\u1038\n// \u1021\u1000\u101a\u103a\u104d Output \u1000 Markdown \u1007\u101a\u102c\u1038\u1000\u103d\u1000\u103a\u1010\u103d\u1031 \u1015\u102b\u101c\u102c\u101b\u1004\u103a \u101c\u103e\u101c\u103e\u1015\u1015 \u1015\u103c\u1016\u102d\u102f\u1037 \u101c\u103d\u103e\u1010\u103a\u1015\u1031\u1038\u101c\u102d\u102f\u1000\u103a\u1019\u101a\u103a\n\nreturn [{\n  json: {\n    cleanOutput: finalMessage,\n    agent_used: $('Jarvis Brain').first().json.agent_used || 'unknown'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        -896
+      ],
+      "id": "48ad491e-6e78-4682-b8d1-0c200e087e01",
+      "name": "Clean Response"
+    },
+    {
+      "parameters": {
+        "description": "=Analyze business ideas and provide strategic frameworks.\n\nUse this tool when user asks about:\n- Business plans or ideas\n- Marketing strategy (4Ps: Product, Price, Place, Promotion)\n- SWOT analysis\n- ROI calculations\n- Target audience or customer personas\n- Competitor analysis\n\nInput: A description of what business analysis is needed.",
+        "workflowId": {
+          "__rl": true,
+          "value": "DvvZiJ0n2HvbkAax",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/DvvZiJ0n2HvbkAax",
+          "cachedResultName": "Nemo - Business Strategist"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_message": "={{ $fromAI('user_message', 'The business question or idea to analyze') }}",
+            "user_id": "={{ $('Merge User').first().json.id }}",
+            "user_context": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_context', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_message",
+              "displayName": "user_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_context",
+              "displayName": "user_context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        -432
+      ],
+      "id": "e43d9be7-23db-4e67-bcd9-e9383b4795aa",
+      "name": "analyze_business"
+    },
+    {
+      "parameters": {
+        "description": "Search past conversations and memories from the database. Use this when user asks about previous discussions, past decisions, or needs context from earlier conversations. \n\nInput: A search query describing what to find",
+        "workflowId": {
+          "__rl": true,
+          "value": "volKVoT9R96UigzM",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/volKVoT9R96UigzM",
+          "cachedResultName": "Nemo - Memory Retrieval Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $fromAI('query', `What to search for`, 'string') }}",
+            "user_id": "={{ $('Merge User').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -672
+      ],
+      "id": "567f7f89-2283-4b15-bc5d-193f878fb95d",
+      "name": "search_memory"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool when user asks for REAL-TIME information, prices, news, or competitor analysis (e.g., 'Google search for...', 'Current price of...', 'Competitors of...').",
+        "workflowId": {
+          "__rl": true,
+          "value": "Td29kBFdqAqSxBpo",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Td29kBFdqAqSxBpo",
+          "cachedResultName": "Nemo - Market Intel Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $fromAI(\"query\", \"What specifically should I search for?\") }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        -432
+      ],
+      "id": "23b8c17d-b78c-48dc-a793-fe57823d347a",
+      "name": "research_market"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to REMEMBER user habits or CHECK preferences.\n- If user says \"I like/hate X\", \"Remember that...\", set action='save', text='the preference'.\n- If you are planning a task/meeting and need to know user habits, set action='get', text='context'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "7g0eMB0yVqi8yMmQ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7g0eMB0yVqi8yMmQ",
+          "cachedResultName": "Nemo - Preference Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "={{ $fromAI(\"action\", \"save or get\") }}",
+            "text": "={{ $fromAI(\"text\", \"The preference to save OR context to check\") }}",
+            "user_id": "={{ $('Merge User').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        -672
+      ],
+      "id": "c1ed47a2-a720-4da0-b8a2-60eb2a10b0f5",
+      "name": "manage_preferences"
+    },
+    {
+      "parameters": {
+        "description": "For scheduling, tasks, to-do lists, and reminders.",
+        "workflowId": {
+          "__rl": true,
+          "value": "M9qgqvtsa5nuHUQ3",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/M9qgqvtsa5nuHUQ3",
+          "cachedResultName": "Nemo - Ops Secretary"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_message": "={{ $fromAI(\"user_message\") }}",
+            "user_id": "={{ $('Merge User').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_message",
+              "displayName": "user_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        -432
+      ],
+      "id": "68953fec-510c-4f22-bde8-33785d39f0d2",
+      "name": "ops_secretary"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to manage contacts.\n- Action 'save': Use when user wants to save a contact or sends a business card image. Extract all info to 'query'.\n- Action 'search': Use when user asks for someone's email/phone (e.g., \"Find Ko Kyaw\"). Put the name in 'query'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "M61NswfHOOsFxrL6",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/M61NswfHOOsFxrL6",
+          "cachedResultName": "Nemo - Contact Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "={{ $fromAI(\"action\") }}",
+            "query": "={{ $fromAI(\"query\") }}",
+            "user_id": "={{ $('Merge User').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        -672
+      ],
+      "id": "966de2b3-6465-4053-af04-81a40f21518a",
+      "name": "manage_contact"
+    },
+    {
+      "parameters": {
+        "jsCode": "// $input.first().json \u1000\u102d\u102f\u101e\u102f\u1036\u1038\u101c\u102d\u102f\u1000\u103a\u101b\u1004\u103a Webhook \u1000\u101c\u102c\u101c\u102c\u104a Voice \u1000\u101c\u102c\u101c\u102c \u1021\u1000\u102f\u1014\u103a\u1016\u1019\u103a\u1038\u101c\u102d\u102f\u1037\u101b\u101e\u103d\u102c\u1038\u1015\u102b\u1015\u103c\u102e\nconst inputData = $input.first().json;\n\n// Webhook \u1000\u101c\u102c\u101b\u1004\u103a .body \u1011\u1032\u1019\u103e\u102c\u1015\u102b\u1019\u101a\u103a\u104a Execute Workflow \u1000\u101c\u102c\u101b\u1004\u103a \u1010\u102d\u102f\u1000\u103a\u101b\u102d\u102f\u1000\u103a\u1015\u102b\u1019\u101a\u103a\nconst payload = inputData.body ? inputData.body : inputData;\n\n// UUID Generator Function (Valid UUID v4 \u1016\u1014\u103a\u1010\u102e\u1038\u1015\u1031\u1038\u1019\u101a\u1037\u103a Function)\nfunction generateUUID() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\n    return v.toString(16);\n  });\n}\n\nreturn {\n  json: {\n    // User ID\n    id: payload.user_id || 'guest-user',\n    \n    // \ud83d\udd25 FIX: Random String \u1021\u1005\u102c\u1038 Valid UUID \u1000\u102d\u102f \u1011\u102f\u1010\u103a\u1015\u1031\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u102b\u1015\u103c\u102e\n    thread_id: payload.thread_id || generateUUID(),\n    \n    // Message Content\n    final_message: payload.message || \"\",\n    \n    // Name\n    first_name: payload.name || \"Guest\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -896
+      ],
+      "id": "bdec7ce6-b997-4e09-929c-285d7e405220",
+      "name": "Merge User"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to save new business ideas or content ideas.\nInputs: title, description, type (business/content/marketing).",
+        "workflowId": {
+          "__rl": true,
+          "value": "rk_RR1SePy-TNVo68mZRu",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rk_RR1SePy-TNVo68mZRu",
+          "cachedResultName": "Nemo - Idea Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $fromAI(\"title\") }}",
+            "description": "={{ $fromAI(\"description\") }}",
+            "type": "={{ $fromAI(\"type\", \"business\") }}",
+            "user_id": "={{ $('Merge User').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        -432
+      ],
+      "id": "2f5b0eb4-2fc0-4262-819a-47a7bf7e2d4d",
+      "name": "manage_ideas"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dd585e02-b4e3-4537-8372-3fe1e2fbb80d",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        -992
+      ],
+      "id": "81bb7fae-797c-4747-8b1f-e1a073e019a4",
+      "name": "Webhook",
+      "webhookId": "dd585e02-b4e3-4537-8372-3fe1e2fbb80d"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ \n  JSON.stringify({\n    reply: $('Clean Response').item.json.cleanOutput || \"No response generated\",\n    agent: $('Clean Response').item.json.agent_used || \"unknown\"\n  }) \n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2608,
+        -896
+      ],
+      "id": "4c911b24-29d1-466a-8fb6-5683f02e27bb",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "thread_id",
+              "fieldValue": "={{ $('Merge User').first().json.thread_id }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Merge User').first().json.id }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "assistant"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $('Clean Response').first().json.cleanOutput }}"
+            },
+            {
+              "fieldId": "agent_used",
+              "fieldValue": "={{ $('Clean Response').first().json.agent_used }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "thread_name",
+              "fieldValue": "={{ $('Find Name Logic').first().json.existing_thread_name }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        -896
+      ],
+      "id": "18c718f6-0faa-41bc-a7cc-3f9498ea1fef",
+      "name": "Save AI Msg",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "thread_id",
+              "fieldValue": "={{ $('Merge User').first().json.thread_id }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "user"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $('Merge User').first().json.final_message }}"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "thread_name",
+              "fieldValue": "={{ $('Find Name Logic').first().json.existing_thread_name }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Merge User').first().json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -896
+      ],
+      "id": "2bcbbffd-892e-4307-89b2-02b9e719201d",
+      "name": "Save User Msg",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "conversations",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Merge User').item.json.thread_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        -896
+      ],
+      "id": "bcc77683-c1ff-4507-bc09-ec81a1df7be2",
+      "name": "Get Thread Name",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Supabase \u1000 \u1015\u103c\u1014\u103a\u101c\u102c\u1010\u1032\u1037 Data \u1010\u103d\u1031\u1000\u102d\u102f \u101a\u1030\u1019\u101a\u103a\nconst items = $('Get Thread Name').all();\n\n// thread_name \u1019\u101c\u103d\u1010\u103a\u1010\u1032\u1037 (Null \u1019\u1016\u103c\u1005\u103a\u1010\u1032\u1037) \u1015\u1011\u1019\u1006\u102f\u1036\u1038 Row \u1000\u102d\u102f \u101b\u103e\u102c\u1019\u101a\u103a\nlet foundName = null;\n\nfor (const item of items) {\n  const name = item.json.thread_name;\n  if (name && name !== '' && name !== null) {\n    foundName = name;\n    break; // \u1010\u103d\u1031\u1037\u1010\u102c\u1014\u1032\u1037 \u101b\u103e\u102c\u1010\u102c\u101b\u1015\u103a\u1019\u101a\u103a\n  }\n}\n\n// \u1010\u103d\u1031\u1037\u1010\u1032\u1037 \u1014\u102c\u1019\u100a\u103a\u1000\u102d\u102f \u1015\u103c\u1014\u103a\u1011\u102f\u1010\u103a\u1015\u1031\u1038\u1019\u101a\u103a (\u1019\u1010\u103d\u1031\u1037\u101b\u1004\u103a null)\nreturn {\n  json: {\n    existing_thread_name: foundName\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -896
+      ],
+      "id": "319c2ea0-25a6-44aa-9b3e-6bf25ca506c5",
+      "name": "Find Name Logic"
+    },
+    {
+      "parameters": {
+        "description": "Use this tool when the user wants to analyze a competitor's social media performance, check their viral score, or spy on their ads. Input should be the Facebook/TikTok URL.\"",
+        "workflowId": {
+          "__rl": true,
+          "value": "HCV-51qLaCdcxHGx2yBcO",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/HCV-51qLaCdcxHGx2yBcO",
+          "cachedResultName": "Nemo - Social Scout"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "target ": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('target_', `The URL of the competitor page`, 'string') }}"
+          },
+          "matchingColumns": [
+            "target "
+          ],
+          "schema": [
+            {
+              "id": "target ",
+              "displayName": "target ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        -672
+      ],
+      "id": "0330ddec-3615-403e-aec1-2196d6b88f3c",
+      "name": "social_scout"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "message",
+              "type": "any"
+            },
+            {
+              "name": "user_id",
+              "type": "any"
+            },
+            {
+              "name": "thread_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        -800
+      ],
+      "id": "1fbb3b04-70c4-4b7c-be7c-82065de8eb8a",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jarvis Brain": {
+      "main": [
+        [
+          {
+            "node": "Save to Long-term Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Long-term Memory": {
+      "main": [
+        [
+          {
+            "node": "Clean Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Response": {
+      "main": [
+        [
+          {
+            "node": "Save AI Msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "analyze_business": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "research_market": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manage_preferences": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ops_secretary": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manage_contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge User": {
+      "main": [
+        [
+          {
+            "node": "Get Thread Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manage_ideas": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Merge User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save AI Msg": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save User Msg": {
+      "main": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Thread Name": {
+      "main": [
+        [
+          {
+            "node": "Find Name Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Name Logic": {
+      "main": [
+        [
+          {
+            "node": "Save User Msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "social_scout": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis Brain",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Merge User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "admin.orcadigital.online",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "257",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "103.25.241.70",
+            "cf-ipcountry": "MM",
+            "cf-ray": "9bc80c0c7da6ddfc-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "69a6f1ed-3a5a-4a25-8e76-f32ecee47576",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "origin": "https://preview-nemoai-dashboard-setup-kzmnz0k8nhf3i3onyog4.vusercontent.net",
+            "priority": "u=1, i",
+            "referer": "https://preview-nemoai-dashboard-setup-kzmnz0k8nhf3i3onyog4.vusercontent.net/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "103.25.241.70",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "message": "\u1012\u102e\u1014\u1031\u1037\u1019\u103c\u1014\u103a\u1019\u102c\u1037\u1014\u102d\u102f\u1004\u103a\u1004\u1036\u101b\u1031\u1038\u1014\u1032\u1037\u1015\u102b\u1010\u103a\u101e\u1010\u103a\u1015\u103c\u102e\u1038\u1018\u102c\u1011\u1030\u1038\u101c\u1032",
+            "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+            "thread_id": "e5a4e001-24db-4d78-bcac-e26c4d374c54",
+            "name": "Boss"
+          },
+          "webhookUrl": "https://admin.orcadigital.online/webhook/chat",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "message": "\u1012\u102e\u1014\u1031\u1037 \u101b\u1014\u103a\u1000\u102f\u1014\u103a\u101b\u1032\u1037 \u101b\u102c\u101e\u102e\u1025\u1010\u102f\u1010\u103d\u1031 \u1010\u1005\u103a\u1001\u103b\u1000\u103a \u1011\u1015\u103a\u1015\u103c\u1031\u102c\u1015\u103c\u1015\u1031\u1038\u1015\u102b\u104b",
+          "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+          "thread_id": "2b9fda1e-d5ed-443e-bd83-65b7822c5ad8"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "28f9347a-3f25-4e7b-9a73-ba56eb04ab29",
+  "activeVersionId": null,
+  "versionCounter": 219,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-16T12:42:00.625Z",
+      "createdAt": "2026-01-16T12:42:00.625Z",
+      "role": "workflow:owner",
+      "workflowId": "jGRfjeR5Bm3nV3Jv",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
+}

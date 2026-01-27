@@ -1,0 +1,262 @@
+{
+  "updatedAt": "2026-01-25T14:08:26.675Z",
+  "createdAt": "2026-01-25T08:09:51.251Z",
+  "id": "OPqleYbWDbxnuHa6",
+  "name": "Nemo - Push Notification Sender",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        240
+      ],
+      "id": "trigger-push",
+      "name": "When Called by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://agent.nemoautomation.services/api/notifications/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "6ikSJFOdLiiW8xIsLd21bluSlOaTB1c/k9cfbwEx24E="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message || $json.body, type: $json.type || 'general', data: $json.data || {} }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        240
+      ],
+      "id": "send-push",
+      "name": "Send Push Notification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nreturn [{\n  json: {\n    success: result.success || false,\n    notification_id: result.notification_id || null,\n    push_sent: result.push_sent || false,\n    devices_notified: result.devices_notified || 0,\n    message: result.message || 'Notification processed'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        240
+      ],
+      "id": "format-result",
+      "name": "Format Result"
+    }
+  ],
+  "connections": {
+    "When Called by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Send Push Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Push Notification": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "28ae09b6-35bd-4bbf-b887-eadcab8b432f",
+  "activeVersionId": "28ae09b6-35bd-4bbf-b887-eadcab8b432f",
+  "versionCounter": 13,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-01-25T08:09:51.254Z",
+      "createdAt": "2026-01-25T08:09:51.254Z",
+      "role": "workflow:owner",
+      "workflowId": "OPqleYbWDbxnuHa6",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-25T14:08:34.000Z",
+    "createdAt": "2026-01-25T14:08:26.677Z",
+    "versionId": "28ae09b6-35bd-4bbf-b887-eadcab8b432f",
+    "workflowId": "OPqleYbWDbxnuHa6",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          192,
+          240
+        ],
+        "id": "trigger-push",
+        "name": "When Called by Another Workflow"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://agent.nemoautomation.services/api/notifications/send",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "x-api-key",
+                "value": "6ikSJFOdLiiW8xIsLd21bluSlOaTB1c/k9cfbwEx24E="
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message || $json.body, type: $json.type || 'general', data: $json.data || {} }) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          400,
+          240
+        ],
+        "id": "send-push",
+        "name": "Send Push Notification"
+      },
+      {
+        "parameters": {
+          "jsCode": "const result = $input.first().json;\n\nreturn [{\n  json: {\n    success: result.success || false,\n    notification_id: result.notification_id || null,\n    push_sent: result.push_sent || false,\n    devices_notified: result.devices_notified || 0,\n    message: result.message || 'Notification processed'\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          624,
+          240
+        ],
+        "id": "format-result",
+        "name": "Format Result"
+      }
+    ],
+    "connections": {
+      "When Called by Another Workflow": {
+        "main": [
+          [
+            {
+              "node": "Send Push Notification",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Push Notification": {
+        "main": [
+          [
+            {
+              "node": "Format Result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 28ae09b6",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-25T14:08:34.107Z",
+        "id": 364,
+        "workflowId": "OPqleYbWDbxnuHa6",
+        "versionId": "28ae09b6-35bd-4bbf-b887-eadcab8b432f",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

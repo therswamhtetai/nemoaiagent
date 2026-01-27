@@ -1,0 +1,1194 @@
+{
+  "updatedAt": "2026-01-26T10:06:31.843Z",
+  "createdAt": "2026-01-04T15:20:34.359Z",
+  "id": "M9qgqvtsa5nuHUQ3",
+  "name": "Agent Task Manager",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "options": {
+          "systemMessage": "=You are the Ops Secretary of NemoAI. Your goal is to manage tasks intelligently with high precision.\n\n## \ud83d\uded1 PRIME DIRECTIVE (THE GOLDEN RULE):\n**NEVER** update, complete, or modify a task without finding its ID first.\n1. If the user refers to an existing task (e.g., \"Mark Carousel as done\", \"I started the design\"), you **MUST** call `check_task` first to find the specific task.\n2. Read the search results to get the correct `id`.\n3. ONLY THEN call `complete_task` using that `id`.\n\n## \ud83d\udd04 Status Management:\nThe `complete_task` tool is not just for finishing tasks. Use it to update status to:\n- `in_progress` (User started working)\n- `completed` (User finished)\n- `archived` (User finished)\n- `pending` (Reset status)\n\n## \ud83d\udd52 Current Context:\nCurrent Time: {{ $now.setZone('Asia/Yangon').toFormat('yyyy-MM-dd, h:mm a') }}\nCurrent Year: {{ $now.year }}\nCurrent Month: {{ $now.month }}\n\n## \ud83d\udcc5 DATE FORMATTING (CRITICAL FOR TASKS):\nWhen creating tasks with due dates:\n1. **ALWAYS use CURRENT YEAR** ({{ $now.year }}) unless user explicitly says a different year\n2. If user says just a day (e.g., \"28 \u101b\u1000\u103a\", \"28th\"), use CURRENT MONTH ({{ $now.month }})\n3. If user says \"next week/month\", calculate from current date\n4. **FORMAT**: YYYY-MM-DD HH:MM:SS (e.g., {{ $now.year }}-{{ $now.toFormat('MM') }}-28 17:00:00)\n5. Default time if not specified: 17:00:00 (evening)\n\nExamples based on current date {{ $now.setZone('Asia/Yangon').toFormat('yyyy-MM-dd') }}:\n- \"28 \u101b\u1000\u103a\u1014\u1031\u1037\" \u2192 {{ $now.year }}-{{ $now.toFormat('MM') }}-28 17:00:00\n- \"next Monday\" \u2192 Calculate the actual date\n- \"February 5\" \u2192 {{ $now.year }}-02-05 17:00:00\n\n## \ud83e\udde0 Analysis Logic:\nWhen user mentions a NEW task:\n1. **Analyze Priority:**\n   - Urgent/ASAP/Important = HIGH\n   - Someday/Maybe = LOW\n   - Default = MEDIUM\n2. **Extract Deadline:**\n   - Look for specific time (e.g., \"Tomorrow 5 PM\").\n   - \u26a0\ufe0f CRITICAL: If user does NOT say *when*, you MUST ask: \"\u1018\u101a\u103a\u1021\u1001\u103b\u102d\u1014\u103a \u101c\u102f\u1015\u103a\u101b\u1019\u101c\u1032\u1001\u1004\u103a\u1017\u103b\u102c?\"\n   - Do NOT create the task without a deadline.\n3. **Business Context:**\n   - If user mentions a specific business (e.g., \"Shwe Bo Dawma\"), add \"[Shwe Bo Dawma]\" to the start of the title/description.\n\n## \ud83d\udee0\ufe0f Tool Usage:\n- ##MUST USE## `check_task`: Call this FIRST for any update/query and find user input task.\n- `manage_task`: Call ONLY to create NEW tasks.\n- `complete_task`: Call to update the `status` field (requires `id` from check_task).\n- 'delete_task': Call ONLY to delete task. **CRITICAL RULE** Before proceed to call this tool, ask user to confirm Yes/No. (requires `id` from check_task)\n- 'update_task': Call this tool to update when user want to update a task's status, title, due date or other details. ID is required. (requires `id` from check_task)\n\n## REMINDER HANDLING:\nWhen user mentions reminders (\"remind me\", \"set reminder\", \"don't forget\"):\n\n1. EXTRACT TIME: Parse the datetime from user message\n   - \"at 3 PM\" \u2192 Today at 15:00\n   - \"tomorrow morning\" \u2192 Tomorrow at 09:00\n   - \"tomorrow at 5\" \u2192 Tomorrow at 17:00\n   - \"in 2 hours\" \u2192 Current time + 2 hours\n   - \"Friday 3 PM\" \u2192 Next Friday at 15:00\n\n2. FORMAT: Convert to ISO 8601 with Myanmar timezone (+06:30)\n   Example: {{ $now.year }}-01-24T15:00:00+06:30\n\n3. CALL manage_reminder tool:\n   - action: \"create\"\n   - title: What to remind about\n   - remind_at: ISO datetime string\n\n4. CONFIRM: Tell user \"I'll remind you about [title] at [time]\"\n\n\u26a0\ufe0f TIMEZONE ENFORCEMENT \u26a0\ufe0f\nAll times MUST use Myanmar timezone (+06:30). NEVER output UTC (Z)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "eef499f4-29bc-421f-873a-d77ab894c2b4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        224
+      ],
+      "id": "ace25c16-933e-4f82-8271-6dd879b73619",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "user_message"
+            },
+            {
+              "name": "user_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f783e60d-82e4-4226-bcb9-c44cdea1d241",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "217f0f21-3e0f-4fd0-aab6-8e21aa43963c",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        0
+      ],
+      "id": "18bfcd44-35d7-419b-93cd-160617a7f980",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to check Tasks.",
+        "operation": "getAll",
+        "tableId": "tasks",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        480,
+        224
+      ],
+      "id": "b2c5df27-f971-4466-96a6-3283fcc27047",
+      "name": "check_task",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Call this tool ONLY when you have all mandatory details: title, due_date, and priority. If any is missing, DO NOT call this tool yet.",
+        "workflowId": {
+          "__rl": true,
+          "value": "JWwLi4Zo4Zqh7igS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/JWwLi4Zo4Zqh7igS",
+          "cachedResultName": "Nemo - Task Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $fromAI(\"title\") }}",
+            "description": "={{ $fromAI(\"description\") }}",
+            "priority": "={{ $fromAI(\"priority\") }}",
+            "due_date": "={{ $fromAI(\"due_date\") }}",
+            "user_id": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        224
+      ],
+      "id": "4e5d935d-1fd5-49bf-b8bc-99eb537a2127",
+      "name": "manage_task"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to complete Tasks.",
+        "operation": "update",
+        "tableId": "tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            },
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `Insert row ID here.`, 'string') }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues0_Field_Value', `What is the status of task in_progress / completed / archive?`, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        736,
+        224
+      ],
+      "id": "a996bd77-8d38-4aae-9da7-ffca4f897b55",
+      "name": "complete_task",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to delete tasks.",
+        "operation": "delete",
+        "tableId": "tasks",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            },
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `Insert row ID here.`, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        592,
+        368
+      ],
+      "id": "09ac8e80-67fb-4f38-899c-537d2cd2a7c0",
+      "name": "delete_task",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Create, list, or cancel reminders. Use when user says 'remind me', 'set a reminder', 'list my reminders', or 'cancel reminder'.\n\nActions:\n- create: Set a new reminder (needs title and remind_at in ISO format)\n- list: Show all pending reminders\n- cancel: Cancel a reminder by ID",
+        "workflowId": {
+          "__rl": true,
+          "value": "FjbkrqqGmbowjkoL",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/FjbkrqqGmbowjkoL",
+          "cachedResultName": "Nemo - Reminder Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "={{ $fromAI('action', 'create, list, or cancel') }}",
+            "user_id": "={{ $('Execute Workflow Trigger').item.json.user_id }}",
+            "title": "={{ $fromAI('title', 'What to remind about') }}",
+            "remind_at": "={{ $fromAI(\"remind_at\", \"ISO datetime string with Myanmar offset (+06:30). E.g., 2026-01-24T18:00:00+06:30\") }}",
+            "reminder_id": "={{ $fromAI('reminder_id', 'ID of reminder to cancel, if applicable') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "remind_at",
+              "displayName": "remind_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "reminder_id",
+              "displayName": "reminder_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        224
+      ],
+      "id": "manage-reminder-tool-001",
+      "name": "manage_reminder"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Call this tool to update a task's status, title, or details. ID is required.",
+        "operation": "update",
+        "tableId": "tasks",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            },
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `Insert row ID here from check_task tool.`, 'string') }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "due_date",
+              "fieldValue": "={{ $fromAI(\"due_date\") }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $fromAI(\"status\") }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $fromAI(\"description\") }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        432,
+        368
+      ],
+      "id": "1e7cfd51-c035-4df6-bbed-8e607fcd6c20",
+      "name": "update_task",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        240
+      ],
+      "id": "a5df218b-8095-4a37-910e-6ecd8268060c",
+      "name": "Simple Memory"
+    }
+  ],
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manage_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "complete_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delete_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manage_reminder": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_task": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "user_message": "Taunggyi Hotel Social Poster \u101c\u102f\u1015\u103a\u101b\u1019\u101a\u1037\u103a \u1021\u1001\u103b\u102d\u1014\u103a\u1000\u102d\u102f 4:30 PM \u1000\u1014\u1031 5:30 PM \u1000\u102d\u102f \u1015\u103c\u1031\u102c\u1004\u103a\u1038\u1015\u1031\u1038\u1015\u102b\u104b",
+          "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "0e9b6b1a-54bc-4a9c-88aa-0672640ea8f1",
+  "activeVersionId": "0e9b6b1a-54bc-4a9c-88aa-0672640ea8f1",
+  "versionCounter": 91,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-01-04T15:20:34.364Z",
+      "createdAt": "2026-01-04T15:20:34.364Z",
+      "role": "workflow:owner",
+      "workflowId": "M9qgqvtsa5nuHUQ3",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-26T10:06:51.000Z",
+    "createdAt": "2026-01-26T10:06:31.846Z",
+    "versionId": "0e9b6b1a-54bc-4a9c-88aa-0672640ea8f1",
+    "workflowId": "M9qgqvtsa5nuHUQ3",
+    "nodes": [
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.user_message }}",
+          "options": {
+            "systemMessage": "=You are the Ops Secretary of NemoAI. Your goal is to manage tasks intelligently with high precision.\n\n## \ud83d\uded1 PRIME DIRECTIVE (THE GOLDEN RULE):\n**NEVER** update, complete, or modify a task without finding its ID first.\n1. If the user refers to an existing task (e.g., \"Mark Carousel as done\", \"I started the design\"), you **MUST** call `check_task` first to find the specific task.\n2. Read the search results to get the correct `id`.\n3. ONLY THEN call `complete_task` using that `id`.\n\n## \ud83d\udd04 Status Management:\nThe `complete_task` tool is not just for finishing tasks. Use it to update status to:\n- `in_progress` (User started working)\n- `completed` (User finished)\n- `archived` (User finished)\n- `pending` (Reset status)\n\n## \ud83d\udd52 Current Context:\nCurrent Time: {{ $now.setZone('Asia/Yangon').toFormat('yyyy-MM-dd, h:mm a') }}\nCurrent Year: {{ $now.year }}\nCurrent Month: {{ $now.month }}\n\n## \ud83d\udcc5 DATE FORMATTING (CRITICAL FOR TASKS):\nWhen creating tasks with due dates:\n1. **ALWAYS use CURRENT YEAR** ({{ $now.year }}) unless user explicitly says a different year\n2. If user says just a day (e.g., \"28 \u101b\u1000\u103a\", \"28th\"), use CURRENT MONTH ({{ $now.month }})\n3. If user says \"next week/month\", calculate from current date\n4. **FORMAT**: YYYY-MM-DD HH:MM:SS (e.g., {{ $now.year }}-{{ $now.toFormat('MM') }}-28 17:00:00)\n5. Default time if not specified: 17:00:00 (evening)\n\nExamples based on current date {{ $now.setZone('Asia/Yangon').toFormat('yyyy-MM-dd') }}:\n- \"28 \u101b\u1000\u103a\u1014\u1031\u1037\" \u2192 {{ $now.year }}-{{ $now.toFormat('MM') }}-28 17:00:00\n- \"next Monday\" \u2192 Calculate the actual date\n- \"February 5\" \u2192 {{ $now.year }}-02-05 17:00:00\n\n## \ud83e\udde0 Analysis Logic:\nWhen user mentions a NEW task:\n1. **Analyze Priority:**\n   - Urgent/ASAP/Important = HIGH\n   - Someday/Maybe = LOW\n   - Default = MEDIUM\n2. **Extract Deadline:**\n   - Look for specific time (e.g., \"Tomorrow 5 PM\").\n   - \u26a0\ufe0f CRITICAL: If user does NOT say *when*, you MUST ask: \"\u1018\u101a\u103a\u1021\u1001\u103b\u102d\u1014\u103a \u101c\u102f\u1015\u103a\u101b\u1019\u101c\u1032\u1001\u1004\u103a\u1017\u103b\u102c?\"\n   - Do NOT create the task without a deadline.\n3. **Business Context:**\n   - If user mentions a specific business (e.g., \"Shwe Bo Dawma\"), add \"[Shwe Bo Dawma]\" to the start of the title/description.\n\n## \ud83d\udee0\ufe0f Tool Usage:\n- ##MUST USE## `check_task`: Call this FIRST for any update/query and find user input task.\n- `manage_task`: Call ONLY to create NEW tasks.\n- `complete_task`: Call to update the `status` field (requires `id` from check_task).\n- 'delete_task': Call ONLY to delete task. **CRITICAL RULE** Before proceed to call this tool, ask user to confirm Yes/No. (requires `id` from check_task)\n- 'update_task': Call this tool to update when user want to update a task's status, title, due date or other details. ID is required. (requires `id` from check_task)\n\n## REMINDER HANDLING:\nWhen user mentions reminders (\"remind me\", \"set reminder\", \"don't forget\"):\n\n1. EXTRACT TIME: Parse the datetime from user message\n   - \"at 3 PM\" \u2192 Today at 15:00\n   - \"tomorrow morning\" \u2192 Tomorrow at 09:00\n   - \"tomorrow at 5\" \u2192 Tomorrow at 17:00\n   - \"in 2 hours\" \u2192 Current time + 2 hours\n   - \"Friday 3 PM\" \u2192 Next Friday at 15:00\n\n2. FORMAT: Convert to ISO 8601 with Myanmar timezone (+06:30)\n   Example: {{ $now.year }}-01-24T15:00:00+06:30\n\n3. CALL manage_reminder tool:\n   - action: \"create\"\n   - title: What to remind about\n   - remind_at: ISO datetime string\n\n4. CONFIRM: Tell user \"I'll remind you about [title] at [time]\"\n\n\u26a0\ufe0f TIMEZONE ENFORCEMENT \u26a0\ufe0f\nAll times MUST use Myanmar timezone (+06:30). NEVER output UTC (Z)."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          416,
+          0
+        ],
+        "id": "eef499f4-29bc-421f-873a-d77ab894c2b4",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-3-flash-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          224,
+          224
+        ],
+        "id": "ace25c16-933e-4f82-8271-6dd879b73619",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "user_message"
+              },
+              {
+                "name": "user_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "f783e60d-82e4-4226-bcb9-c44cdea1d241",
+        "name": "Execute Workflow Trigger"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "217f0f21-3e0f-4fd0-aab6-8e21aa43963c",
+                "name": "output",
+                "value": "={{ $json.output }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          944,
+          0
+        ],
+        "id": "18bfcd44-35d7-419b-93cd-160617a7f980",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "descriptionType": "manual",
+          "toolDescription": "Use this tool to check Tasks.",
+          "operation": "getAll",
+          "tableId": "tasks",
+          "returnAll": true,
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabaseTool",
+        "typeVersion": 1,
+        "position": [
+          480,
+          224
+        ],
+        "id": "b2c5df27-f971-4466-96a6-3283fcc27047",
+        "name": "check_task",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "description": "Call this tool ONLY when you have all mandatory details: title, due_date, and priority. If any is missing, DO NOT call this tool yet.",
+          "workflowId": {
+            "__rl": true,
+            "value": "JWwLi4Zo4Zqh7igS",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/JWwLi4Zo4Zqh7igS",
+            "cachedResultName": "Nemo - Task Manager"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "title": "={{ $fromAI(\"title\") }}",
+              "description": "={{ $fromAI(\"description\") }}",
+              "priority": "={{ $fromAI(\"priority\") }}",
+              "due_date": "={{ $fromAI(\"due_date\") }}",
+              "user_id": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "title",
+                "displayName": "title",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              },
+              {
+                "id": "description",
+                "displayName": "description",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              },
+              {
+                "id": "priority",
+                "displayName": "priority",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              },
+              {
+                "id": "due_date",
+                "displayName": "due_date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              },
+              {
+                "id": "user_id",
+                "displayName": "user_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          608,
+          224
+        ],
+        "id": "4e5d935d-1fd5-49bf-b8bc-99eb537a2127",
+        "name": "manage_task"
+      },
+      {
+        "parameters": {
+          "descriptionType": "manual",
+          "toolDescription": "Use this tool to complete Tasks.",
+          "operation": "update",
+          "tableId": "tasks",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.user_id }}"
+              },
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `Insert row ID here.`, 'string') }}"
+              }
+            ]
+          },
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "status",
+                "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues0_Field_Value', `What is the status of task in_progress / completed / archive?`, 'string') }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabaseTool",
+        "typeVersion": 1,
+        "position": [
+          736,
+          224
+        ],
+        "id": "a996bd77-8d38-4aae-9da7-ffca4f897b55",
+        "name": "complete_task",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "descriptionType": "manual",
+          "toolDescription": "Use this tool to delete tasks.",
+          "operation": "delete",
+          "tableId": "tasks",
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.user_id }}"
+              },
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `Insert row ID here.`, 'string') }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabaseTool",
+        "typeVersion": 1,
+        "position": [
+          592,
+          368
+        ],
+        "id": "09ac8e80-67fb-4f38-899c-537d2cd2a7c0",
+        "name": "delete_task",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "description": "Create, list, or cancel reminders. Use when user says 'remind me', 'set a reminder', 'list my reminders', or 'cancel reminder'.\n\nActions:\n- create: Set a new reminder (needs title and remind_at in ISO format)\n- list: Show all pending reminders\n- cancel: Cancel a reminder by ID",
+          "workflowId": {
+            "__rl": true,
+            "value": "FjbkrqqGmbowjkoL",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/FjbkrqqGmbowjkoL",
+            "cachedResultName": "Nemo - Reminder Manager"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "action": "={{ $fromAI('action', 'create, list, or cancel') }}",
+              "user_id": "={{ $('Execute Workflow Trigger').item.json.user_id }}",
+              "title": "={{ $fromAI('title', 'What to remind about') }}",
+              "remind_at": "={{ $fromAI(\"remind_at\", \"ISO datetime string with Myanmar offset (+06:30). E.g., 2026-01-24T18:00:00+06:30\") }}",
+              "reminder_id": "={{ $fromAI('reminder_id', 'ID of reminder to cancel, if applicable') }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "action",
+                "displayName": "action",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string"
+              },
+              {
+                "id": "user_id",
+                "displayName": "user_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string"
+              },
+              {
+                "id": "title",
+                "displayName": "title",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string"
+              },
+              {
+                "id": "remind_at",
+                "displayName": "remind_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string"
+              },
+              {
+                "id": "reminder_id",
+                "displayName": "reminder_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string"
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          880,
+          224
+        ],
+        "id": "manage-reminder-tool-001",
+        "name": "manage_reminder"
+      },
+      {
+        "parameters": {
+          "descriptionType": "manual",
+          "toolDescription": "Call this tool to update a task's status, title, or details. ID is required.",
+          "operation": "update",
+          "tableId": "tasks",
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.user_id }}"
+              },
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Field_Value', `Insert row ID here from check_task tool.`, 'string') }}"
+              }
+            ]
+          },
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "due_date",
+                "fieldValue": "={{ $fromAI(\"due_date\") }}"
+              },
+              {
+                "fieldId": "status",
+                "fieldValue": "={{ $fromAI(\"status\") }}"
+              },
+              {
+                "fieldId": "description",
+                "fieldValue": "={{ $fromAI(\"description\") }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabaseTool",
+        "typeVersion": 1,
+        "position": [
+          432,
+          368
+        ],
+        "id": "1e7cfd51-c035-4df6-bbed-8e607fcd6c20",
+        "name": "update_task",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $json.user_id }}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [
+          352,
+          240
+        ],
+        "id": "a5df218b-8095-4a37-910e-6ecd8268060c",
+        "name": "Simple Memory"
+      }
+    ],
+    "connections": {
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Execute Workflow Trigger": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "check_task": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "manage_task": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "complete_task": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "delete_task": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "manage_reminder": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "update_task": {
+        "ai_tool": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Simple Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 0e9b6b1a",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-26T10:06:51.041Z",
+        "id": 393,
+        "workflowId": "M9qgqvtsa5nuHUQ3",
+        "versionId": "0e9b6b1a-54bc-4a9c-88aa-0672640ea8f1",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

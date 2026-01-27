@@ -1,0 +1,978 @@
+{
+  "updatedAt": "2026-01-15T02:46:10.174Z",
+  "createdAt": "2026-01-04T14:01:52.887Z",
+  "id": "7g0eMB0yVqi8yMmQ",
+  "name": "Nemo - Preference Manager",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action"
+            },
+            {
+              "name": "text"
+            },
+            {
+              "name": "user_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        -80
+      ],
+      "id": "037916c8-99da-4e97-9608-e1f3a079d836",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "3e82b33b-cc21-4047-9c39-5b817453f9e8"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "31ae7a72-e488-4d0b-a189-9a1e3dfb1cc8",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "get",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -64,
+        -80
+      ],
+      "id": "df7a6c56-b01d-41a6-be82-219b90af51ab",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -16
+      ],
+      "id": "cc429ae7-939d-4ffb-8159-b737de201f68",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "user_preferences",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('When Executed by Another Workflow').item.json.user_id }}"
+            },
+            {
+              "keyName": "preference_key",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript').item.json.key }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        688,
+        -176
+      ],
+      "id": "47c6745a-13fb-413a-98b4-9367113d069b",
+      "name": "Get many rows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When Executed by Another Workflow').item.json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Extract the user preference from this text: \"{{ $('When Executed by Another Workflow').item.json.text }}\"\n\nReturn ONLY a JSON object with \"key\" (snake_case) and \"value\".\nExample: {\"key\": \"meeting_time\", \"value\": \"after 2 PM\"}\nDo not add markdown formatting."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.8,
+      "position": [
+        160,
+        -176
+      ],
+      "id": "dd24a577-569d-4063-8ee9-fdefacb9d6a0",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the output from Basic LLM Chain\nconst llmOutput = $input.first().json.text; // Basic LLM Chain usually outputs 'text'\n\ntry {\n  // Clean up markdown if present and parse\n  const cleanJson = llmOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  const data = JSON.parse(cleanJson);\n  return { json: data };\n} catch (e) {\n  return { json: { key: \"error\", value: \"parsing_failed\" } };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -176
+      ],
+      "id": "b3a440e4-180f-4d02-b1b4-d4b8f3bb84d9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d1027962-2526-43e3-a7bc-a47607361d79",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -176
+      ],
+      "id": "9f932154-123b-430e-8b1a-598b74e5eea1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "user_preferences",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get many rows').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "preference_value",
+              "fieldValue": "={{ $('Code in JavaScript').item.json.value }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -112
+      ],
+      "id": "3b8aa68a-1b3a-4f44-9c41-d7b7ffd24085",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "user_preferences",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "preference_value",
+              "fieldValue": "={{ $('Code in JavaScript').item.json.value }}"
+            },
+            {
+              "fieldId": "preference_key",
+              "fieldValue": "={{ $('Code in JavaScript').item.json.key }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -288
+      ],
+      "id": "ab21342c-3de6-4dfe-a244-eee8191dae1c",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "user_preferences",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('When Executed by Another Workflow').item.json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        144,
+        160
+      ],
+      "id": "e6c76196-81b0-45cd-b9b7-65a33113cd3f",
+      "name": "Get many rows1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Supabase \u1000 \u101b\u101c\u102c\u1010\u1032\u1037 Row \u1021\u1000\u102f\u1014\u103a\u101c\u102f\u1036\u1038\u1000\u102d\u102f \u101a\u1030\u1019\u101a\u103a\nconst items = $input.all();\n\nif (items.length === 0) {\n  return { json: { text: \"No preferences found for this user.\" } };\n}\n\n// \"Key: Value\" \u1015\u102f\u1036\u1005\u1036\u1014\u1032\u1037 \u1005\u102c\u1000\u103c\u1031\u102c\u1004\u103a\u1038 \u1015\u103c\u1014\u103a\u1005\u102e\u1019\u101a\u103a\nconst formatted = items.map(item => {\n  return `- ${item.json.preference_key}: ${item.json.preference_value}`;\n}).join('\\n');\n\nreturn { json: { text: formatted } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        160
+      ],
+      "id": "bebd2e70-787e-487a-a514-16f206249a69",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "action": "save",
+          "text": "User appreciates detailed breakdowns and logical validation of data (e.g., showing the math for Gold Price calculations).",
+          "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "38496cd7-c63e-4b46-97c3-c0b5a8840f29",
+  "activeVersionId": "38496cd7-c63e-4b46-97c3-c0b5a8840f29",
+  "versionCounter": 15,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-01-04T14:01:52.892Z",
+      "createdAt": "2026-01-04T14:01:52.892Z",
+      "role": "workflow:owner",
+      "workflowId": "7g0eMB0yVqi8yMmQ",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-15T02:46:11.000Z",
+    "createdAt": "2026-01-15T02:46:10.175Z",
+    "versionId": "38496cd7-c63e-4b46-97c3-c0b5a8840f29",
+    "workflowId": "7g0eMB0yVqi8yMmQ",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "action"
+              },
+              {
+                "name": "text"
+              },
+              {
+                "name": "user_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -272,
+          -80
+        ],
+        "id": "037916c8-99da-4e97-9608-e1f3a079d836",
+        "name": "When Executed by Another Workflow"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "save",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "id": "3e82b33b-cc21-4047-9c39-5b817453f9e8"
+                    }
+                  ],
+                  "combinator": "and"
+                }
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "31ae7a72-e488-4d0b-a189-9a1e3dfb1cc8",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "get",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          -64,
+          -80
+        ],
+        "id": "df7a6c56-b01d-41a6-be82-219b90af51ab",
+        "name": "Switch"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-3-flash-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          160,
+          -16
+        ],
+        "id": "cc429ae7-939d-4ffb-8159-b737de201f68",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "user_preferences",
+          "limit": 1,
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $('When Executed by Another Workflow').item.json.user_id }}"
+              },
+              {
+                "keyName": "preference_key",
+                "condition": "eq",
+                "keyValue": "={{ $('Code in JavaScript').item.json.key }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          688,
+          -176
+        ],
+        "id": "47c6745a-13fb-413a-98b4-9367113d069b",
+        "name": "Get many rows",
+        "alwaysOutputData": true,
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('When Executed by Another Workflow').item.json.text }}",
+          "messages": {
+            "messageValues": [
+              {
+                "message": "=Extract the user preference from this text: \"{{ $('When Executed by Another Workflow').item.json.text }}\"\n\nReturn ONLY a JSON object with \"key\" (snake_case) and \"value\".\nExample: {\"key\": \"meeting_time\", \"value\": \"after 2 PM\"}\nDo not add markdown formatting."
+              }
+            ]
+          },
+          "batching": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.8,
+        "position": [
+          160,
+          -176
+        ],
+        "id": "dd24a577-569d-4063-8ee9-fdefacb9d6a0",
+        "name": "Basic LLM Chain"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse the output from Basic LLM Chain\nconst llmOutput = $input.first().json.text; // Basic LLM Chain usually outputs 'text'\n\ntry {\n  // Clean up markdown if present and parse\n  const cleanJson = llmOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  const data = JSON.parse(cleanJson);\n  return { json: data };\n} catch (e) {\n  return { json: { key: \"error\", value: \"parsing_failed\" } };\n}"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          -176
+        ],
+        "id": "b3a440e4-180f-4d02-b1b4-d4b8f3bb84d9",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "d1027962-2526-43e3-a7bc-a47607361d79",
+                "leftValue": "={{ $json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "empty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          896,
+          -176
+        ],
+        "id": "9f932154-123b-430e-8b1a-598b74e5eea1",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "tableId": "user_preferences",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ $('Get many rows').item.json.id }}"
+              }
+            ]
+          },
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "preference_value",
+                "fieldValue": "={{ $('Code in JavaScript').item.json.value }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1104,
+          -112
+        ],
+        "id": "3b8aa68a-1b3a-4f44-9c41-d7b7ffd24085",
+        "name": "Update a row",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "tableId": "user_preferences",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "preference_value",
+                "fieldValue": "={{ $('Code in JavaScript').item.json.value }}"
+              },
+              {
+                "fieldId": "preference_key",
+                "fieldValue": "={{ $('Code in JavaScript').item.json.key }}"
+              },
+              {
+                "fieldId": "user_id",
+                "fieldValue": "={{ $('When Executed by Another Workflow').item.json.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1104,
+          -288
+        ],
+        "id": "ab21342c-3de6-4dfe-a244-eee8191dae1c",
+        "name": "Create a row",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "user_preferences",
+          "returnAll": true,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $('When Executed by Another Workflow').item.json.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          144,
+          160
+        ],
+        "id": "e6c76196-81b0-45cd-b9b7-65a33113cd3f",
+        "name": "Get many rows1",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Supabase \u1000 \u101b\u101c\u102c\u1010\u1032\u1037 Row \u1021\u1000\u102f\u1014\u103a\u101c\u102f\u1036\u1038\u1000\u102d\u102f \u101a\u1030\u1019\u101a\u103a\nconst items = $input.all();\n\nif (items.length === 0) {\n  return { json: { text: \"No preferences found for this user.\" } };\n}\n\n// \"Key: Value\" \u1015\u102f\u1036\u1005\u1036\u1014\u1032\u1037 \u1005\u102c\u1000\u103c\u1031\u102c\u1004\u103a\u1038 \u1015\u103c\u1014\u103a\u1005\u102e\u1019\u101a\u103a\nconst formatted = items.map(item => {\n  return `- ${item.json.preference_key}: ${item.json.preference_value}`;\n}).join('\\n');\n\nreturn { json: { text: formatted } };"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          352,
+          160
+        ],
+        "id": "bebd2e70-787e-487a-a514-16f206249a69",
+        "name": "Code in JavaScript1"
+      }
+    ],
+    "connections": {
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "node": "Switch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get many rows1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "node": "Get many rows",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get many rows": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "Create a row",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Update a row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get many rows1": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 38496cd7",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-15T02:46:11.690Z",
+        "id": 133,
+        "workflowId": "7g0eMB0yVqi8yMmQ",
+        "versionId": "38496cd7-c63e-4b46-97c3-c0b5a8840f29",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

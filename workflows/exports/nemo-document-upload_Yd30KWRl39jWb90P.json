@@ -1,0 +1,1190 @@
+{
+  "updatedAt": "2026-01-24T09:14:08.721Z",
+  "createdAt": "2026-01-23T19:22:45.690Z",
+  "id": "Yd30KWRl39jWb90P",
+  "name": "Nemo - Document Upload",
+  "description": "Nemo - Document Upload",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-document",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-doc",
+      "name": "Document Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        64,
+        304
+      ],
+      "webhookId": "upload-document"
+    },
+    {
+      "parameters": {
+        "binaryData": true,
+        "binaryPropertyName": "file",
+        "dataPropertyName": "content_hash"
+      },
+      "id": "calc-hash",
+      "name": "Calculate Hash",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        288,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const binaryKey = 'file';\n  \n  // Robust binary reading\n  let base64 = '';\n  // Check if we can read binary data\n  try {\n    const buffer = await this.helpers.getBinaryDataBuffer(i, binaryKey);\n    base64 = buffer.toString('base64');\n  } catch (e) {\n    // Fallback if buffer fails (unlikely with this helper)\n    base64 = item.binary?.[binaryKey]?.data || '';\n  }\n\n  const userId = item.json.body?.user_id || item.json.user_id || 'unknown';\n  const message = item.json.body?.message || '';\n  const filename = item.binary?.[binaryKey]?.fileName || 'document';\n  const mimeType = item.binary?.[binaryKey]?.mimeType || 'application/pdf';\n  const fileType = mimeType.includes('pdf') ? 'pdf' : mimeType.includes('word') ? 'docx' : 'txt';\n  const contentHash = item.json.content_hash;\n\n  results.push({\n    json: {\n      user_id: userId,\n      message: message,\n      filename: filename,\n      file_type: fileType,\n      mime_type: mimeType,\n      content_hash: contentHash,\n      base64: base64\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "extract-info",
+      "name": "Extract File Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "documents",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "content_hash",
+              "condition": "eq",
+              "keyValue": "={{ $('Extract File Info').first().json.content_hash }}"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extract File Info').first().json.user_id }}"
+            }
+          ]
+        }
+      },
+      "id": "check-dup",
+      "name": "Check Duplicate Hash",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        720,
+        208
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "documents",
+        "limit": 1
+      },
+      "id": "check-versions",
+      "name": "Check Existing Versions",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        720,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fileInfo = $('Extract File Info').first().json;\nconst uploadedHash = fileInfo.content_hash;\nconst uploadedUserId = fileInfo.user_id;\n\n// Use input from current node (Check Duplicate Hash OR Check Existing Versions)\nconst inputData = $input.all();\n\n// Check for duplicates by comparing content_hash\nlet isDuplicate = false;\nlet existingId = null;\nlet nextVersion = 1;\nlet parentId = null;\n\nfor (const item of inputData) {\n  const data = item.json;\n  if (data && data.id) {\n    // Check if this is a duplicate (same content_hash)\n    if (data.content_hash === uploadedHash && data.user_id === uploadedUserId) {\n      isDuplicate = true;\n      existingId = data.id;\n      break;\n    }\n    // Check for version (same filename pattern)\n    if (data.filename && !isDuplicate) {\n      const existingBase = data.filename.replace(/\\.[^.]+$/, '').toLowerCase();\n      const uploadBase = fileInfo.filename.replace(/\\.[^.]+$/, '').toLowerCase();\n      if (existingBase === uploadBase && data.user_id === uploadedUserId) {\n        nextVersion = (data.version || 1) + 1;\n        parentId = data.parent_id || data.id;\n      }\n    }\n  }\n}\n\nif (isDuplicate) {\n  return [{\n    json: {\n      ...fileInfo,\n      is_duplicate: true,\n      existing_id: existingId,\n      message: 'Document already exists.'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ...fileInfo,\n    is_duplicate: false,\n    version: nextVersion,\n    parent_id: parentId\n  }\n}];"
+      },
+      "id": "logic-merge",
+      "name": "Version Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_duplicate }}",
+              "value2": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "if-dup",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Document already exists (v{{ $('Check Duplicate Hash').first().json.version }}).\",\n  \"document_id\": \"{{ $json.existing_id }}\",\n  \"is_duplicate\": true\n}",
+        "options": {}
+      },
+      "id": "respond-dup",
+      "name": "Respond Duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"inline_data\": {\n          \"mime_type\": \"{{ $json.mime_type }}\",\n          \"data\": \"{{ $json.base64 }}\"\n        }\n      },\n      {\n        \"text\": \"Extract all text content from this document. Return only the text.\"\n      }\n    ]\n  }]\n}",
+        "options": {}
+      },
+      "id": "gemini-parse",
+      "name": "Gemini Parse PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        400
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "eMemLe0qsN26xekJ",
+          "name": "Gemini API Key"
+        },
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst fileInfo = $('Version Logic').first().json;\n\nconst fullText = response.candidates?.[0]?.content?.parts?.[0]?.text || '';\nif (!fullText) {\n  return [{ json: { error: 'Could not extract text', success: false } }];\n}\n\n// Chunking logic\nconst CHUNK_SIZE = 2000;\nconst OVERLAP = 200;\nconst chunks = [];\n\nfor (let i = 0; i < fullText.length; i += (CHUNK_SIZE - OVERLAP)) {\n  const chunk = fullText.slice(i, i + CHUNK_SIZE).trim();\n  if (chunk) {\n    chunks.push({\n      user_id: fileInfo.user_id,\n      filename: fileInfo.filename,\n      content: chunk,\n      chunk_index: chunks.length\n    });\n  }\n}\n\nreturn [{\n  json: {\n    ...fileInfo,\n    full_text: fullText,\n    summary: fullText.slice(0, 500) + '...',\n    total_chunks: chunks.length,\n    chunks: chunks\n  }\n}];"
+      },
+      "id": "chunk-text",
+      "name": "Chunk Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "documents",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $json.user_id }}"
+            },
+            {
+              "fieldId": "filename",
+              "fieldValue": "={{ $json.filename }}"
+            },
+            {
+              "fieldId": "file_type",
+              "fieldValue": "={{ $json.file_type }}"
+            },
+            {
+              "fieldId": "content_summary",
+              "fieldValue": "={{ $json.summary }}"
+            },
+            {
+              "fieldId": "total_chunks",
+              "fieldValue": "={{ $json.total_chunks }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "version",
+              "fieldValue": "={{ $json.version }}"
+            },
+            {
+              "fieldId": "parent_id",
+              "fieldValue": "={{ $json.parent_id }}"
+            }
+          ]
+        }
+      },
+      "id": "save-doc",
+      "name": "Save Document",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const docResult = $input.first().json;\nconst prevData = $('Chunk Text').first().json;\nconst documentId = docResult.id;\nconst chunks = prevData.chunks || [];\n\nreturn chunks.map((chunk, i) => ({\n  json: {\n    ...chunk,\n    document_id: documentId,\n    chunk_index: i\n  }\n}));"
+      },
+      "id": "prepare-chunks",
+      "name": "Prepare Chunks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'models/text-embedding-004', content: { parts: [{ text: $json.content }] } }) }}",
+        "options": {}
+      },
+      "id": "embed-chunk",
+      "name": "Embed Chunk",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2272,
+        400
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "eMemLe0qsN26xekJ",
+          "name": "Gemini API Key"
+        },
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "knowledge_base",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Prepare Chunks').item.json.user_id }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $('Prepare Chunks').item.json.content }}"
+            },
+            {
+              "fieldId": "content_type",
+              "fieldValue": "document"
+            },
+            {
+              "fieldId": "embedding",
+              "fieldValue": "={{ JSON.stringify($json.embedding?.values || []) }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ JSON.stringify({ document_id: $('Prepare Chunks').item.json.document_id, filename: $('Prepare Chunks').item.json.filename }) }}"
+            }
+          ]
+        }
+      },
+      "id": "save-kb",
+      "name": "Save to Knowledge Base",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        400
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Document uploaded successfully (v{{ $('Version Logic').first().json.version }}).\",\n  \"document_id\": \"{{ $('Prepare Chunks').first().json.document_id }}\",\n  \"version\": {{ $('Version Logic').first().json.version }}\n}",
+        "options": {}
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2704,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Document Webhook": {
+      "main": [
+        [
+          {
+            "node": "Calculate Hash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Hash": {
+      "main": [
+        [
+          {
+            "node": "Extract File Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract File Info": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate Hash",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Existing Versions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate Hash": {
+      "main": [
+        [
+          {
+            "node": "Version Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Versions": {
+      "main": [
+        [
+          {
+            "node": "Version Logic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Version Logic": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Respond Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gemini Parse PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Parse PDF": {
+      "main": [
+        [
+          {
+            "node": "Chunk Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Text": {
+      "main": [
+        [
+          {
+            "node": "Save Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Document": {
+      "main": [
+        [
+          {
+            "node": "Prepare Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Chunks": {
+      "main": [
+        [
+          {
+            "node": "Embed Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed Chunk": {
+      "main": [
+        [
+          {
+            "node": "Save to Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Document Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "admin.orcadigital.online",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "content-length": "1055638",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "18.143.133.236",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9c2a7acf2ba63dbf-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "69a6f1ed-3a5a-4a25-8e76-f32ecee47576",
+            "connection": "keep-alive",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryw3z7JC6ll4uB3TFI",
+            "origin": "http://localhost:3000",
+            "priority": "u=1, i",
+            "referer": "http://localhost:3000/",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "18.143.133.236",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+            "message": "facebook ads"
+          },
+          "webhookUrl": "https://admin.orcadigital.online/webhook/upload-document",
+          "executionMode": "production"
+        },
+        "binary": {
+          "file": {
+            "mimeType": "application/pdf",
+            "fileType": "pdf",
+            "fileExtension": "pdf",
+            "data": "filesystem-v2",
+            "fileName": "2026-01-23T17-00 Transaction #25829031133453779-25719187717771456.pdf",
+            "id": "filesystem-v2:workflows/Yd30KWRl39jWb90P/executions/temp/binary_data/820d523b-1f92-40f4-bdb5-4152951b740f",
+            "fileSize": "1.06 MB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "46151629-34d8-40e0-b39b-84f97adc5ed7",
+  "activeVersionId": "46151629-34d8-40e0-b39b-84f97adc5ed7",
+  "versionCounter": 83,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-23T19:22:45.695Z",
+      "createdAt": "2026-01-23T19:22:45.695Z",
+      "role": "workflow:owner",
+      "workflowId": "Yd30KWRl39jWb90P",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-24T09:14:08.723Z",
+    "createdAt": "2026-01-24T09:14:08.723Z",
+    "versionId": "46151629-34d8-40e0-b39b-84f97adc5ed7",
+    "workflowId": "Yd30KWRl39jWb90P",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "upload-document",
+          "responseMode": "responseNode",
+          "options": {
+            "rawBody": true
+          }
+        },
+        "id": "webhook-doc",
+        "name": "Document Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          64,
+          304
+        ],
+        "webhookId": "upload-document"
+      },
+      {
+        "parameters": {
+          "binaryData": true,
+          "binaryPropertyName": "file",
+          "dataPropertyName": "content_hash"
+        },
+        "id": "calc-hash",
+        "name": "Calculate Hash",
+        "type": "n8n-nodes-base.crypto",
+        "typeVersion": 1,
+        "position": [
+          288,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const binaryKey = 'file';\n  \n  // Robust binary reading\n  let base64 = '';\n  // Check if we can read binary data\n  try {\n    const buffer = await this.helpers.getBinaryDataBuffer(i, binaryKey);\n    base64 = buffer.toString('base64');\n  } catch (e) {\n    // Fallback if buffer fails (unlikely with this helper)\n    base64 = item.binary?.[binaryKey]?.data || '';\n  }\n\n  const userId = item.json.body?.user_id || item.json.user_id || 'unknown';\n  const message = item.json.body?.message || '';\n  const filename = item.binary?.[binaryKey]?.fileName || 'document';\n  const mimeType = item.binary?.[binaryKey]?.mimeType || 'application/pdf';\n  const fileType = mimeType.includes('pdf') ? 'pdf' : mimeType.includes('word') ? 'docx' : 'txt';\n  const contentHash = item.json.content_hash;\n\n  results.push({\n    json: {\n      user_id: userId,\n      message: message,\n      filename: filename,\n      file_type: fileType,\n      mime_type: mimeType,\n      content_hash: contentHash,\n      base64: base64\n    }\n  });\n}\n\nreturn results;"
+        },
+        "id": "extract-info",
+        "name": "Extract File Info",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          512,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "documents",
+          "limit": 1,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "content_hash",
+                "condition": "eq",
+                "keyValue": "={{ $('Extract File Info').first().json.content_hash }}"
+              },
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $('Extract File Info').first().json.user_id }}"
+              }
+            ]
+          }
+        },
+        "id": "check-dup",
+        "name": "Check Duplicate Hash",
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          720,
+          208
+        ],
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "documents",
+          "limit": 1
+        },
+        "id": "check-versions",
+        "name": "Check Existing Versions",
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          720,
+          400
+        ],
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const fileInfo = $('Extract File Info').first().json;\nconst uploadedHash = fileInfo.content_hash;\nconst uploadedUserId = fileInfo.user_id;\n\n// Use input from current node (Check Duplicate Hash OR Check Existing Versions)\nconst inputData = $input.all();\n\n// Check for duplicates by comparing content_hash\nlet isDuplicate = false;\nlet existingId = null;\nlet nextVersion = 1;\nlet parentId = null;\n\nfor (const item of inputData) {\n  const data = item.json;\n  if (data && data.id) {\n    // Check if this is a duplicate (same content_hash)\n    if (data.content_hash === uploadedHash && data.user_id === uploadedUserId) {\n      isDuplicate = true;\n      existingId = data.id;\n      break;\n    }\n    // Check for version (same filename pattern)\n    if (data.filename && !isDuplicate) {\n      const existingBase = data.filename.replace(/\\.[^.]+$/, '').toLowerCase();\n      const uploadBase = fileInfo.filename.replace(/\\.[^.]+$/, '').toLowerCase();\n      if (existingBase === uploadBase && data.user_id === uploadedUserId) {\n        nextVersion = (data.version || 1) + 1;\n        parentId = data.parent_id || data.id;\n      }\n    }\n  }\n}\n\nif (isDuplicate) {\n  return [{\n    json: {\n      ...fileInfo,\n      is_duplicate: true,\n      existing_id: existingId,\n      message: 'Document already exists.'\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    ...fileInfo,\n    is_duplicate: false,\n    version: nextVersion,\n    parent_id: parentId\n  }\n}];"
+        },
+        "id": "logic-merge",
+        "name": "Version Logic",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          944,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{ $json.is_duplicate }}",
+                "value2": true
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "if-dup",
+        "name": "Is Duplicate?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          1168,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"success\": true,\n  \"message\": \"Document already exists (v{{ $('Check Duplicate Hash').first().json.version }}).\",\n  \"document_id\": \"{{ $json.existing_id }}\",\n  \"is_duplicate\": true\n}",
+          "options": {}
+        },
+        "id": "respond-dup",
+        "name": "Respond Duplicate",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1392,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googlePalmApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"inline_data\": {\n          \"mime_type\": \"{{ $json.mime_type }}\",\n          \"data\": \"{{ $json.base64 }}\"\n        }\n      },\n      {\n        \"text\": \"Extract all text content from this document. Return only the text.\"\n      }\n    ]\n  }]\n}",
+          "options": {}
+        },
+        "id": "gemini-parse",
+        "name": "Gemini Parse PDF",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1392,
+          400
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "eMemLe0qsN26xekJ",
+            "name": "Gemini API Key"
+          },
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const response = $input.first().json;\nconst fileInfo = $('Version Logic').first().json;\n\nconst fullText = response.candidates?.[0]?.content?.parts?.[0]?.text || '';\nif (!fullText) {\n  return [{ json: { error: 'Could not extract text', success: false } }];\n}\n\n// Chunking logic\nconst CHUNK_SIZE = 2000;\nconst OVERLAP = 200;\nconst chunks = [];\n\nfor (let i = 0; i < fullText.length; i += (CHUNK_SIZE - OVERLAP)) {\n  const chunk = fullText.slice(i, i + CHUNK_SIZE).trim();\n  if (chunk) {\n    chunks.push({\n      user_id: fileInfo.user_id,\n      filename: fileInfo.filename,\n      content: chunk,\n      chunk_index: chunks.length\n    });\n  }\n}\n\nreturn [{\n  json: {\n    ...fileInfo,\n    full_text: fullText,\n    summary: fullText.slice(0, 500) + '...',\n    total_chunks: chunks.length,\n    chunks: chunks\n  }\n}];"
+        },
+        "id": "chunk-text",
+        "name": "Chunk Text",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1600,
+          400
+        ]
+      },
+      {
+        "parameters": {
+          "tableId": "documents",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "user_id",
+                "fieldValue": "={{ $json.user_id }}"
+              },
+              {
+                "fieldId": "filename",
+                "fieldValue": "={{ $json.filename }}"
+              },
+              {
+                "fieldId": "file_type",
+                "fieldValue": "={{ $json.file_type }}"
+              },
+              {
+                "fieldId": "content_summary",
+                "fieldValue": "={{ $json.summary }}"
+              },
+              {
+                "fieldId": "total_chunks",
+                "fieldValue": "={{ $json.total_chunks }}"
+              },
+              {
+                "fieldId": "content_hash",
+                "fieldValue": "={{ $json.content_hash }}"
+              },
+              {
+                "fieldId": "version",
+                "fieldValue": "={{ $json.version }}"
+              },
+              {
+                "fieldId": "parent_id",
+                "fieldValue": "={{ $json.parent_id }}"
+              }
+            ]
+          }
+        },
+        "id": "save-doc",
+        "name": "Save Document",
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1824,
+          400
+        ],
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const docResult = $input.first().json;\nconst prevData = $('Chunk Text').first().json;\nconst documentId = docResult.id;\nconst chunks = prevData.chunks || [];\n\nreturn chunks.map((chunk, i) => ({\n  json: {\n    ...chunk,\n    document_id: documentId,\n    chunk_index: i\n  }\n}));"
+        },
+        "id": "prepare-chunks",
+        "name": "Prepare Chunks",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2048,
+          400
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googlePalmApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ model: 'models/text-embedding-004', content: { parts: [{ text: $json.content }] } }) }}",
+          "options": {}
+        },
+        "id": "embed-chunk",
+        "name": "Embed Chunk",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2272,
+          400
+        ],
+        "credentials": {
+          "httpQueryAuth": {
+            "id": "eMemLe0qsN26xekJ",
+            "name": "Gemini API Key"
+          },
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "tableId": "knowledge_base",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "user_id",
+                "fieldValue": "={{ $('Prepare Chunks').item.json.user_id }}"
+              },
+              {
+                "fieldId": "content",
+                "fieldValue": "={{ $('Prepare Chunks').item.json.content }}"
+              },
+              {
+                "fieldId": "content_type",
+                "fieldValue": "document"
+              },
+              {
+                "fieldId": "embedding",
+                "fieldValue": "={{ JSON.stringify($json.embedding?.values || []) }}"
+              },
+              {
+                "fieldId": "is_active",
+                "fieldValue": "true"
+              },
+              {
+                "fieldId": "metadata",
+                "fieldValue": "={{ JSON.stringify({ document_id: $('Prepare Chunks').item.json.document_id, filename: $('Prepare Chunks').item.json.filename }) }}"
+              }
+            ]
+          }
+        },
+        "id": "save-kb",
+        "name": "Save to Knowledge Base",
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          2480,
+          400
+        ],
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"success\": true,\n  \"message\": \"Document uploaded successfully (v{{ $('Version Logic').first().json.version }}).\",\n  \"document_id\": \"{{ $('Prepare Chunks').first().json.document_id }}\",\n  \"version\": {{ $('Version Logic').first().json.version }}\n}",
+          "options": {}
+        },
+        "id": "respond-success",
+        "name": "Respond Success",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          2704,
+          400
+        ]
+      }
+    ],
+    "connections": {
+      "Document Webhook": {
+        "main": [
+          [
+            {
+              "node": "Calculate Hash",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Calculate Hash": {
+        "main": [
+          [
+            {
+              "node": "Extract File Info",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract File Info": {
+        "main": [
+          [
+            {
+              "node": "Check Duplicate Hash",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Existing Versions",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Duplicate Hash": {
+        "main": [
+          [
+            {
+              "node": "Version Logic",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Existing Versions": {
+        "main": [
+          [
+            {
+              "node": "Version Logic",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Version Logic": {
+        "main": [
+          [
+            {
+              "node": "Is Duplicate?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Duplicate?": {
+        "main": [
+          [
+            {
+              "node": "Respond Duplicate",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Gemini Parse PDF",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gemini Parse PDF": {
+        "main": [
+          [
+            {
+              "node": "Chunk Text",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chunk Text": {
+        "main": [
+          [
+            {
+              "node": "Save Document",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save Document": {
+        "main": [
+          [
+            {
+              "node": "Prepare Chunks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Chunks": {
+        "main": [
+          [
+            {
+              "node": "Embed Chunk",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Embed Chunk": {
+        "main": [
+          [
+            {
+              "node": "Save to Knowledge Base",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save to Knowledge Base": {
+        "main": [
+          [
+            {
+              "node": "Respond Success",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-24T09:14:08.822Z",
+        "id": 289,
+        "workflowId": "Yd30KWRl39jWb90P",
+        "versionId": "46151629-34d8-40e0-b39b-84f97adc5ed7",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-24T09:14:21.315Z",
+        "id": 290,
+        "workflowId": "Yd30KWRl39jWb90P",
+        "versionId": "46151629-34d8-40e0-b39b-84f97adc5ed7",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

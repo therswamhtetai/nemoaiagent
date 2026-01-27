@@ -1,0 +1,1426 @@
+{
+  "updatedAt": "2026-01-26T19:37:55.670Z",
+  "createdAt": "2026-01-12T10:26:22.971Z",
+  "id": "HCV-51qLaCdcxHGx2yBcO",
+  "name": "Nemo - Social Scout",
+  "description": "Do competitor analysis",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "target "
+            },
+            {
+              "name": "user_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -704,
+        16
+      ],
+      "id": "1a47e815-b026-4dde-9b3a-cf3dc980a98f",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this social media data for the competitor: {{ $('Normalize Input').item.json.target }}\n\nHere is the raw data:\n{{ $json.merged_text }}\n\nPlease extract and summarize:\n1. Total Follower Count\n2. Engagement Rate (Estimate based on last 5 posts)\n3. Content Strategy: What kind of posts are they posting? (Video/Photo?)\n4. Top Performing Post: Which one got the most likes/shares?\n5. Viral Score (1-10): How trendy is this page right now?\n6. Is this page is currently running ads? \n\nOutput strictly in JSON format:\n{\n  \"followers\": 12345,\n  \"ads_running\": true/false,\n  \"viral_score\": 8,\n  \"summary\": \"They are focusing on short reels...\",\n  \"top_post\": \"The video about...\"\n}\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1520,
+        -80
+      ],
+      "id": "cd8af0e1-4eae-4125-aaae-76c62d501152",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        240
+      ],
+      "id": "aa100a0e-1774-4d41-a7fd-c27df3be5628",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "4Hv5RhChiaDk6iwad",
+          "mode": "list",
+          "cachedResultName": "Facebook Pages Scraper (apify/facebook-pages-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/4Hv5RhChiaDk6iwad/input"
+        },
+        "customBody": "={\n  \"startUrls\": [\n    { \"url\": \"{{ $('Normalize Input').item.json.target }}\" }\n  ],\n  \"maxPosts\": 5,\n  \"proxyConfiguration\": { \"useApifyProxy\": true }\n}",
+        "memory": 4096
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -80
+      ],
+      "id": "be0d8c7f-cd42-48bd-8132-26e7f3447be5",
+      "name": "Apify",
+      "credentials": {
+        "apifyApi": {
+          "id": "nkDHhtz7koGci1VE",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5e4cf50d-e973-44cf-a249-a9c8c1a1439c",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -32,
+        -80
+      ],
+      "id": "d7128da4-a676-43ee-a81f-d47593507b28",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "tableId": "competitors",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "url",
+              "fieldValue": "={{ $('Normalize Input').item.json.target }}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "New Competitor"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Normalize Input').item.json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -16
+      ],
+      "id": "ac79b978-7f66-4730-8d2a-e10e62fba945",
+      "name": "Create Competitor",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "competitors",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "url",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalize Input').item.json.target }}"
+            },
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -80
+      ],
+      "id": "7f81f3ab-6344-4f41-86a1-e2f63de87b8b",
+      "name": "Get Competitor",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b01cdefe-a941-4f74-b09e-998e1dafba2c",
+              "name": "json_output",
+              "value": "={{ JSON.parse($('Basic LLM Chain').item.json.text.replace(/```json/g, \"\").replace(/```/g, \"\")) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1840,
+        -80
+      ],
+      "id": "586ab771-8cd9-49db-bfc6-86de7aaabc79",
+      "name": "Parse JSON"
+    },
+    {
+      "parameters": {
+        "tableId": "social_stats",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "competitor_id",
+              "fieldValue": "={{ $('Code: Merge ID').item.json.competitor_id }}"
+            },
+            {
+              "fieldId": "follower_count",
+              "fieldValue": "={{ $('Parse JSON').item.json.json_output.followers }}"
+            },
+            {
+              "fieldId": "viral_score",
+              "fieldValue": "={{ $('Parse JSON').item.json.json_output.viral_score }}"
+            },
+            {
+              "fieldId": "summary_analysis",
+              "fieldValue": "={{ $('Parse JSON').item.json.json_output.summary }}"
+            },
+            {
+              "fieldId": "recent_posts",
+              "fieldValue": "={{ JSON.stringify($('Apify').item.json) }}"
+            },
+            {
+              "fieldId": "is_running_ads",
+              "fieldValue": "={{ $json.json_output.ads_running }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -80
+      ],
+      "id": "097ecede-4a14-4c8f-b5e4-87e7ef776e6e",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\n\nreturn {\n  json: {\n    competitor_id: inputData.id\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -80
+      ],
+      "id": "f74e35ea-da4a-4987-92d6-fb02b831d0c9",
+      "name": "Code: Merge ID"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "monitor-competitor",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -704,
+        -176
+      ],
+      "id": "d464230c-a897-4065-bb0e-4c0e4624d07f",
+      "name": "Webhook",
+      "webhookId": "7fa3dc39-91ee-49a1-aa94-a956ece816e9"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\n\n// 1. Target URL \u101b\u103e\u102c\u1015\u102f\u1036\u1010\u1031\u102c\u103a (\u1014\u1031\u101b\u102c\u1005\u102f\u1036 + \u1014\u102c\u1019\u100a\u103a\u1005\u102f\u1036 \u101b\u103e\u102c\u1019\u101a\u103a)\nlet targetUrl = \n  inputData.target || \n  inputData.link || // \ud83d\udd25 Added: 'link' key \u1000\u102d\u102f\u1015\u102b \u101b\u103e\u102c\u1001\u102d\u102f\u1004\u103a\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u103c\u102e\n  (inputData.body && inputData.body.target) || \n  (inputData.body && inputData.body.link) || // \ud83d\udd25 Added: Body \u1011\u1032\u1000 'link'\n  (inputData.query && inputData.query.target) || \n  (inputData.query && inputData.query.link) || // \ud83d\udd25 Added: Query \u1011\u1032\u1000 'link'\n  inputData['target ']; \n\n// \u101b\u103e\u102c\u1019\u1010\u103d\u1031\u1037\u101b\u1004\u103a Default \u1011\u100a\u1037\u103a\u1019\u101a\u103a\nif (!targetUrl) {\n  targetUrl = 'https://www.facebook.com/dalaestore.mm';\n}\n\n// 2. User ID \u101b\u103e\u102c\u1015\u102f\u1036\u1010\u1031\u102c\u103a\nlet userId = \n  inputData.user_id || \n  (inputData.body && inputData.body.user_id) || \n  (inputData.query && inputData.query.user_id);\n\nreturn {\n  json: {\n    target: targetUrl.trim(),\n    user_id: userId\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -80
+      ],
+      "id": "47f3293c-a540-4168-b8eb-25ba492fd306",
+      "name": "Normalize Input"
+    },
+    {
+      "parameters": {
+        "resource": "Datasets",
+        "datasetId": "={{ $('Apify').item.json.defaultDatasetId }}",
+        "limit": "={{ true }}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -80
+      ],
+      "id": "1ba72e97-5fd2-48af-a475-2556032c935b",
+      "name": "Get Dataset",
+      "credentials": {
+        "apifyApi": {
+          "id": "nkDHhtz7koGci1VE",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "competitors",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code: Merge ID').item.json.competitor_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "last_scraped_at",
+              "fieldValue": "={{ $('Apify').item.json.startedAt }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "={{ $json.categories[1] }}"
+            },
+            {
+              "fieldId": "url",
+              "fieldValue": "={{ $json.pageUrl }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -80
+      ],
+      "id": "0b84b603-e8f4-49bd-883d-1d223978a846",
+      "name": "Update a row",
+      "alwaysOutputData": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $('Get Dataset').all().map(item => item.json);\n\nreturn {\n  json: {\n    merged_text: JSON.stringify(allItems)\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -80
+      ],
+      "id": "fae5b365-556a-4961-9c3e-3d64bf912776",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "217f0f21-3e0f-4fd0-aab6-8e21aa43963c",
+              "name": "output",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2480,
+        -80
+      ],
+      "id": "06ebf5d9-3ba7-4541-958c-ecfda7b7b54b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Basic LLM Chain').item.json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "## \ud83d\udeab CRITICAL FORMATTING RULES (ZERO MARKDOWN POLICY): 1. **PLAIN TEXT ONLY:** You must output strictly clean, plain text. 2. **ABSOLUTELY FORBIDDEN SYMBOLS:**    - **NO Asterisks:** Do not use `**` for bolding. Do not use `*` for italics. (e.g., Write \"Followers: 500\", NOT \"**Followers:** 500\").    - **NO Hash Headers:** Do not use `###` or `##`.    - **NO Code Blocks:** Do not use backticks (```). 3. **STRUCTURING:**    - Use **UPPERCASE LABELS** for section titles (e.g., THE BOTTOM LINE).    - Use standard bullets (`\u2022`) for lists.    - **MANDATORY:** Leave exactly one empty line between sections."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2192,
+        -80
+      ],
+      "id": "f45eba75-bd6c-4d85-b8ca-16fddb312aca",
+      "name": "Basic LLM Chain1"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify": {
+      "main": [
+        [
+          {
+            "node": "Get Dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Code: Merge ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Competitor": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Competitor": {
+      "main": [
+        [
+          {
+            "node": "Code: Merge ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Merge ID": {
+      "main": [
+        [
+          {
+            "node": "Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Get Competitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Dataset": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "target ": "https://www.facebook.com/Manulife.Myanmar",
+          "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "admin.orcadigital.online",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "128",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "18.143.133.236",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9beeafe1889efd8d-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "69a6f1ed-3a5a-4a25-8e76-f32ecee47576",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "origin": "http://localhost:3000",
+            "priority": "u=1, i",
+            "referer": "http://localhost:3000/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "18.143.133.236",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "trigger": "manual_refresh",
+            "user_id": "2cf06be6-19bd-4705-9964-ccce8aca4506",
+            "link": "https://www.facebook.com/Manulife.Myanmar"
+          },
+          "webhookUrl": "https://admin.orcadigital.online/webhook/monitor-competitor",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+  "activeVersionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+  "versionCounter": 52,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-12T10:26:22.982Z",
+      "createdAt": "2026-01-12T10:26:22.982Z",
+      "role": "workflow:owner",
+      "workflowId": "HCV-51qLaCdcxHGx2yBcO",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-16T15:53:25.000Z",
+    "createdAt": "2026-01-16T15:53:22.928Z",
+    "versionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+    "workflowId": "HCV-51qLaCdcxHGx2yBcO",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "target "
+              },
+              {
+                "name": "user_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -704,
+          16
+        ],
+        "id": "1a47e815-b026-4dde-9b3a-cf3dc980a98f",
+        "name": "Execute Workflow Trigger"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Analyze this social media data for the competitor: {{ $('Normalize Input').item.json.target }}\n\nHere is the raw data:\n{{ $json.merged_text }}\n\nPlease extract and summarize:\n1. Total Follower Count\n2. Engagement Rate (Estimate based on last 5 posts)\n3. Content Strategy: What kind of posts are they posting? (Video/Photo?)\n4. Top Performing Post: Which one got the most likes/shares?\n5. Viral Score (1-10): How trendy is this page right now?\n6. Is this page is currently running ads? \n\nOutput strictly in JSON format:\n{\n  \"followers\": 12345,\n  \"ads_running\": true/false,\n  \"viral_score\": 8,\n  \"summary\": \"They are focusing on short reels...\",\n  \"top_post\": \"The video about...\"\n}\n",
+          "batching": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.9,
+        "position": [
+          1520,
+          -80
+        ],
+        "id": "cd8af0e1-4eae-4125-aaae-76c62d501152",
+        "name": "Basic LLM Chain"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-3-flash-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          1872,
+          240
+        ],
+        "id": "aa100a0e-1774-4d41-a7fd-c27df3be5628",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "actorSource": "store",
+          "actorId": {
+            "__rl": true,
+            "value": "4Hv5RhChiaDk6iwad",
+            "mode": "list",
+            "cachedResultName": "Facebook Pages Scraper (apify/facebook-pages-scraper)",
+            "cachedResultUrl": "https://console.apify.com/actors/4Hv5RhChiaDk6iwad/input"
+          },
+          "customBody": "={\n  \"startUrls\": [\n    { \"url\": \"{{ $('Normalize Input').item.json.target }}\" }\n  ],\n  \"maxPosts\": 5,\n  \"proxyConfiguration\": { \"useApifyProxy\": true }\n}",
+          "memory": 4096
+        },
+        "type": "@apify/n8n-nodes-apify.apify",
+        "typeVersion": 1,
+        "position": [
+          656,
+          -80
+        ],
+        "id": "be0d8c7f-cd42-48bd-8132-26e7f3447be5",
+        "name": "Apify",
+        "credentials": {
+          "apifyApi": {
+            "id": "nkDHhtz7koGci1VE",
+            "name": "Apify account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "5e4cf50d-e973-44cf-a249-a9c8c1a1439c",
+                "leftValue": "={{ $json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -32,
+          -80
+        ],
+        "id": "d7128da4-a676-43ee-a81f-d47593507b28",
+        "name": "If1"
+      },
+      {
+        "parameters": {
+          "tableId": "competitors",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "url",
+                "fieldValue": "={{ $('Normalize Input').item.json.target }}"
+              },
+              {
+                "fieldId": "name",
+                "fieldValue": "New Competitor"
+              },
+              {
+                "fieldId": "user_id",
+                "fieldValue": "={{ $('Normalize Input').item.json.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          192,
+          -16
+        ],
+        "id": "ac79b978-7f66-4730-8d2a-e10e62fba945",
+        "name": "Create Competitor",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "competitors",
+          "returnAll": true,
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "url",
+                "condition": "eq",
+                "keyValue": "={{ $('Normalize Input').item.json.target }}"
+              },
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $json.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          -256,
+          -80
+        ],
+        "id": "7f81f3ab-6344-4f41-86a1-e2f63de87b8b",
+        "name": "Get Competitor",
+        "alwaysOutputData": true,
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "b01cdefe-a941-4f74-b09e-998e1dafba2c",
+                "name": "json_output",
+                "value": "={{ JSON.parse($('Basic LLM Chain').item.json.text.replace(/```json/g, \"\").replace(/```/g, \"\")) }}",
+                "type": "object"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1840,
+          -80
+        ],
+        "id": "586ab771-8cd9-49db-bfc6-86de7aaabc79",
+        "name": "Parse JSON"
+      },
+      {
+        "parameters": {
+          "tableId": "social_stats",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "competitor_id",
+                "fieldValue": "={{ $('Code: Merge ID').item.json.competitor_id }}"
+              },
+              {
+                "fieldId": "follower_count",
+                "fieldValue": "={{ $('Parse JSON').item.json.json_output.followers }}"
+              },
+              {
+                "fieldId": "viral_score",
+                "fieldValue": "={{ $('Parse JSON').item.json.json_output.viral_score }}"
+              },
+              {
+                "fieldId": "summary_analysis",
+                "fieldValue": "={{ $('Parse JSON').item.json.json_output.summary }}"
+              },
+              {
+                "fieldId": "recent_posts",
+                "fieldValue": "={{ JSON.stringify($('Apify').item.json) }}"
+              },
+              {
+                "fieldId": "is_running_ads",
+                "fieldValue": "={{ $json.json_output.ads_running }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          2016,
+          -80
+        ],
+        "id": "097ecede-4a14-4c8f-b5e4-87e7ef776e6e",
+        "name": "Create a row1",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const inputData = $input.first().json;\n\nreturn {\n  json: {\n    competitor_id: inputData.id\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          416,
+          -80
+        ],
+        "id": "f74e35ea-da4a-4987-92d6-fb02b831d0c9",
+        "name": "Code: Merge ID"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "monitor-competitor",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -704,
+          -176
+        ],
+        "id": "d464230c-a897-4065-bb0e-4c0e4624d07f",
+        "name": "Webhook",
+        "webhookId": "7fa3dc39-91ee-49a1-aa94-a956ece816e9"
+      },
+      {
+        "parameters": {
+          "jsCode": "const inputData = $input.first().json;\n\n// 1. Target URL \u101b\u103e\u102c\u1015\u102f\u1036\u1010\u1031\u102c\u103a (\u1014\u1031\u101b\u102c\u1005\u102f\u1036 + \u1014\u102c\u1019\u100a\u103a\u1005\u102f\u1036 \u101b\u103e\u102c\u1019\u101a\u103a)\nlet targetUrl = \n  inputData.target || \n  inputData.link || // \ud83d\udd25 Added: 'link' key \u1000\u102d\u102f\u1015\u102b \u101b\u103e\u102c\u1001\u102d\u102f\u1004\u103a\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u103c\u102e\n  (inputData.body && inputData.body.target) || \n  (inputData.body && inputData.body.link) || // \ud83d\udd25 Added: Body \u1011\u1032\u1000 'link'\n  (inputData.query && inputData.query.target) || \n  (inputData.query && inputData.query.link) || // \ud83d\udd25 Added: Query \u1011\u1032\u1000 'link'\n  inputData['target ']; \n\n// \u101b\u103e\u102c\u1019\u1010\u103d\u1031\u1037\u101b\u1004\u103a Default \u1011\u100a\u1037\u103a\u1019\u101a\u103a\nif (!targetUrl) {\n  targetUrl = 'https://www.facebook.com/dalaestore.mm';\n}\n\n// 2. User ID \u101b\u103e\u102c\u1015\u102f\u1036\u1010\u1031\u102c\u103a\nlet userId = \n  inputData.user_id || \n  (inputData.body && inputData.body.user_id) || \n  (inputData.query && inputData.query.user_id);\n\nreturn {\n  json: {\n    target: targetUrl.trim(),\n    user_id: userId\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -480,
+          -80
+        ],
+        "id": "47f3293c-a540-4168-b8eb-25ba492fd306",
+        "name": "Normalize Input"
+      },
+      {
+        "parameters": {
+          "resource": "Datasets",
+          "datasetId": "={{ $('Apify').item.json.defaultDatasetId }}",
+          "limit": "={{ true }}"
+        },
+        "type": "@apify/n8n-nodes-apify.apify",
+        "typeVersion": 1,
+        "position": [
+          896,
+          -80
+        ],
+        "id": "1ba72e97-5fd2-48af-a475-2556032c935b",
+        "name": "Get Dataset",
+        "credentials": {
+          "apifyApi": {
+            "id": "nkDHhtz7koGci1VE",
+            "name": "Apify account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "tableId": "competitors",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ $('Code: Merge ID').item.json.competitor_id }}"
+              }
+            ]
+          },
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "name",
+                "fieldValue": "={{ $json.title }}"
+              },
+              {
+                "fieldId": "last_scraped_at",
+                "fieldValue": "={{ $('Apify').item.json.startedAt }}"
+              },
+              {
+                "fieldId": "platform",
+                "fieldValue": "={{ $json.categories[1] }}"
+              },
+              {
+                "fieldId": "url",
+                "fieldValue": "={{ $json.pageUrl }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1120,
+          -80
+        ],
+        "id": "0b84b603-e8f4-49bd-883d-1d223978a846",
+        "name": "Update a row",
+        "alwaysOutputData": false,
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const allItems = $('Get Dataset').all().map(item => item.json);\n\nreturn {\n  json: {\n    merged_text: JSON.stringify(allItems)\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1312,
+          -80
+        ],
+        "id": "fae5b365-556a-4961-9c3e-3d64bf912776",
+        "name": "Merge Data"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "217f0f21-3e0f-4fd0-aab6-8e21aa43963c",
+                "name": "output",
+                "value": "={{ $json.text }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2480,
+          -80
+        ],
+        "id": "06ebf5d9-3ba7-4541-958c-ecfda7b7b54b",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Basic LLM Chain').item.json.text }}",
+          "messages": {
+            "messageValues": [
+              {
+                "message": "## \ud83d\udeab CRITICAL FORMATTING RULES (ZERO MARKDOWN POLICY): 1. **PLAIN TEXT ONLY:** You must output strictly clean, plain text. 2. **ABSOLUTELY FORBIDDEN SYMBOLS:**    - **NO Asterisks:** Do not use `**` for bolding. Do not use `*` for italics. (e.g., Write \"Followers: 500\", NOT \"**Followers:** 500\").    - **NO Hash Headers:** Do not use `###` or `##`.    - **NO Code Blocks:** Do not use backticks (```). 3. **STRUCTURING:**    - Use **UPPERCASE LABELS** for section titles (e.g., THE BOTTOM LINE).    - Use standard bullets (`\u2022`) for lists.    - **MANDATORY:** Leave exactly one empty line between sections."
+              }
+            ]
+          },
+          "batching": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.9,
+        "position": [
+          2192,
+          -80
+        ],
+        "id": "f45eba75-bd6c-4d85-b8ca-16fddb312aca",
+        "name": "Basic LLM Chain1"
+      }
+    ],
+    "connections": {
+      "Execute Workflow Trigger": {
+        "main": [
+          [
+            {
+              "node": "Normalize Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "ai_languageModel",
+              "index": 0
+            },
+            {
+              "node": "Basic LLM Chain1",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Apify": {
+        "main": [
+          [
+            {
+              "node": "Get Dataset",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain": {
+        "main": [
+          [
+            {
+              "node": "Parse JSON",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If1": {
+        "main": [
+          [
+            {
+              "node": "Code: Merge ID",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Create Competitor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Competitor": {
+        "main": [
+          [
+            {
+              "node": "If1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Competitor": {
+        "main": [
+          [
+            {
+              "node": "Code: Merge ID",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse JSON": {
+        "main": [
+          [
+            {
+              "node": "Create a row1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code: Merge ID": {
+        "main": [
+          [
+            {
+              "node": "Apify",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Normalize Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalize Input": {
+        "main": [
+          [
+            {
+              "node": "Get Competitor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Dataset": {
+        "main": [
+          [
+            {
+              "node": "Update a row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create a row1": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Data": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain1": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update a row": {
+        "main": [
+          [
+            {
+              "node": "Merge Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version f1421e45",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-16T15:53:25.330Z",
+        "id": 156,
+        "workflowId": "HCV-51qLaCdcxHGx2yBcO",
+        "versionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-24T08:43:05.952Z",
+        "id": 279,
+        "workflowId": "HCV-51qLaCdcxHGx2yBcO",
+        "versionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-26T19:35:40.991Z",
+        "id": 400,
+        "workflowId": "HCV-51qLaCdcxHGx2yBcO",
+        "versionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-26T19:35:42.695Z",
+        "id": 401,
+        "workflowId": "HCV-51qLaCdcxHGx2yBcO",
+        "versionId": "f1421e45-3ea7-449f-80d3-5c4841fdefd2",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

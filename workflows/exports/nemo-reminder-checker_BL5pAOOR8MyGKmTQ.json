@@ -1,0 +1,955 @@
+{
+  "updatedAt": "2026-01-26T19:38:49.423Z",
+  "createdAt": "2026-01-23T22:09:40.093Z",
+  "id": "BL5pAOOR8MyGKmTQ",
+  "name": "Nemo - Reminder Checker",
+  "description": "Reminder Checker",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "check-trigger-001",
+      "name": "Every 5 Minutes"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "reminders",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_sent",
+              "condition": "eq",
+              "keyValue": "false"
+            },
+            {
+              "keyName": "is_cancelled",
+              "condition": "eq",
+              "keyValue": "false"
+            },
+            {
+              "keyName": "remind_at",
+              "condition": "lte",
+              "keyValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "check-get-001",
+      "name": "Get Due Reminders",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "check-if-001",
+      "name": "Any Due?"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "check-loop-001",
+      "name": "Loop Reminders"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "users",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -96
+      ],
+      "id": "check-user-001",
+      "name": "Get User",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Reminder: {{ $(\"Loop Reminders\").item.json.title }}\nDetails: {{ $(\"Loop Reminders\").item.json.description || \"No details\" }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are Nemo, a professional personal assistant sending a reminder notification.\n\nRULES:\n- Write a brief, friendly reminder message (1-2 sentences max)\n- Use plain text only, no markdown, no formatting symbols\n- Do not wrap output in JSON or quotes\n- Address the user naturally by name\n- Include the reminder topic clearly\n- Keep it concise for mobile notification\n\nUser: {{ $json.full_name }}\nCurrent time: {{ $now.format(\"h:mm a\") }}"
+            }
+          ]
+        }
+      },
+      "id": "gen-reminder",
+      "name": "Generative Reminder",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1056,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reminder = $(\"Loop Reminders\").first().json;\nconst user = $(\"Get User\").first().json;\nlet ai_text = $input.first().json.text;\ntry {\n  if (typeof ai_text === \"string\" && ai_text.trim().startsWith(\"{\")) {\n    const parsed = JSON.parse(ai_text);\n    if (parsed.message) ai_text = parsed.message;\n    else if (parsed.text) ai_text = parsed.text;\n  }\n} catch(e) {}\nai_text = ai_text.replace(/^\"|\"$/g, \"\").replace(/^{|}$/g, \"\").replace(/\"message\":/g, \"\").trim();\nconst topicMap = {\n  \"2e4e7018-6d5f-4df6-8ae9-3e67988e46f1\": \"morning_akari\",\n  \"f6f6d720-9f49-45fb-a81a-d54d8a283a1c\": \"morning_sir\",\n  \"2915e4f2-85e8-4327-b402-02bc45276ee3\": \"morning_sir_lin\",\n  \"fd5834eb-6141-4081-81d9-be36a0ced5dd\": \"daily_briefing\"\n};\nconst ntfyTopic = topicMap[user.id] || \"nemoai-\" + (user.username || user.id);\nreturn {\n  json: {\n    reminder_id: reminder.id,\n    title: \"Reminder\",\n    message: ai_text,\n    user_id: user.id,\n    ntfy_topic: ntfyTopic\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -96
+      ],
+      "id": "check-map-001",
+      "name": "Map ntfy Topic"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://18.143.133.236/{{ $json.ntfy_topic }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Reminder"
+            },
+            {
+              "name": "Priority",
+              "value": "high"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "string",
+        "body": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        -96
+      ],
+      "id": "check-ntfy-001",
+      "name": "Send ntfy"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "reminders",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Map ntfy Topic\").item.json.reminder_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_sent",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -96
+      ],
+      "id": "check-mark-001",
+      "name": "Mark Sent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "gemini-model-rem",
+      "name": "Gemini Model (Rem)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        128
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OPqleYbWDbxnuHa6",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/OPqleYbWDbxnuHa6",
+          "cachedResultName": "Nemo - Push Notification Sender"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $('Get User').first().json.id }}",
+            "title": "={{ $('Map ntfy Topic').first().json.title || 'Reminder' }}",
+            "message": "={{ $('Map ntfy Topic').first().json.message || $('Generative Reminder').first().json.text }}",
+            "type": "reminder"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1744,
+        -336
+      ],
+      "id": "push-notif-node",
+      "name": "Send Push Notification"
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Get Due Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Due Reminders": {
+      "main": [
+        [
+          {
+            "node": "Any Due?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Due?": {
+      "main": [
+        [
+          {
+            "node": "Loop Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Loop Reminders": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User": {
+      "main": [
+        [
+          {
+            "node": "Generative Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map ntfy Topic": {
+      "main": [
+        [
+          {
+            "node": "Send ntfy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send ntfy": {
+      "main": [
+        [
+          {
+            "node": "Mark Sent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Push Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Sent": {
+      "main": [
+        [
+          {
+            "node": "Loop Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generative Reminder": {
+      "main": [
+        [
+          {
+            "node": "Map ntfy Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Gemini Model (Rem)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generative Reminder",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:Every 5 Minutes": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": null,
+  "pinData": {
+    "Every 5 Minutes": [
+      {
+        "json": {
+          "timestamp": "2026-01-25T15:25:07.006+06:30",
+          "Readable date": "January 25th 2026, 3:25:07 pm",
+          "Readable time": "3:25:07 pm",
+          "Day of week": "Sunday",
+          "Year": "2026",
+          "Month": "January",
+          "Day of month": "25",
+          "Hour": "15",
+          "Minute": "25",
+          "Second": "07",
+          "Timezone": "Asia/Yangon (UTC+06:30)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "7de04d6f-e4ea-485d-bf71-46752a5c1a3c",
+  "activeVersionId": "7de04d6f-e4ea-485d-bf71-46752a5c1a3c",
+  "versionCounter": 63,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-23T22:09:40.097Z",
+      "createdAt": "2026-01-23T22:09:40.097Z",
+      "role": "workflow:owner",
+      "workflowId": "BL5pAOOR8MyGKmTQ",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-25T09:04:24.000Z",
+    "createdAt": "2026-01-25T09:04:22.012Z",
+    "versionId": "7de04d6f-e4ea-485d-bf71-46752a5c1a3c",
+    "workflowId": "BL5pAOOR8MyGKmTQ",
+    "nodes": [
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "id": "check-trigger-001",
+        "name": "Every 5 Minutes"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "reminders",
+          "returnAll": true,
+          "matchType": "allFilters",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "is_sent",
+                "condition": "eq",
+                "keyValue": "false"
+              },
+              {
+                "keyName": "is_cancelled",
+                "condition": "eq",
+                "keyValue": "false"
+              },
+              {
+                "keyName": "remind_at",
+                "condition": "lte",
+                "keyValue": "={{ $now.toISO() }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          224,
+          0
+        ],
+        "id": "check-get-001",
+        "name": "Get Due Reminders",
+        "alwaysOutputData": true,
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          448,
+          0
+        ],
+        "id": "check-if-001",
+        "name": "Any Due?"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          672,
+          -96
+        ],
+        "id": "check-loop-001",
+        "name": "Loop Reminders"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "users",
+          "limit": 1,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ $json.user_id }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          880,
+          -96
+        ],
+        "id": "check-user-001",
+        "name": "Get User",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Reminder: {{ $(\"Loop Reminders\").item.json.title }}\nDetails: {{ $(\"Loop Reminders\").item.json.description || \"No details\" }}",
+          "messages": {
+            "messageValues": [
+              {
+                "message": "=You are Nemo, a professional personal assistant sending a reminder notification.\n\nRULES:\n- Write a brief, friendly reminder message (1-2 sentences max)\n- Use plain text only, no markdown, no formatting symbols\n- Do not wrap output in JSON or quotes\n- Address the user naturally by name\n- Include the reminder topic clearly\n- Keep it concise for mobile notification\n\nUser: {{ $json.full_name }}\nCurrent time: {{ $now.format(\"h:mm a\") }}"
+              }
+            ]
+          }
+        },
+        "id": "gen-reminder",
+        "name": "Generative Reminder",
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.4,
+        "position": [
+          1056,
+          -96
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const reminder = $(\"Loop Reminders\").first().json;\nconst user = $(\"Get User\").first().json;\nlet ai_text = $input.first().json.text;\ntry {\n  if (typeof ai_text === \"string\" && ai_text.trim().startsWith(\"{\")) {\n    const parsed = JSON.parse(ai_text);\n    if (parsed.message) ai_text = parsed.message;\n    else if (parsed.text) ai_text = parsed.text;\n  }\n} catch(e) {}\nai_text = ai_text.replace(/^\"|\"$/g, \"\").replace(/^{|}$/g, \"\").replace(/\"message\":/g, \"\").trim();\nconst topicMap = {\n  \"2e4e7018-6d5f-4df6-8ae9-3e67988e46f1\": \"morning_akari\",\n  \"f6f6d720-9f49-45fb-a81a-d54d8a283a1c\": \"morning_sir\",\n  \"2915e4f2-85e8-4327-b402-02bc45276ee3\": \"morning_sir_lin\",\n  \"fd5834eb-6141-4081-81d9-be36a0ced5dd\": \"daily_briefing\"\n};\nconst ntfyTopic = topicMap[user.id] || \"nemoai-\" + (user.username || user.id);\nreturn {\n  json: {\n    reminder_id: reminder.id,\n    title: \"Reminder\",\n    message: ai_text,\n    user_id: user.id,\n    ntfy_topic: ntfyTopic\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1360,
+          -96
+        ],
+        "id": "check-map-001",
+        "name": "Map ntfy Topic"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "=http://18.143.133.236/{{ $json.ntfy_topic }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Title",
+                "value": "Reminder"
+              },
+              {
+                "name": "Priority",
+                "value": "high"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "string",
+          "body": "={{ $json.message }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1552,
+          -96
+        ],
+        "id": "check-ntfy-001",
+        "name": "Send ntfy"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "tableId": "reminders",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id",
+                "condition": "eq",
+                "keyValue": "={{ $(\"Map ntfy Topic\").item.json.reminder_id }}"
+              }
+            ]
+          },
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "is_sent",
+                "fieldValue": "true"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1760,
+          -96
+        ],
+        "id": "check-mark-001",
+        "name": "Mark Sent",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash",
+          "options": {}
+        },
+        "id": "gemini-model-rem",
+        "name": "Gemini Model (Rem)",
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          1104,
+          128
+        ],
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "OPqleYbWDbxnuHa6",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/OPqleYbWDbxnuHa6",
+            "cachedResultName": "Nemo - Push Notification Sender"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "user_id": "={{ $('Get User').first().json.id }}",
+              "title": "={{ $('Map ntfy Topic').first().json.title || 'Reminder' }}",
+              "message": "={{ $('Map ntfy Topic').first().json.message || $('Generative Reminder').first().json.text }}",
+              "type": "reminder"
+            }
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.2,
+        "position": [
+          1744,
+          -336
+        ],
+        "id": "push-notif-node",
+        "name": "Send Push Notification"
+      }
+    ],
+    "connections": {
+      "Every 5 Minutes": {
+        "main": [
+          [
+            {
+              "node": "Get Due Reminders",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Due Reminders": {
+        "main": [
+          [
+            {
+              "node": "Any Due?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Any Due?": {
+        "main": [
+          [
+            {
+              "node": "Loop Reminders",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Loop Reminders": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Get User",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get User": {
+        "main": [
+          [
+            {
+              "node": "Generative Reminder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Map ntfy Topic": {
+        "main": [
+          [
+            {
+              "node": "Send ntfy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send ntfy": {
+        "main": [
+          [
+            {
+              "node": "Mark Sent",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Send Push Notification",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Sent": {
+        "main": [
+          [
+            {
+              "node": "Loop Reminders",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generative Reminder": {
+        "main": [
+          [
+            {
+              "node": "Map ntfy Topic",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ],
+        "ai_languageModel": [
+          []
+        ]
+      },
+      "Gemini Model (Rem)": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Generative Reminder",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 7de04d6f",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-25T09:04:24.486Z",
+        "id": 358,
+        "workflowId": "BL5pAOOR8MyGKmTQ",
+        "versionId": "7de04d6f-e4ea-485d-bf71-46752a5c1a3c",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-26T19:32:25.850Z",
+        "id": 395,
+        "workflowId": "BL5pAOOR8MyGKmTQ",
+        "versionId": "7de04d6f-e4ea-485d-bf71-46752a5c1a3c",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

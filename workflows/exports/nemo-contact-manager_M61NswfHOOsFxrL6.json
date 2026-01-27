@@ -1,0 +1,713 @@
+{
+  "updatedAt": "2026-01-10T18:27:45.601Z",
+  "createdAt": "2026-01-04T16:35:38.439Z",
+  "id": "M61NswfHOOsFxrL6",
+  "name": "Nemo - Contact Manager",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action"
+            },
+            {
+              "name": "query"
+            },
+            {
+              "name": "user_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e29a2660-47bf-44bd-b8f0-621532cebc6d",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "search",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ee46caef-db78-4e92-af7e-4af147944706"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9765b68c-fa19-4893-a884-06aa0ab75f6b",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4ab6cbb2-7260-4c26-b9ac-c4d70a10724d",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "contacts",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+            },
+            {
+              "keyName": "name",
+              "condition": "eq",
+              "keyValue": "={{ $('Execute Workflow Trigger').item.json.query }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -144
+      ],
+      "id": "b4a936ac-e4db-4e57-895a-5dd4239a5692",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (items.length === 0) {\n  return { json: { text: \"No contact found with that name.\" } };\n}\nconst result = items.map(i =>\n  `- Name: ${i.json.name} | Email: ${i.json.email || 'N/A'} | Phone: ${i.json.phone || 'N/A'} | Company: ${i.json.company || 'N/A'}`\n).join(\"\\n\");\nreturn { json: { text: result } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -144
+      ],
+      "id": "46284b44-ff45-4806-baff-551ca43405eb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Execute Workflow Trigger').item.json.query }}",
+        "options": {
+          "systemMessage": "You are a Data Entry Assistant.\nExtract contact details from the provided text.\n\nReturn ONLY a valid JSON object with these keys:\n{\n  \"name\": \"Name of person (Required)\",\n  \"email\": \"Email address (or null)\",\n  \"phone\": \"Phone number (or null)\",\n  \"company\": \"Company name (or null)\",\n  \"role\": \"Job title (or null)\"\n}\n\nDo NOT include markdown formatting like ```json ... ```. Just the raw JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        96
+      ],
+      "id": "4e77287c-6d5d-45b6-b075-da43e67e9203",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI Agent \u1000 output \u1000\u102d\u102f \u101a\u1030\u1019\u101a\u103a\nconst aiOutput = $input.first().json.output || $input.first().json.text;\n\ntry {\n  // Markdown \u1010\u103d\u1031\u104a \u1019\u103b\u1000\u103a\u1010\u1031\u102c\u1004\u103a\u1021\u1015\u102d\u102f\u1010\u103d\u1031\u1000\u102d\u102f \u1016\u101a\u103a\u1019\u101a\u103a\n  const cleanJson = aiOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  \n  // JSON Object \u1021\u1005\u1005\u103a\u1021\u1016\u103c\u1005\u103a \u1015\u103c\u1031\u102c\u1004\u103a\u1038\u1019\u101a\u103a\n  return { json: JSON.parse(cleanJson) };\n} catch (error) {\n  // Error \u1010\u1000\u103a\u101b\u1004\u103a (\u1025\u1015\u1019\u102c AI \u1000 \u1005\u1000\u102c\u1038\u1010\u103d\u1031\u101b\u103e\u100a\u103a\u1014\u1031\u101b\u1004\u103a)\n  return { json: { error: \"Parsing failed\", raw: aiOutput } };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        96
+      ],
+      "id": "367e87ba-0fb7-4674-839f-bea0e4892ddd",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "tableId": "contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $json.phone }}"
+            },
+            {
+              "fieldId": "company",
+              "fieldValue": "={{ $json.company }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "={{ $json.role }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        976,
+        96
+      ],
+      "id": "4e302da4-2001-483f-82eb-137380c03808",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        304
+      ],
+      "id": "6c4fde40-6adf-41b0-aef7-57f35866f0a0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "48e80e6d-4ba3-415b-8f3a-7b4d347c2746",
+  "activeVersionId": "48e80e6d-4ba3-415b-8f3a-7b4d347c2746",
+  "versionCounter": 10,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-01-04T16:35:38.448Z",
+      "createdAt": "2026-01-04T16:35:38.448Z",
+      "role": "workflow:owner",
+      "workflowId": "M61NswfHOOsFxrL6",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-04T16:50:56.000Z",
+    "createdAt": "2026-01-04T16:50:54.342Z",
+    "versionId": "48e80e6d-4ba3-415b-8f3a-7b4d347c2746",
+    "workflowId": "M61NswfHOOsFxrL6",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "action"
+              },
+              {
+                "name": "query"
+              },
+              {
+                "name": "user_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "e29a2660-47bf-44bd-b8f0-621532cebc6d",
+        "name": "Execute Workflow Trigger"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "search",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "id": "ee46caef-db78-4e92-af7e-4af147944706"
+                    }
+                  ],
+                  "combinator": "and"
+                }
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "9765b68c-fa19-4893-a884-06aa0ab75f6b",
+                      "leftValue": "={{ $json.action }}",
+                      "rightValue": "save",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          0
+        ],
+        "id": "4ab6cbb2-7260-4c26-b9ac-c4d70a10724d",
+        "name": "Switch"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "contacts",
+          "returnAll": true,
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "user_id",
+                "condition": "eq",
+                "keyValue": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+              },
+              {
+                "keyName": "name",
+                "condition": "eq",
+                "keyValue": "={{ $('Execute Workflow Trigger').item.json.query }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          416,
+          -144
+        ],
+        "id": "b4a936ac-e4db-4e57-895a-5dd4239a5692",
+        "name": "Get many rows",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\nif (items.length === 0) {\n  return { json: { text: \"No contact found with that name.\" } };\n}\nconst result = items.map(i =>\n  `- Name: ${i.json.name} | Email: ${i.json.email || 'N/A'} | Phone: ${i.json.phone || 'N/A'} | Company: ${i.json.company || 'N/A'}`\n).join(\"\\n\");\nreturn { json: { text: result } };"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          624,
+          -144
+        ],
+        "id": "46284b44-ff45-4806-baff-551ca43405eb",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Execute Workflow Trigger').item.json.query }}",
+          "options": {
+            "systemMessage": "You are a Data Entry Assistant.\nExtract contact details from the provided text.\n\nReturn ONLY a valid JSON object with these keys:\n{\n  \"name\": \"Name of person (Required)\",\n  \"email\": \"Email address (or null)\",\n  \"phone\": \"Phone number (or null)\",\n  \"company\": \"Company name (or null)\",\n  \"role\": \"Job title (or null)\"\n}\n\nDo NOT include markdown formatting like ```json ... ```. Just the raw JSON."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          416,
+          96
+        ],
+        "id": "4e77287c-6d5d-45b6-b075-da43e67e9203",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "jsCode": "// AI Agent \u1000 output \u1000\u102d\u102f \u101a\u1030\u1019\u101a\u103a\nconst aiOutput = $input.first().json.output || $input.first().json.text;\n\ntry {\n  // Markdown \u1010\u103d\u1031\u104a \u1019\u103b\u1000\u103a\u1010\u1031\u102c\u1004\u103a\u1021\u1015\u102d\u102f\u1010\u103d\u1031\u1000\u102d\u102f \u1016\u101a\u103a\u1019\u101a\u103a\n  const cleanJson = aiOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  \n  // JSON Object \u1021\u1005\u1005\u103a\u1021\u1016\u103c\u1005\u103a \u1015\u103c\u1031\u102c\u1004\u103a\u1038\u1019\u101a\u103a\n  return { json: JSON.parse(cleanJson) };\n} catch (error) {\n  // Error \u1010\u1000\u103a\u101b\u1004\u103a (\u1025\u1015\u1019\u102c AI \u1000 \u1005\u1000\u102c\u1038\u1010\u103d\u1031\u101b\u103e\u100a\u103a\u1014\u1031\u101b\u1004\u103a)\n  return { json: { error: \"Parsing failed\", raw: aiOutput } };\n}"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          768,
+          96
+        ],
+        "id": "367e87ba-0fb7-4674-839f-bea0e4892ddd",
+        "name": "Code in JavaScript1"
+      },
+      {
+        "parameters": {
+          "tableId": "contacts",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "user_id",
+                "fieldValue": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+              },
+              {
+                "fieldId": "name",
+                "fieldValue": "={{ $json.name }}"
+              },
+              {
+                "fieldId": "email",
+                "fieldValue": "={{ $json.email }}"
+              },
+              {
+                "fieldId": "phone",
+                "fieldValue": "={{ $json.phone }}"
+              },
+              {
+                "fieldId": "company",
+                "fieldValue": "={{ $json.company }}"
+              },
+              {
+                "fieldId": "role",
+                "fieldValue": "={{ $json.role }}"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          976,
+          96
+        ],
+        "id": "4e302da4-2001-483f-82eb-137380c03808",
+        "name": "Create a row",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          288,
+          304
+        ],
+        "id": "6c4fde40-6adf-41b0-aef7-57f35866f0a0",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Execute Workflow Trigger": {
+        "main": [
+          [
+            {
+              "node": "Switch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "node": "Get many rows",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get many rows": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript1": {
+        "main": [
+          [
+            {
+              "node": "Create a row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 48e80e6d",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-04T16:50:56.426Z",
+        "id": 35,
+        "workflowId": "M61NswfHOOsFxrL6",
+        "versionId": "48e80e6d-4ba3-415b-8f3a-7b4d347c2746",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

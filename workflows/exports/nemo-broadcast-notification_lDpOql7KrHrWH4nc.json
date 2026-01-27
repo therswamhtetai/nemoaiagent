@@ -1,0 +1,764 @@
+{
+  "updatedAt": "2026-01-26T19:39:03.198Z",
+  "createdAt": "2026-01-26T01:30:49.345Z",
+  "id": "lDpOql7KrHrWH4nc",
+  "name": "Nemo - Broadcast Notification",
+  "description": "Dev Broadcast",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "broadcast-notification",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        180,
+        240
+      ],
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "webhookId": "broadcast-noti"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, full_name, email FROM users WHERE is_active = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        240
+      ],
+      "id": "fetch-users",
+      "name": "Fetch All Active Users",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $('Webhook Trigger').first().json.body;\nconst users = $input.all();\n\nconst notifications = users.map(user => ({\n  user_id: user.json.id,\n  title: webhookData.title || 'NemoAI Update',\n  message: webhookData.message || '',\n  type: webhookData.type || 'general',\n  data: webhookData.data || {}\n}));\n\nreturn notifications.map(n => ({ json: n }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        240
+      ],
+      "id": "prepare-notifications",
+      "name": "Prepare Notifications"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://agent.nemoautomation.services/api/notifications/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message, type: $json.type, data: $json.data }) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        840,
+        240
+      ],
+      "id": "send-notifications",
+      "name": "Send Notifications"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.all();\nconst successful = results.filter(r => r.json.success !== false).length;\nconst failed = results.length - successful;\n\nreturn [{\n  json: {\n    success: true,\n    total_users: results.length,\n    notifications_sent: successful,\n    failed: failed,\n    message: `Broadcast sent to ${successful} users`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        240
+      ],
+      "id": "summarize-result",
+      "name": "Summarize Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        240
+      ],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        180,
+        440
+      ],
+      "id": "manual-trigger",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Default values for manual testing\nreturn [{\n  json: {\n    body: {\n      title: 'Maintenance Notice',\n      message: 'NemoAI will undergo scheduled maintenance tonight from 2:00 AM to 4:00 AM MMT. Thank you for your patience!',\n      type: 'maintenance',\n      data: {\n        scheduled_time: '2:00 AM - 4:00 AM MMT',\n        action_url: null\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        440
+      ],
+      "id": "manual-data",
+      "name": "Manual Test Data"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, full_name, email FROM users WHERE is_active = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        620,
+        440
+      ],
+      "id": "fetch-users-manual",
+      "name": "Fetch Users (Manual)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $('Manual Test Data').first().json.body;\nconst users = $input.all();\n\nconst notifications = users.map(user => ({\n  user_id: user.json.id,\n  title: webhookData.title || 'NemoAI Update',\n  message: webhookData.message || '',\n  type: webhookData.type || 'general',\n  data: webhookData.data || {}\n}));\n\nreturn notifications.map(n => ({ json: n }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        440
+      ],
+      "id": "prepare-notifications-manual",
+      "name": "Prepare Notifications (Manual)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://agent.nemoautomation.services/api/notifications/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message, type: $json.type, data: $json.data }) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1060,
+        440
+      ],
+      "id": "send-notifications-manual",
+      "name": "Send Notifications (Manual)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.all();\nconst successful = results.filter(r => r.json.success !== false).length;\nconst failed = results.length - successful;\n\nreturn [{\n  json: {\n    success: true,\n    total_users: results.length,\n    notifications_sent: successful,\n    failed: failed,\n    message: `Broadcast sent to ${successful} users`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        440
+      ],
+      "id": "summarize-result-manual",
+      "name": "Summarize Result (Manual)"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Active Users": {
+      "main": [
+        [
+          {
+            "node": "Prepare Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Notifications": {
+      "main": [
+        [
+          {
+            "node": "Send Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notifications": {
+      "main": [
+        [
+          {
+            "node": "Summarize Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Result": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Manual Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Data": {
+      "main": [
+        [
+          {
+            "node": "Fetch Users (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Users (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Notifications (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Notifications (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Send Notifications (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Notifications (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Summarize Result (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "3f72662f-7cd2-4d7b-b2a6-8e0212251eb1",
+  "activeVersionId": "3f72662f-7cd2-4d7b-b2a6-8e0212251eb1",
+  "versionCounter": 8,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-26T01:30:49.348Z",
+      "createdAt": "2026-01-26T01:30:49.348Z",
+      "role": "workflow:owner",
+      "workflowId": "lDpOql7KrHrWH4nc",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-26T01:30:49.354Z",
+    "createdAt": "2026-01-26T01:30:49.354Z",
+    "versionId": "3f72662f-7cd2-4d7b-b2a6-8e0212251eb1",
+    "workflowId": "lDpOql7KrHrWH4nc",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "broadcast-notification",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          180,
+          240
+        ],
+        "id": "webhook-trigger",
+        "name": "Webhook Trigger",
+        "webhookId": "broadcast-noti"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT id, full_name, email FROM users WHERE is_active = true",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          400,
+          240
+        ],
+        "id": "fetch-users",
+        "name": "Fetch All Active Users",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const webhookData = $('Webhook Trigger').first().json.body;\nconst users = $input.all();\n\nconst notifications = users.map(user => ({\n  user_id: user.json.id,\n  title: webhookData.title || 'NemoAI Update',\n  message: webhookData.message || '',\n  type: webhookData.type || 'general',\n  data: webhookData.data || {}\n}));\n\nreturn notifications.map(n => ({ json: n }));"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          620,
+          240
+        ],
+        "id": "prepare-notifications",
+        "name": "Prepare Notifications"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://agent.nemoautomation.services/api/notifications/send",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message, type: $json.type, data: $json.data }) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 10,
+                "batchInterval": 1000
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          840,
+          240
+        ],
+        "id": "send-notifications",
+        "name": "Send Notifications"
+      },
+      {
+        "parameters": {
+          "jsCode": "const results = $input.all();\nconst successful = results.filter(r => r.json.success !== false).length;\nconst failed = results.length - successful;\n\nreturn [{\n  json: {\n    success: true,\n    total_users: results.length,\n    notifications_sent: successful,\n    failed: failed,\n    message: `Broadcast sent to ${successful} users`\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1060,
+          240
+        ],
+        "id": "summarize-result",
+        "name": "Summarize Result"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $json }}"
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1280,
+          240
+        ],
+        "id": "respond-webhook",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          180,
+          440
+        ],
+        "id": "manual-trigger",
+        "name": "Manual Trigger"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Default values for manual testing\nreturn [{\n  json: {\n    body: {\n      title: 'Maintenance Notice',\n      message: 'NemoAI will undergo scheduled maintenance tonight from 2:00 AM to 4:00 AM MMT. Thank you for your patience!',\n      type: 'maintenance',\n      data: {\n        scheduled_time: '2:00 AM - 4:00 AM MMT',\n        action_url: null\n      }\n    }\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          400,
+          440
+        ],
+        "id": "manual-data",
+        "name": "Manual Test Data"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT id, full_name, email FROM users WHERE is_active = true",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          620,
+          440
+        ],
+        "id": "fetch-users-manual",
+        "name": "Fetch Users (Manual)",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const webhookData = $('Manual Test Data').first().json.body;\nconst users = $input.all();\n\nconst notifications = users.map(user => ({\n  user_id: user.json.id,\n  title: webhookData.title || 'NemoAI Update',\n  message: webhookData.message || '',\n  type: webhookData.type || 'general',\n  data: webhookData.data || {}\n}));\n\nreturn notifications.map(n => ({ json: n }));"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          840,
+          440
+        ],
+        "id": "prepare-notifications-manual",
+        "name": "Prepare Notifications (Manual)"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://agent.nemoautomation.services/api/notifications/send",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, title: $json.title, message: $json.message, type: $json.type, data: $json.data }) }}",
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 10,
+                "batchInterval": 1000
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1060,
+          440
+        ],
+        "id": "send-notifications-manual",
+        "name": "Send Notifications (Manual)"
+      },
+      {
+        "parameters": {
+          "jsCode": "const results = $input.all();\nconst successful = results.filter(r => r.json.success !== false).length;\nconst failed = results.length - successful;\n\nreturn [{\n  json: {\n    success: true,\n    total_users: results.length,\n    notifications_sent: successful,\n    failed: failed,\n    message: `Broadcast sent to ${successful} users`\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1280,
+          440
+        ],
+        "id": "summarize-result-manual",
+        "name": "Summarize Result (Manual)"
+      }
+    ],
+    "connections": {
+      "Webhook Trigger": {
+        "main": [
+          [
+            {
+              "node": "Fetch All Active Users",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch All Active Users": {
+        "main": [
+          [
+            {
+              "node": "Prepare Notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Notifications": {
+        "main": [
+          [
+            {
+              "node": "Send Notifications",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Notifications": {
+        "main": [
+          [
+            {
+              "node": "Summarize Result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Summarize Result": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Manual Trigger": {
+        "main": [
+          [
+            {
+              "node": "Manual Test Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Manual Test Data": {
+        "main": [
+          [
+            {
+              "node": "Fetch Users (Manual)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Users (Manual)": {
+        "main": [
+          [
+            {
+              "node": "Prepare Notifications (Manual)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Notifications (Manual)": {
+        "main": [
+          [
+            {
+              "node": "Send Notifications (Manual)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Notifications (Manual)": {
+        "main": [
+          [
+            {
+              "node": "Summarize Result (Manual)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-26T01:31:10.726Z",
+        "id": 380,
+        "workflowId": "lDpOql7KrHrWH4nc",
+        "versionId": "3f72662f-7cd2-4d7b-b2a6-8e0212251eb1",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-26T19:32:29.364Z",
+        "id": 396,
+        "workflowId": "lDpOql7KrHrWH4nc",
+        "versionId": "3f72662f-7cd2-4d7b-b2a6-8e0212251eb1",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

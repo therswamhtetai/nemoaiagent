@@ -1,0 +1,367 @@
+{
+  "updatedAt": "2026-01-22T22:58:43.790Z",
+  "createdAt": "2025-12-28T07:25:09.257Z",
+  "id": "volKVoT9R96UigzM",
+  "name": "Nemo - Memory Retrieval Tool",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query"
+            },
+            {
+              "name": "user_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "bcc60e3f-c38f-4411-9255-f082d22e4cb5",
+      "name": "Memory Query Input"
+    },
+    {
+      "parameters": {
+        "modelName": "models/embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        160,
+        224
+      ],
+      "id": "27ddfee1-ba6e-4cdb-b5a5-b5886983a1b7",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "value": "knowledge_base",
+          "mode": "list",
+          "cachedResultName": "knowledge_base"
+        },
+        "prompt": "={{ $json.query }} ",
+        "topK": 3,
+        "options": {
+          "queryName": "match_documents",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "user_id",
+                "value": "={{ $('Memory Query Input').item.json.user_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        -16
+      ],
+      "id": "5301b3ba-2ce9-447c-8e4f-67f9fabbbe8a",
+      "name": "Vector Search",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// \u1041. \u1018\u102c\u1019\u103e \u101b\u103e\u102c\u1019\u1010\u103d\u1031\u1037\u101b\u1004\u103a\nif (items.length === 0) {\n  return {\n    json: {\n      found: false,\n      message: \"No relevant memories found.\",\n      context: \"\"\n    }\n  };\n}\n\n// \u1042. \u101b\u103e\u102c\u1010\u103d\u1031\u1037\u101b\u1004\u103a \u1005\u102c\u101e\u102c\u1038 (Content) \u1010\u103d\u1031\u1000\u102d\u102f \u1006\u103d\u1032\u1011\u102f\u1010\u103a\u1015\u103c\u102e\u1038 \u1005\u102e\u1019\u101a\u103a\nconst contextText = items.map((item, index) => {\n  // \ud83d\udd25 \u1015\u103c\u1004\u103a\u1006\u1004\u103a\u1001\u103b\u1000\u103a: document \u1021\u1031\u102c\u1000\u103a\u1000 pageContent \u1000\u102d\u102f\u1015\u102b \u1011\u1015\u103a\u101b\u103e\u102c\u1001\u102d\u102f\u1004\u103a\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u102b\u1010\u101a\u103a\n  const content = \n    (item.json.document && item.json.document.pageContent) || // \u1021\u101e\u1005\u103a\u101d\u1004\u103a\u101c\u102c\u1010\u1032\u1037\u1015\u102f\u1036\u1005\u1036\n    (item.json.document && item.json.document.content) || \n    item.json.pageContent || \n    item.json.content || \n    item.json.text || \n    \"No Text Content\";\n  \n  // Metadata (\u1021\u1001\u103b\u102d\u1014\u103a)\n  let dateInfo = \"N/A\";\n  if (item.json.metadata && item.json.metadata.created_at) {\n    dateInfo = item.json.metadata.created_at;\n  } else if (item.json.document && item.json.document.metadata && item.json.document.metadata.created_at) {\n    dateInfo = item.json.document.metadata.created_at;\n  }\n\n  return `[Memory ${index + 1} - ${dateInfo}]:\\n${content}`;\n}).join(\"\\n\\n---\\n\\n\");\n\n// \u1043. AI \u1014\u102c\u1038\u101c\u100a\u103a\u1019\u101a\u1037\u103a Format \u1014\u1032\u1037 \u1015\u103c\u1014\u103a\u1011\u102f\u1010\u103a\u1019\u101a\u103a\nreturn {\n  json: {\n    found: true,\n    message: `Found ${items.length} relevant memories about the topic.`,\n    context: contextText, \n    count: items.length\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -16
+      ],
+      "id": "1d0552b7-372c-4e9f-a0cb-3f16def72205",
+      "name": "Format Results"
+    }
+  ],
+  "connections": {
+    "Memory Query Input": {
+      "main": [
+        [
+          {
+            "node": "Vector Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Search",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Search": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Memory Query Input": [
+      {
+        "json": {
+          "query": "summary of saved information, ideas, preferences, and tasks",
+          "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "523c1dc0-ec3a-4e0e-8474-a0e4a3522535",
+  "activeVersionId": "523c1dc0-ec3a-4e0e-8474-a0e4a3522535",
+  "versionCounter": 68,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2025-12-28T07:25:09.267Z",
+      "createdAt": "2025-12-28T07:25:09.267Z",
+      "role": "workflow:owner",
+      "workflowId": "volKVoT9R96UigzM",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-22T22:58:52.000Z",
+    "createdAt": "2026-01-22T22:58:43.791Z",
+    "versionId": "523c1dc0-ec3a-4e0e-8474-a0e4a3522535",
+    "workflowId": "volKVoT9R96UigzM",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "query"
+              },
+              {
+                "name": "user_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -240,
+          -16
+        ],
+        "id": "bcc60e3f-c38f-4411-9255-f082d22e4cb5",
+        "name": "Memory Query Input"
+      },
+      {
+        "parameters": {
+          "modelName": "models/embedding-001"
+        },
+        "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          160,
+          224
+        ],
+        "id": "27ddfee1-ba6e-4cdb-b5a5-b5886983a1b7",
+        "name": "Embeddings Google Gemini",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "load",
+          "tableName": {
+            "__rl": true,
+            "value": "knowledge_base",
+            "mode": "list",
+            "cachedResultName": "knowledge_base"
+          },
+          "prompt": "={{ $json.query }} ",
+          "topK": 3,
+          "options": {
+            "queryName": "match_documents",
+            "metadata": {
+              "metadataValues": [
+                {
+                  "name": "user_id",
+                  "value": "={{ $('Memory Query Input').item.json.user_id }}"
+                }
+              ]
+            }
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+        "typeVersion": 1.3,
+        "position": [
+          160,
+          -16
+        ],
+        "id": "5301b3ba-2ce9-447c-8e4f-67f9fabbbe8a",
+        "name": "Vector Search",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\n\n// \u1041. \u1018\u102c\u1019\u103e \u101b\u103e\u102c\u1019\u1010\u103d\u1031\u1037\u101b\u1004\u103a\nif (items.length === 0) {\n  return {\n    json: {\n      found: false,\n      message: \"No relevant memories found.\",\n      context: \"\"\n    }\n  };\n}\n\n// \u1042. \u101b\u103e\u102c\u1010\u103d\u1031\u1037\u101b\u1004\u103a \u1005\u102c\u101e\u102c\u1038 (Content) \u1010\u103d\u1031\u1000\u102d\u102f \u1006\u103d\u1032\u1011\u102f\u1010\u103a\u1015\u103c\u102e\u1038 \u1005\u102e\u1019\u101a\u103a\nconst contextText = items.map((item, index) => {\n  // \ud83d\udd25 \u1015\u103c\u1004\u103a\u1006\u1004\u103a\u1001\u103b\u1000\u103a: document \u1021\u1031\u102c\u1000\u103a\u1000 pageContent \u1000\u102d\u102f\u1015\u102b \u1011\u1015\u103a\u101b\u103e\u102c\u1001\u102d\u102f\u1004\u103a\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u102b\u1010\u101a\u103a\n  const content = \n    (item.json.document && item.json.document.pageContent) || // \u1021\u101e\u1005\u103a\u101d\u1004\u103a\u101c\u102c\u1010\u1032\u1037\u1015\u102f\u1036\u1005\u1036\n    (item.json.document && item.json.document.content) || \n    item.json.pageContent || \n    item.json.content || \n    item.json.text || \n    \"No Text Content\";\n  \n  // Metadata (\u1021\u1001\u103b\u102d\u1014\u103a)\n  let dateInfo = \"N/A\";\n  if (item.json.metadata && item.json.metadata.created_at) {\n    dateInfo = item.json.metadata.created_at;\n  } else if (item.json.document && item.json.document.metadata && item.json.document.metadata.created_at) {\n    dateInfo = item.json.document.metadata.created_at;\n  }\n\n  return `[Memory ${index + 1} - ${dateInfo}]:\\n${content}`;\n}).join(\"\\n\\n---\\n\\n\");\n\n// \u1043. AI \u1014\u102c\u1038\u101c\u100a\u103a\u1019\u101a\u1037\u103a Format \u1014\u1032\u1037 \u1015\u103c\u1014\u103a\u1011\u102f\u1010\u103a\u1019\u101a\u103a\nreturn {\n  json: {\n    found: true,\n    message: `Found ${items.length} relevant memories about the topic.`,\n    context: contextText, \n    count: items.length\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          512,
+          -16
+        ],
+        "id": "1d0552b7-372c-4e9f-a0cb-3f16def72205",
+        "name": "Format Results"
+      }
+    ],
+    "connections": {
+      "Memory Query Input": {
+        "main": [
+          [
+            {
+              "node": "Vector Search",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Embeddings Google Gemini": {
+        "ai_embedding": [
+          [
+            {
+              "node": "Vector Search",
+              "type": "ai_embedding",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Vector Search": {
+        "main": [
+          [
+            {
+              "node": "Format Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 523c1dc0",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-22T22:58:52.893Z",
+        "id": 204,
+        "workflowId": "volKVoT9R96UigzM",
+        "versionId": "523c1dc0-ec3a-4e0e-8474-a0e4a3522535",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

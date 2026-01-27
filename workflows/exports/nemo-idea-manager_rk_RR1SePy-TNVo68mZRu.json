@@ -1,0 +1,327 @@
+{
+  "updatedAt": "2026-01-10T18:56:31.113Z",
+  "createdAt": "2026-01-10T18:38:10.039Z",
+  "id": "rk_RR1SePy-TNVo68mZRu",
+  "name": "Nemo - Idea Manager",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "title"
+            },
+            {
+              "name": "description"
+            },
+            {
+              "name": "type"
+            },
+            {
+              "name": "user_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0c047b04-09c4-446b-a82f-f9156b93fbd4",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    text: `Idea title \"${$('Supabase').item.json.title}\" \u1000\u102d\u102f \u1019\u103e\u1010\u103a\u101e\u102c\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u102b\u1015\u103c\u102e\u104b`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "9d63e22b-98e8-499f-b5d9-771b0c9a6c81",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "tableId": "ideas",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $('Execute Workflow Trigger').item.json.title }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $('Execute Workflow Trigger').item.json.description }}"
+            },
+            {
+              "fieldId": "type",
+              "fieldValue": "={{ $('Execute Workflow Trigger').item.json.type }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "draft"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a264121b-ccdf-4392-9a54-7d7e60a3f4b6",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "title": "Diamond Signboard Business",
+          "description": "A new business idea for a signboard/advertising production company named 'Diamond'. Requires equipment, skilled labor, and operational planning.",
+          "type": "business"
+        }
+      }
+    ]
+  },
+  "versionId": "97185c3b-df56-4637-a10c-a8a1ead1abcc",
+  "activeVersionId": "97185c3b-df56-4637-a10c-a8a1ead1abcc",
+  "versionCounter": 14,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-01-10T18:38:10.042Z",
+      "createdAt": "2026-01-10T18:38:10.042Z",
+      "role": "workflow:owner",
+      "workflowId": "rk_RR1SePy-TNVo68mZRu",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-10T18:53:45.000Z",
+    "createdAt": "2026-01-10T18:53:43.376Z",
+    "versionId": "97185c3b-df56-4637-a10c-a8a1ead1abcc",
+    "workflowId": "rk_RR1SePy-TNVo68mZRu",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "title"
+              },
+              {
+                "name": "description"
+              },
+              {
+                "name": "type"
+              },
+              {
+                "name": "user_id"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "0c047b04-09c4-446b-a82f-f9156b93fbd4",
+        "name": "Execute Workflow Trigger"
+      },
+      {
+        "parameters": {
+          "jsCode": "return {\n  json: {\n    text: `Idea title \"${$('Supabase').item.json.title}\" \u1000\u102d\u102f \u1019\u103e\u1010\u103a\u101e\u102c\u1038\u101c\u102d\u102f\u1000\u103a\u1015\u102b\u1015\u103c\u102e\u104b`\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          416,
+          0
+        ],
+        "id": "9d63e22b-98e8-499f-b5d9-771b0c9a6c81",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "tableId": "ideas",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldId": "user_id",
+                "fieldValue": "={{ $('Execute Workflow Trigger').item.json.user_id }}"
+              },
+              {
+                "fieldId": "title",
+                "fieldValue": "={{ $('Execute Workflow Trigger').item.json.title }}"
+              },
+              {
+                "fieldId": "description",
+                "fieldValue": "={{ $('Execute Workflow Trigger').item.json.description }}"
+              },
+              {
+                "fieldId": "type",
+                "fieldValue": "={{ $('Execute Workflow Trigger').item.json.type }}"
+              },
+              {
+                "fieldId": "status",
+                "fieldValue": "draft"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          208,
+          0
+        ],
+        "id": "a264121b-ccdf-4392-9a54-7d7e60a3f4b6",
+        "name": "Supabase",
+        "credentials": {
+          "supabaseApi": {
+            "id": "JbItbwVcQiGCLFAC",
+            "name": "NemoAIDatabase"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Execute Workflow Trigger": {
+        "main": [
+          [
+            {
+              "node": "Supabase",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Supabase": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 97185c3b",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-10T18:53:45.257Z",
+        "id": 72,
+        "workflowId": "rk_RR1SePy-TNVo68mZRu",
+        "versionId": "97185c3b-df56-4637-a10c-a8a1ead1abcc",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

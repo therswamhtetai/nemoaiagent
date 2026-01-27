@@ -1,0 +1,480 @@
+{
+  "updatedAt": "2026-01-18T04:00:13.137Z",
+  "createdAt": "2025-12-28T12:23:47.108Z",
+  "id": "DvvZiJ0n2HvbkAax",
+  "name": "Nemo - Business Strategist",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "user_message"
+            },
+            {
+              "name": "user_id"
+            },
+            {
+              "name": "user_context"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c389b4c5-af9f-482e-a2d2-fd16c092682a",
+      "name": "Strategy Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "options": {
+          "systemMessage": "=You are NemoAI, a Senior Strategic Consultant (CFO/COO Level).\n\n## Your Personality:\n- **DIRECT & HONEST:** Do not sugarcoat. If a budget is low, say it's low. If an idea is risky, say it's risky.\n- **CONCISE:** No fluff. No \"I hope this helps.\" No \"Great idea.\" Get straight to the analysis.\n- **OBJECTIVE:** Focus on numbers, feasibility, and ROI.\n- **NOT A PEOPLE PLEASER:** Do not try to be friendly. Be effective.\n\n## Response Guidelines:\n1. **Analyze:** Look at the user_message and user_context.\n2. **Framework:** Choose 4Ps, SWOT, or ROI automatically.\n3. **Language:** Respond in the same language as the user (Myanmar/English) but keep it professional.\n\n## \u26a0\ufe0f IMPORTANT: JSON OUTPUT FORMAT\nYou must respond in **VALID JSON FORMAT ONLY**. \nKeep all text fields **SHORT and BULLET-POINT STYLE**.\n\nStructure:\n{\n  \"analysis_type\": \"Strategy / SWOT / ROI\",\n  \"summary\": \"ONE sentence executive summary. (e.g., 'With 50 Lakhs, standard cafe is impossible. Use Micro-model.')\",\n  \"data\": {\n    \"point_1\": \"Title: Brief detail (Max 15 words)\",\n    \"point_2\": \"Title: Brief detail (Max 15 words)\",\n    \"point_3\": \"Title: Brief detail (Max 15 words)\",\n    \"point_4\": \"Title: Brief detail (Max 15 words)\"\n  },\n  \"recommendation\": \"The single most important action step. (No fluff)\",\n  \"confidence_score\": 0.95\n}\n\n## Constraint Checklist & Confidence Score:\n1. Confidence Score?\n2. Is the formatting JSON?\n3. Is the content concise?\n4. Are you being too polite? (If yes, rewrite to be stricter).\n\n## \ud83d\udeab CRITICAL FORMATTING RULES (ZERO MARKDOWN POLICY):\n1. **PLAIN TEXT ONLY:** You must output strictly clean, plain text.\n2. **ABSOLUTELY FORBIDDEN SYMBOLS:**\n   - **NO Asterisks:** Do not use `**` for bolding. Do not use `*` for italics. (e.g., Write \"Followers: 500\", NOT \"**Followers:** 500\").\n   - **NO Hash Headers:** Do not use `###` or `##`.\n   - **NO Code Blocks:** Do not use backticks (```).\n3. **STRUCTURING:**\n   - Use **UPPERCASE LABELS** for section titles (e.g., THE BOTTOM LINE).\n   - Use standard bullets (`\u2022`) for lists.\n   - **MANDATORY:** Leave exactly one empty line between sections."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ec10ef67-7450-4e2a-84d9-75234630c5d8",
+      "name": "Business Strategist"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        160,
+        208
+      ],
+      "id": "7ba642a3-7e6e-44ca-b694-f86da1b3a27e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Search user's business history and past discussions",
+        "workflowId": {
+          "__rl": true,
+          "value": "volKVoT9R96UigzM",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/volKVoT9R96UigzM",
+          "cachedResultName": "Nemo - Memory Retrieval Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', ``, 'string') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        208
+      ],
+      "id": "7a339a9f-c224-4e33-a60d-5af7e9eef59c",
+      "name": "search_memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "07e3d8e3-7e75-46c2-a408-a9a8bf388afa",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        0
+      ],
+      "id": "95d2bf22-95d8-4f22-b62d-61c9da6dedd6",
+      "name": "Format Output"
+    }
+  ],
+  "connections": {
+    "Strategy Request": {
+      "main": [
+        [
+          {
+            "node": "Business Strategist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Business Strategist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Business Strategist",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Strategist": {
+      "main": [
+        [
+          {
+            "node": "Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Strategy Request": [
+      {
+        "json": {
+          "user_message": "Coffee Shop \u1016\u103d\u1004\u1037\u103a\u1001\u103b\u1004\u103a\u1010\u101a\u103a",
+          "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+          "user_context": "New business idea"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "6df039e3-9a56-4087-ab2f-439e34548c1e",
+  "activeVersionId": "6df039e3-9a56-4087-ab2f-439e34548c1e",
+  "versionCounter": 40,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2025-12-28T12:23:47.112Z",
+      "createdAt": "2025-12-28T12:23:47.112Z",
+      "role": "workflow:owner",
+      "workflowId": "DvvZiJ0n2HvbkAax",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-18T04:00:14.000Z",
+    "createdAt": "2026-01-18T04:00:13.138Z",
+    "versionId": "6df039e3-9a56-4087-ab2f-439e34548c1e",
+    "workflowId": "DvvZiJ0n2HvbkAax",
+    "nodes": [
+      {
+        "parameters": {
+          "workflowInputs": {
+            "values": [
+              {
+                "name": "user_message"
+              },
+              {
+                "name": "user_id"
+              },
+              {
+                "name": "user_context"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "c389b4c5-af9f-482e-a2d2-fd16c092682a",
+        "name": "Strategy Request"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.user_message }}",
+          "options": {
+            "systemMessage": "=You are NemoAI, a Senior Strategic Consultant (CFO/COO Level).\n\n## Your Personality:\n- **DIRECT & HONEST:** Do not sugarcoat. If a budget is low, say it's low. If an idea is risky, say it's risky.\n- **CONCISE:** No fluff. No \"I hope this helps.\" No \"Great idea.\" Get straight to the analysis.\n- **OBJECTIVE:** Focus on numbers, feasibility, and ROI.\n- **NOT A PEOPLE PLEASER:** Do not try to be friendly. Be effective.\n\n## Response Guidelines:\n1. **Analyze:** Look at the user_message and user_context.\n2. **Framework:** Choose 4Ps, SWOT, or ROI automatically.\n3. **Language:** Respond in the same language as the user (Myanmar/English) but keep it professional.\n\n## \u26a0\ufe0f IMPORTANT: JSON OUTPUT FORMAT\nYou must respond in **VALID JSON FORMAT ONLY**. \nKeep all text fields **SHORT and BULLET-POINT STYLE**.\n\nStructure:\n{\n  \"analysis_type\": \"Strategy / SWOT / ROI\",\n  \"summary\": \"ONE sentence executive summary. (e.g., 'With 50 Lakhs, standard cafe is impossible. Use Micro-model.')\",\n  \"data\": {\n    \"point_1\": \"Title: Brief detail (Max 15 words)\",\n    \"point_2\": \"Title: Brief detail (Max 15 words)\",\n    \"point_3\": \"Title: Brief detail (Max 15 words)\",\n    \"point_4\": \"Title: Brief detail (Max 15 words)\"\n  },\n  \"recommendation\": \"The single most important action step. (No fluff)\",\n  \"confidence_score\": 0.95\n}\n\n## Constraint Checklist & Confidence Score:\n1. Confidence Score?\n2. Is the formatting JSON?\n3. Is the content concise?\n4. Are you being too polite? (If yes, rewrite to be stricter).\n\n## \ud83d\udeab CRITICAL FORMATTING RULES (ZERO MARKDOWN POLICY):\n1. **PLAIN TEXT ONLY:** You must output strictly clean, plain text.\n2. **ABSOLUTELY FORBIDDEN SYMBOLS:**\n   - **NO Asterisks:** Do not use `**` for bolding. Do not use `*` for italics. (e.g., Write \"Followers: 500\", NOT \"**Followers:** 500\").\n   - **NO Hash Headers:** Do not use `###` or `##`.\n   - **NO Code Blocks:** Do not use backticks (```).\n3. **STRUCTURING:**\n   - Use **UPPERCASE LABELS** for section titles (e.g., THE BOTTOM LINE).\n   - Use standard bullets (`\u2022`) for lists.\n   - **MANDATORY:** Leave exactly one empty line between sections."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          208,
+          0
+        ],
+        "id": "ec10ef67-7450-4e2a-84d9-75234630c5d8",
+        "name": "Business Strategist"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-3-flash-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          160,
+          208
+        ],
+        "id": "7ba642a3-7e6e-44ca-b694-f86da1b3a27e",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "description": "Search user's business history and past discussions",
+          "workflowId": {
+            "__rl": true,
+            "value": "volKVoT9R96UigzM",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/volKVoT9R96UigzM",
+            "cachedResultName": "Nemo - Memory Retrieval Tool"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('query', ``, 'string') }}",
+              "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "query",
+                "displayName": "query",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              },
+              {
+                "id": "user_id",
+                "displayName": "user_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+        "typeVersion": 2.2,
+        "position": [
+          352,
+          208
+        ],
+        "id": "7a339a9f-c224-4e33-a60d-5af7e9eef59c",
+        "name": "search_memory"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "07e3d8e3-7e75-46c2-a408-a9a8bf388afa",
+                "name": "output",
+                "value": "={{ $json.output }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          560,
+          0
+        ],
+        "id": "95d2bf22-95d8-4f22-b62d-61c9da6dedd6",
+        "name": "Format Output"
+      }
+    ],
+    "connections": {
+      "Strategy Request": {
+        "main": [
+          [
+            {
+              "node": "Business Strategist",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Business Strategist",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "search_memory": {
+        "ai_tool": [
+          [
+            {
+              "node": "Business Strategist",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Business Strategist": {
+        "main": [
+          [
+            {
+              "node": "Format Output",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 6df039e3",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-18T04:00:14.944Z",
+        "id": 165,
+        "workflowId": "DvvZiJ0n2HvbkAax",
+        "versionId": "6df039e3-9a56-4087-ab2f-439e34548c1e",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

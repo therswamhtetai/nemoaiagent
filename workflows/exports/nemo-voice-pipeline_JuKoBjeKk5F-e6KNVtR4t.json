@@ -1,0 +1,476 @@
+{
+  "updatedAt": "2026-01-26T19:38:26.467Z",
+  "createdAt": "2026-01-14T22:37:11.875Z",
+  "id": "JuKoBjeKk5F-e6KNVtR4t",
+  "name": "Nemo - Voice Pipeline",
+  "description": "Speech to text workflow that connect wih main",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voice-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "103d7356-765d-4496-9a8a-8750b3fd6a4f",
+      "name": "Webhook",
+      "webhookId": "4b52c369-fbc8-4fb7-be9f-07b9cd7632c1"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "39ec9747-a3a0-4086-a2e7-397fcb96aef0",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "o5t83JWF11dsSfyi",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/o5t83JWF11dsSfyi",
+          "cachedResultName": "Nemo - Web API Router"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message": "={{ $json.content.parts[0].text }}",
+            "user_id": "={{ $('Webhook').item.json.body.user_id }}",
+            "thread_id": "={{ $('Webhook').item.json.body.thread_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "980d6f3e-c5b9-4bce-b5f6-d4e18a693b42",
+      "name": "Call 'Nemo - Web API Router'"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"reply\": $json.content } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "5bbc1682-942c-415e-87eb-ea32d6d2b89a",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Call 'Nemo - Web API Router'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Nemo - Web API Router'": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "admin.orcadigital.online",
+            "user-agent": "node",
+            "content-length": "377808",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "*",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "44.210.76.110",
+            "cf-ipcountry": "US",
+            "cf-ray": "9c3f09d26a192d17-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "69a6f1ed-3a5a-4a25-8e76-f32ecee47576",
+            "connection": "keep-alive",
+            "content-type": "multipart/form-data; boundary=----formdata-undici-064502614854",
+            "sec-fetch-mode": "cors",
+            "x-forwarded-for": "44.210.76.110",
+            "x-forwarded-proto": "https",
+            "x-vercel-id": "sin1::tzmn8-1769420315097-29abf880ab75"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+            "userId": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+            "thread_id": "22db05c9-0e90-473b-b61f-8fefbd726b6d",
+            "threadId": "22db05c9-0e90-473b-b61f-8fefbd726b6d",
+            "sessionId": "22db05c9-0e90-473b-b61f-8fefbd726b6d",
+            "chatId": "22db05c9-0e90-473b-b61f-8fefbd726b6d"
+          },
+          "webhookUrl": "https://admin.orcadigital.online/webhook/voice-chat",
+          "executionMode": "production"
+        },
+        "binary": {
+          "data": {
+            "mimeType": "audio/webm",
+            "fileType": "audio",
+            "fileExtension": "weba",
+            "data": "filesystem-v2",
+            "fileName": "audio.webm",
+            "id": "filesystem-v2:workflows/JuKoBjeKk5F-e6KNVtR4t/executions/3134/binary_data/9d7fb540-8abe-4d4d-aabd-2a590e4a5f47",
+            "fileSize": "377 kB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "63414237-a800-4c0d-99e7-621da2ed2e13",
+  "activeVersionId": "63414237-a800-4c0d-99e7-621da2ed2e13",
+  "versionCounter": 52,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-14T22:37:11.879Z",
+      "createdAt": "2026-01-14T22:37:11.879Z",
+      "role": "workflow:owner",
+      "workflowId": "JuKoBjeKk5F-e6KNVtR4t",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-26T09:44:22.000Z",
+    "createdAt": "2026-01-26T09:44:19.733Z",
+    "versionId": "63414237-a800-4c0d-99e7-621da2ed2e13",
+    "workflowId": "JuKoBjeKk5F-e6KNVtR4t",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "voice-chat",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -224,
+          0
+        ],
+        "id": "103d7356-765d-4496-9a8a-8750b3fd6a4f",
+        "name": "Webhook",
+        "webhookId": "4b52c369-fbc8-4fb7-be9f-07b9cd7632c1"
+      },
+      {
+        "parameters": {
+          "resource": "audio",
+          "modelId": {
+            "__rl": true,
+            "value": "models/gemini-2.5-pro",
+            "mode": "list",
+            "cachedResultName": "models/gemini-2.5-pro"
+          },
+          "inputType": "binary",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.googleGemini",
+        "typeVersion": 1.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "39ec9747-a3a0-4086-a2e7-397fcb96aef0",
+        "name": "Transcribe a recording",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "o5t83JWF11dsSfyi",
+            "mode": "list",
+            "cachedResultUrl": "/workflow/o5t83JWF11dsSfyi",
+            "cachedResultName": "Nemo - Web API Router"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "message": "={{ $json.content.parts[0].text }}",
+              "user_id": "={{ $('Webhook').item.json.body.user_id }}",
+              "thread_id": "={{ $('Webhook').item.json.body.thread_id }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "message",
+                "displayName": "message",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "user_id",
+                "displayName": "user_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "thread_id",
+                "displayName": "thread_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "canBeUsedToMatch": true,
+                "type": "string",
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": true
+          },
+          "options": {
+            "waitForSubWorkflow": true
+          }
+        },
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          224,
+          0
+        ],
+        "id": "980d6f3e-c5b9-4bce-b5f6-d4e18a693b42",
+        "name": "Call 'Nemo - Web API Router'"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ { \"reply\": $json.content } }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          448,
+          0
+        ],
+        "id": "5bbc1682-942c-415e-87eb-ea32d6d2b89a",
+        "name": "Respond to Webhook"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Transcribe a recording",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Transcribe a recording": {
+        "main": [
+          [
+            {
+              "node": "Call 'Nemo - Web API Router'",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Call 'Nemo - Web API Router'": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 63414237",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-26T09:44:22.788Z",
+        "id": 387,
+        "workflowId": "JuKoBjeKk5F-e6KNVtR4t",
+        "versionId": "63414237-a800-4c0d-99e7-621da2ed2e13",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-26T19:32:33.694Z",
+        "id": 397,
+        "workflowId": "JuKoBjeKk5F-e6KNVtR4t",
+        "versionId": "63414237-a800-4c0d-99e7-621da2ed2e13",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}

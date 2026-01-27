@@ -1,0 +1,429 @@
+{
+  "updatedAt": "2026-01-26T19:39:51.129Z",
+  "createdAt": "2026-01-23T19:56:38.591Z",
+  "id": "uozz_aGMGLV1Q5L79-uT7",
+  "name": "Nemo - Image Analysis",
+  "description": "Nemo - Image Analyse",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-image",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "3e860e00-7df9-42ce-95d0-598c9dcfbe09",
+      "name": "Image Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "upload-image"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const binaryKey = Object.keys(item.binary || {})[0];\n\n  if (!binaryKey) {\n    results.push({ json: { error: 'No binary found', ...item.json } });\n    continue;\n  }\n\n  // Robustly get binary data\n  const buffer = await this.helpers.getBinaryDataBuffer(i, binaryKey);\n  const base64 = buffer.toString('base64');\n  const mimeType = item.binary[binaryKey].mimeType;\n  const fileName = item.binary[binaryKey].fileName || 'image.png';\n\n  const userId = item.json.body?.user_id || item.json.user_id || 'unknown';\n  const message = item.json.body?.message || 'Describe this image';\n\n  results.push({\n    json: {\n      user_id: userId,\n      message: message,\n      filename: fileName,\n      mime_type: mimeType,\n      base64: base64\n    }\n  });\n}\n\nreturn results;\n"
+      },
+      "id": "7adafd8d-6849-4dbf-87f1-4620c54f8649",
+      "name": "Extract Image Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"inline_data\": {\n          \"mime_type\": \"{{ $json.mime_type }}\",\n          \"data\": \"{{ $json.base64 }}\"\n        }\n      },\n      {\n        \"text\": \"{{ $json.message }}\\n\\nRespond appropriately. For caption requests, write a creative caption. For business cards, extract contact as JSON {name,phone,email,company,role}. Otherwise describe what you see.\"\n      }\n    ]\n  }],\n  \"generationConfig\": { \"temperature\": 0.7 }\n}",
+        "options": {}
+      },
+      "id": "8b6ab8f1-7436-4452-9d61-5feecb4ab650",
+      "name": "Gemini Vision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        0
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qJ3tJlGTxwiZCORz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst prevData = $('Extract Image Info').first().json;\n\nconst text = response.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not analyze';\n\n// Try to detect contact JSON\nlet contactData = null;\nlet isContact = false;\ntry {\n  const match = text.match(/\\{[^}]*name[^}]*\\}/i);\n  if (match) {\n    contactData = JSON.parse(match[0]);\n    isContact = !!(contactData.name || contactData.email || contactData.phone);\n  }\n} catch(e) {}\n\nreturn [{\n  json: {\n    success: true,\n    type: isContact ? 'contact' : 'analysis',\n    analysis: text,\n    contact_data: contactData,\n    requires_confirmation: isContact,\n    message: isContact ? `Contact detected: ${contactData?.name || 'Unknown'}. Save?` : null\n  }\n}];"
+      },
+      "id": "b9c71ca5-9f0d-4615-a299-0b9932883f5b",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "3a6aa963-e013-4854-9b8a-71353765f6a5",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Image Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Image Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Image Info": {
+      "main": [
+        [
+          {
+            "node": "Gemini Vision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Vision": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "Image Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "admin.orcadigital.online",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            "content-length": "6261100",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "18.143.133.236",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9c2a8b2b98abf938-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "69a6f1ed-3a5a-4a25-8e76-f32ecee47576",
+            "connection": "keep-alive",
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryeoYnjvFZ3Sub7aHk",
+            "origin": "http://localhost:3000",
+            "priority": "u=1, i",
+            "referer": "http://localhost:3000/",
+            "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "18.143.133.236",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "user_id": "fd5834eb-6141-4081-81d9-be36a0ced5dd",
+            "message": "Cross Culture Mascot"
+          },
+          "webhookUrl": "https://admin.orcadigital.online/webhook/upload-image",
+          "executionMode": "production"
+        },
+        "binary": {
+          "file": {
+            "mimeType": "image/png",
+            "fileType": "image",
+            "fileExtension": "png",
+            "data": "filesystem-v2",
+            "fileName": "Gemini_Generated_Image_rhi4g0rhi4g0rhi4.png",
+            "id": "filesystem-v2:workflows/uozz_aGMGLV1Q5L79-uT7/executions/temp/binary_data/0a0b7400-8923-463f-8c01-8241385603f4",
+            "fileSize": "6.26 MB"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "versionId": "4bebe11e-61fc-48c4-9943-c347d0e3c1eb",
+  "activeVersionId": "4bebe11e-61fc-48c4-9943-c347d0e3c1eb",
+  "versionCounter": 21,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-23T19:56:38.594Z",
+      "createdAt": "2026-01-23T19:56:38.594Z",
+      "role": "workflow:owner",
+      "workflowId": "uozz_aGMGLV1Q5L79-uT7",
+      "projectId": "2vxUI2bijjASTGye",
+      "project": {
+        "updatedAt": "2025-12-21T18:16:07.221Z",
+        "createdAt": "2025-12-21T11:35:31.290Z",
+        "id": "2vxUI2bijjASTGye",
+        "name": "Thomas Htet <therswamhtet@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-12-21T11:35:31.290Z",
+            "createdAt": "2025-12-21T11:35:31.290Z",
+            "userId": "f7f3363d-82da-4e53-bec2-260941d606e3",
+            "projectId": "2vxUI2bijjASTGye",
+            "user": {
+              "updatedAt": "2026-01-27T19:48:50.000Z",
+              "createdAt": "2025-12-21T11:35:30.789Z",
+              "id": "f7f3363d-82da-4e53-bec2-260941d606e3",
+              "email": "therswamhtet@gmail.com",
+              "firstName": "Thomas",
+              "lastName": "Htet",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-12-21T18:16:19.430Z",
+                "personalization_survey_n8n_version": "2.0.3"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "OkFlg5I493MQFyjB",
+                "userActivatedAt": 1766909496153,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767330017837
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-27",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-01-23T22:01:44.000Z",
+    "createdAt": "2026-01-23T22:01:42.503Z",
+    "versionId": "4bebe11e-61fc-48c4-9943-c347d0e3c1eb",
+    "workflowId": "uozz_aGMGLV1Q5L79-uT7",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "upload-image",
+          "responseMode": "responseNode",
+          "options": {
+            "rawBody": true
+          }
+        },
+        "id": "3e860e00-7df9-42ce-95d0-598c9dcfbe09",
+        "name": "Image Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "upload-image"
+      },
+      {
+        "parameters": {
+          "jsCode": "\nconst items = $input.all();\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const binaryKey = Object.keys(item.binary || {})[0];\n\n  if (!binaryKey) {\n    results.push({ json: { error: 'No binary found', ...item.json } });\n    continue;\n  }\n\n  // Robustly get binary data\n  const buffer = await this.helpers.getBinaryDataBuffer(i, binaryKey);\n  const base64 = buffer.toString('base64');\n  const mimeType = item.binary[binaryKey].mimeType;\n  const fileName = item.binary[binaryKey].fileName || 'image.png';\n\n  const userId = item.json.body?.user_id || item.json.user_id || 'unknown';\n  const message = item.json.body?.message || 'Describe this image';\n\n  results.push({\n    json: {\n      user_id: userId,\n      message: message,\n      filename: fileName,\n      mime_type: mimeType,\n      base64: base64\n    }\n  });\n}\n\nreturn results;\n"
+        },
+        "id": "7adafd8d-6849-4dbf-87f1-4620c54f8649",
+        "name": "Extract Image Info",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          240,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googlePalmApi",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"inline_data\": {\n          \"mime_type\": \"{{ $json.mime_type }}\",\n          \"data\": \"{{ $json.base64 }}\"\n        }\n      },\n      {\n        \"text\": \"{{ $json.message }}\\n\\nRespond appropriately. For caption requests, write a creative caption. For business cards, extract contact as JSON {name,phone,email,company,role}. Otherwise describe what you see.\"\n      }\n    ]\n  }],\n  \"generationConfig\": { \"temperature\": 0.7 }\n}",
+          "options": {}
+        },
+        "id": "8b6ab8f1-7436-4452-9d61-5feecb4ab650",
+        "name": "Gemini Vision",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          512,
+          0
+        ],
+        "credentials": {
+          "googlePalmApi": {
+            "id": "qJ3tJlGTxwiZCORz",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const response = $input.first().json;\nconst prevData = $('Extract Image Info').first().json;\n\nconst text = response.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not analyze';\n\n// Try to detect contact JSON\nlet contactData = null;\nlet isContact = false;\ntry {\n  const match = text.match(/\\{[^}]*name[^}]*\\}/i);\n  if (match) {\n    contactData = JSON.parse(match[0]);\n    isContact = !!(contactData.name || contactData.email || contactData.phone);\n  }\n} catch(e) {}\n\nreturn [{\n  json: {\n    success: true,\n    type: isContact ? 'contact' : 'analysis',\n    analysis: text,\n    contact_data: contactData,\n    requires_confirmation: isContact,\n    message: isContact ? `Contact detected: ${contactData?.name || 'Unknown'}. Save?` : null\n  }\n}];"
+        },
+        "id": "b9c71ca5-9f0d-4615-a299-0b9932883f5b",
+        "name": "Format Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          768,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify($json) }}",
+          "options": {}
+        },
+        "id": "3a6aa963-e013-4854-9b8a-71353765f6a5",
+        "name": "Send Response",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          1024,
+          0
+        ]
+      }
+    ],
+    "connections": {
+      "Image Webhook": {
+        "main": [
+          [
+            {
+              "node": "Extract Image Info",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Image Info": {
+        "main": [
+          [
+            {
+              "node": "Gemini Vision",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gemini Vision": {
+        "main": [
+          [
+            {
+              "node": "Format Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Response": {
+        "main": [
+          [
+            {
+              "node": "Send Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Thomas Htet",
+    "name": "Version 4bebe11e",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-23T22:01:44.901Z",
+        "id": 232,
+        "workflowId": "uozz_aGMGLV1Q5L79-uT7",
+        "versionId": "4bebe11e-61fc-48c4-9943-c347d0e3c1eb",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      },
+      {
+        "createdAt": "2026-01-24T08:42:53.667Z",
+        "id": 277,
+        "workflowId": "uozz_aGMGLV1Q5L79-uT7",
+        "versionId": "4bebe11e-61fc-48c4-9943-c347d0e3c1eb",
+        "event": "activated",
+        "userId": "f7f3363d-82da-4e53-bec2-260941d606e3"
+      }
+    ]
+  }
+}
