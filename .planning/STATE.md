@@ -70,6 +70,13 @@ NemoAI personal AI assistant system optimization. Phase 01 (Daily Briefing) and 
 
 ---
 
+## Accumulated Context
+
+### Pending Todos
+- 2 items in `.planning/todos/pending/`
+
+---
+
 ## Next Steps
 
 ### Immediate
