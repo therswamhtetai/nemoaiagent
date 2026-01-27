@@ -73,7 +73,9 @@ NemoAI personal AI assistant system optimization. Phase 01 (Daily Briefing) and 
 ## Accumulated Context
 
 ### Pending Todos
-- 2 items in `.planning/todos/pending/`
+- 12 items in `.planning/todos/pending/`
+- 10 new: Social Scout TikTok & Viral Analysis enhancement
+- 2 existing: Skills system, Google services integration
 
 ---
 
