@@ -4317,8 +4317,12 @@ export default function NemoAIDashboard() {
                         (task) => {
                           if (!task.due_date || task.status === "completed" || task.status === "archived") return false
                           const taskDate = new Date(task.due_date)
-                          const taskDateStr = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, "0")}-${String(taskDate.getDate()).padStart(2, "0")}`
-                          return taskDateStr === cellDateStr
+                          const taskDateStr = `${taskDate.getUTCFullYear()}-${String(taskDate.getUTCMonth() + 1).padStart(2, "0")}-${String(taskDate.getUTCDate()).padStart(2, "0")}`
+                          return (
+                            taskDateStr === cellDateStr &&
+                            task.status !== "completed" &&
+                            task.status !== "archived"
+                          )
                         }
                       )
 
