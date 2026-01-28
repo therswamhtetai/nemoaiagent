@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Timeout duration in milliseconds (120 seconds for voice - transcription + LLM processing)
-const WEBHOOK_TIMEOUT = 120000
-
-// Extend Vercel serverless function timeout (Pro plan: up to 300s, Hobby: 60s max)
-export const maxDuration = 120
+// Async voice processing - fires webhook and returns immediately
+// Real-time Supabase subscription handles the response on the frontend
 
 export async function POST(request: NextRequest) {
     try {
@@ -29,46 +26,31 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
         }
 
-        // Create AbortController for timeout
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT)
-
-        try {
-            const response = await fetch(webhookUrl, {
-                method: 'POST',
-                // No Content-Type header needed for FormData; fetch sets boundary automatically
-                body: formData,
-                signal: controller.signal
-            })
-
-            clearTimeout(timeoutId)
-
+        // Fire-and-forget: Send to webhook without waiting for response
+        // n8n will process and save to Supabase; frontend uses real-time subscription
+        fetch(webhookUrl, {
+            method: 'POST',
+            body: formData,
+        }).then(response => {
             if (!response.ok) {
-                // Voice webhook might not return JSON on error, be careful
-                const errorText = await response.text()
-                console.error(`Voice webhook error: ${response.status} - ${errorText}`)
-                return NextResponse.json(
-                    { error: 'Voice processing temporarily unavailable', code: 'WEBHOOK_ERROR' },
-                    { status: 502 }
-                )
+                console.error(`[Voice] Webhook returned ${response.status}`)
+            } else {
+                console.log('[Voice] Webhook accepted request')
             }
+        }).catch(error => {
+            console.error('[Voice] Webhook fire-and-forget error:', error)
+        })
 
-            // Voice webhook returns JSON with audio_base64
-            const data = await response.json()
-            return NextResponse.json(data)
-
-        } catch (fetchError) {
-            clearTimeout(timeoutId)
-
-            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-                console.error("Voice webhook timeout after", WEBHOOK_TIMEOUT, "ms")
-                return NextResponse.json(
-                    { error: 'Voice processing timed out. Please try again.', code: 'TIMEOUT' },
-                    { status: 504 }
-                )
-            }
-            throw fetchError
-        }
+        // Return 202 Accepted immediately
+        // Frontend will receive the AI response via Supabase real-time subscription
+        return NextResponse.json(
+            { 
+                status: 'processing', 
+                message: 'Voice command received. Processing in background...',
+                user_id: sessionUserId
+            },
+            { status: 202 }
+        )
 
     } catch (error) {
         console.error("Voice proxy error:", error)

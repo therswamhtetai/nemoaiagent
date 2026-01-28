@@ -1,7 +1,51 @@
 import { createBrowserClient } from "@/lib/supabase/client"
 import { Message, Thread, Task, Idea, Contact, Competitor, SocialStat, PromptCard } from "@/lib/types"
+import { RealtimeChannel } from "@supabase/supabase-js"
 
 // FIXED_USER_ID removed for dynamic authentication
+
+// Real-time subscription for conversations
+// Returns an unsubscribe function
+export const SubscribeToConversations = (
+    userId: string,
+    threadId: string,
+    onNewMessage: (message: Message) => void
+): (() => void) => {
+    const supabase = createBrowserClient()
+    
+    const channelName = `conversations:${userId}:${threadId}`
+    console.log(`[Realtime] Subscribing to channel: ${channelName}`)
+    
+    const channel: RealtimeChannel = supabase
+        .channel(channelName)
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'conversations',
+                filter: `thread_id=eq.${threadId}`
+            },
+            (payload) => {
+                console.log('[Realtime] New message received:', payload.new)
+                const newMessage = payload.new as Message
+                // Only trigger callback for assistant messages (AI responses)
+                // User messages are already shown optimistically
+                if (newMessage.role === 'assistant') {
+                    onNewMessage(newMessage)
+                }
+            }
+        )
+        .subscribe((status) => {
+            console.log(`[Realtime] Subscription status: ${status}`)
+        })
+    
+    // Return unsubscribe function
+    return () => {
+        console.log(`[Realtime] Unsubscribing from channel: ${channelName}`)
+        supabase.removeChannel(channel)
+    }
+}
 
 export const CheckServerConnection = async (): Promise<boolean> => {
     const supabase = createBrowserClient()

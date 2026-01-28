@@ -931,6 +931,38 @@ export default function NemoAIDashboard() {
     }
   }, [currentThreadId])
 
+  // Real-time subscription for conversation updates (for async voice processing)
+  useEffect(() => {
+    if (!currentThreadId || !userId || useFallbackMode) return
+
+    console.log('[v0] Setting up real-time subscription for thread:', currentThreadId)
+    
+    const unsubscribe = API.SubscribeToConversations(
+      userId,
+      currentThreadId,
+      (newMessage) => {
+        console.log('[v0] Real-time: New assistant message received')
+        // Add the new message to the messages array
+        setMessages(prev => {
+          // Check if message already exists (prevent duplicates)
+          if (prev.some(m => m.id === newMessage.id)) {
+            return prev
+          }
+          return [...prev, newMessage]
+        })
+        // Stop loading states
+        setLoading(false)
+        setIsProcessing(false)
+      }
+    )
+
+    // Cleanup subscription on unmount or thread change
+    return () => {
+      console.log('[v0] Cleaning up real-time subscription')
+      unsubscribe()
+    }
+  }, [currentThreadId, userId, useFallbackMode])
+
   useEffect(() => {
     // Instant scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" })
@@ -1868,6 +1900,7 @@ export default function NemoAIDashboard() {
   }
 
   // CHANGE: Add sendAudioToN8n function to handle API call and response
+  // Updated for async processing - API returns 202, real-time subscription handles AI response
   const sendAudioToN8n = async (audioBlob: Blob) => {
     // Capture the thread ID at the start of the function to ensure consistency
     // If currentThreadId is set (which it should be from handlePushToTalk), use it.
@@ -1883,6 +1916,7 @@ export default function NemoAIDashboard() {
 
     // Force UI update to show "Thinking" state if not already
     setLoading(true)
+    setIsProcessing(true)
     setShowQuickPrompts(false)
 
     try {
@@ -1899,7 +1933,7 @@ export default function NemoAIDashboard() {
         formData.append("chatId", activeThreadId) // Common alias
       }
 
-      console.log("[v0] Sending audio to n8n webhook...")
+      console.log("[v0] Sending audio to n8n webhook (async mode)...")
       console.log("[v0] - Audio blob size:", audioBlob.size, "bytes")
       console.log("[v0] - User ID:", userId || "not set")
       console.log("[v0] - Thread ID:", activeThreadId || "not set")
@@ -1909,7 +1943,7 @@ export default function NemoAIDashboard() {
       if (messages.length === 0) {
         const placeholderMsg: Message = {
           id: "temp-mic-placeholder",
-          content: "🎤 Processing voice command...",
+          content: "Processing voice command...",
           role: "user",
           created_at: new Date().toISOString(),
           thread_id: activeThreadId || "temp",
@@ -1922,57 +1956,73 @@ export default function NemoAIDashboard() {
         body: formData,
       })
 
+      // Handle 202 Accepted (async processing) - this is the expected response now
+      if (response.status === 202) {
+        console.log("[v0] Voice command accepted (202). Waiting for real-time update...")
+        
+        // Remove placeholder message
+        setMessages(prev => prev.filter(m => m.id !== "temp-mic-placeholder"))
+        
+        // Wait a moment for n8n to save the user's transcribed message, then reload
+        setTimeout(async () => {
+          if (activeThreadId) {
+            console.log("[v0] Reloading conversations to get transcribed user message...")
+            await loadConversations(activeThreadId)
+            await loadThreads()
+          }
+        }, 2000) // 2 second delay for transcription to complete
+        
+        // Keep loading state active - real-time subscription will turn it off when AI responds
+        // Don't call setLoading(false) here!
+        return
+      }
+
+      // Handle other non-OK responses as errors
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
+      // Legacy path: if we somehow get a 200 with data (shouldn't happen with new API)
       const contentType = response.headers.get("content-type")
       const responseText = await response.text()
 
       console.log("[v0] Response content-type:", contentType)
-      console.log("[v0] Response text:", responseText.substring(0, 200)) // Log first 200 chars
+      console.log("[v0] Response text:", responseText.substring(0, 200))
 
-      if (!responseText || responseText.trim() === "") {
-        throw new Error("Empty response from n8n webhook")
+      if (responseText && responseText.trim() !== "") {
+        let data
+        try {
+          data = JSON.parse(responseText)
+        } catch (jsonError) {
+          console.error("[v0] Failed to parse JSON. Response was:", responseText)
+        }
+
+        if (data?.audio_base64) {
+          playAudioResponse(data.audio_base64)
+        }
       }
 
-      let data
-      try {
-        data = JSON.parse(responseText)
-      } catch (jsonError) {
-        console.error("[v0] Failed to parse JSON. Response was:", responseText)
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`)
-      }
-
-      console.log("[v0] n8n response:", data)
-
-      // CHANGE: After webhook responds, reload conversations to show updates
+      // Reload conversations for legacy responses
       if (activeThreadId) {
-        console.log("[v0] Reloading conversations for thread:", activeThreadId)
         await loadConversations(activeThreadId)
-        // Also reload threads list to show the new/updated thread in sidebar
         await loadThreads()
-        console.log("[v0] Conversations and Threads reloaded successfully")
       }
 
-      if (data.audio_base64) {
+      console.log("[v0] Voice response received")
+      setLoading(false)
+      setIsProcessing(false)
 
-        playAudioResponse(data.audio_base64)
-      } else {
-
-      }
-
-      console.log("[v0] Voice response received - backend handled conversation updates")
     } catch (err) {
       console.error("[v0] Error sending audio to n8n:", err)
-      alert(
-        `Failed to process voice chat: ${err instanceof Error ? err.message : "Unknown error"}. Please check the webhook.`,
-      )
-    } finally {
-      // CHANGE: Always hide loading animation when done
+      // Only show error for actual network failures, not async processing
+      if (err instanceof Error && !err.message.includes('202')) {
+        alert(
+          `Failed to send voice command: ${err.message}. Please try again.`,
+        )
+      }
+      // Stop loading on error
       setLoading(false)
-      setIsProcessing(false) // Also reset processing flag
-
+      setIsProcessing(false)
       // Cleanup the temp message if it exists
       setMessages(prev => prev.filter(m => m.id !== "temp-mic-placeholder"))
     }
