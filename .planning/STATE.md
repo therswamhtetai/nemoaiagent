@@ -2,11 +2,11 @@
 
 ## Current Status
 - **Project**: NemoAI Voice Message Flow Overhaul
-- **Phase**: 03 - Voice Message Flow Overhaul (1/3 plans complete)
+- **Phase**: 03 - Voice Message Flow Overhaul (2/3 plans complete)
 - **Status**: In progress
-- **Last activity**: 2026-01-28 - Completed 03-01-PLAN.md (voice recording state machine)
+- **Last activity**: 2026-01-28 - Completed 03-02-PLAN.md (error handling and retry logic)
 
-Progress: ███░░░░░░░ 30%
+Progress: ██████░░░░ 60%
 
 ## Project Overview
 NemoAI personal AI assistant system - fixing voice message flow for zero bugs and high stability.
@@ -15,9 +15,9 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 
 ### Completed Plans
 - **03-01**: Voice recording state machine ✓ (2026-01-28)
+- **03-02**: Error handling and retry logic ✓ (2026-01-28)
 
 ### In Progress
-- **03-02**: Error handling and retry logic (ready to execute)
 - **03-03**: UI polish and human verification (pending)
 
 ## Key Decisions
@@ -29,6 +29,9 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 | 03-01 | Trust Supabase real-time subscription | Removed polling - faster updates, less server load |
 | 03-01 | 30s timeout fallback | Handles real-time subscription failures |
 | 03-01 | Single temp message pattern | Consistent loading state across voice flow |
+| 03-02 | Combined Tasks 2&3 in single commit | Interdependent changes (timeout uses error states) |
+| 03-02 | 60s full timeout with 30s warning | Gives more time for slow AI processing |
+| 03-02 | processingTimeoutRef pattern | Trackable timeouts that can be cleared on success |
 
 ## Completed Changes
 - [x] Voice recording state machine fixed (isPushToTalk removed)
@@ -36,6 +39,10 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 - [x] Polling removed (trust real-time subscription)
 - [x] Temp message handling simplified (single "temp-voice" message)
 - [x] Thread title auto-update from transcription
+- [x] Retry logic for voice upload (3 attempts with 2s backoff)
+- [x] Error states and user feedback (voiceError state)
+- [x] Processing timeout detection (30s warning, 60s full timeout)
+- [x] Dismissable error UI in chat area
 
 ---
 
@@ -92,6 +99,8 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 2. **Thread creation timing** - Create BEFORE async operations to prevent errors
 3. **Trust real-time subscriptions** - Polling creates duplicate updates and server load
 4. **Timeout fallbacks** - Essential for reliability when WebSocket fails
+5. **Retry with backoff** - Network resilience without hammering the server
+6. **Trackable timeouts** - Use refs so timeouts can be cleared when response arrives
 
 ### Previous Optimization Insights
 1. **Understand frontend architecture first** - async optimization failed because frontend reads from Supabase
