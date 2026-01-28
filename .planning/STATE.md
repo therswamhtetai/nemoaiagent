@@ -2,23 +2,33 @@
 
 ## Current Status
 - **Project**: NemoAI Voice Message Flow Overhaul
-- **Phase**: 03 - Voice Message Flow Overhaul (2/3 plans complete)
-- **Status**: In progress
-- **Last activity**: 2026-01-28 - Completed 03-02-PLAN.md (error handling and retry logic)
+- **Phase**: 03 - Voice Message Flow Overhaul (COMPLETE)
+- **Status**: Phase completed, ready for next phase
+- **Last activity**: 2026-01-29 - Completed all 3 plans with human verification
 
-Progress: ██████░░░░ 60%
+Progress: ██████████ 100%
 
 ## Project Overview
-NemoAI personal AI assistant system - fixing voice message flow for zero bugs and high stability.
+NemoAI personal AI assistant system - voice message flow completely overhauled with zero bugs and high stability.
 
-## Phase 03: Voice Message Flow Overhaul
+## Phase 03: Voice Message Flow Overhaul ✓ COMPLETE
 
 ### Completed Plans
 - **03-01**: Voice recording state machine ✓ (2026-01-28)
-- **03-02**: Error handling and retry logic ✓ (2026-01-28)
+- **03-02**: Error handling and retry logic ✓ (2026-01-29)
+- **03-03**: UI polish and human verification ✓ (2026-01-29)
 
-### In Progress
-- **03-03**: UI polish and human verification (pending)
+### Summary of Changes
+- Voice recording state machine fixed (single source of truth)
+- Thread creation timing fixed (before recording starts)
+- Polling removed (trust Supabase real-time subscription)
+- Automatic retry logic added (3 attempts with 2s backoff)
+- Comprehensive error messages implemented
+- Processing timeout handling (30s warning, 60s timeout)
+- UI polished with "I'm listening..." indicator
+- Message duplication and flicker issues fixed
+- Instant thread scroll (no flash/animation)
+- Loading indicator during thread load
 
 ## Key Decisions
 
@@ -29,9 +39,15 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 | 03-01 | Trust Supabase real-time subscription | Removed polling - faster updates, less server load |
 | 03-01 | 30s timeout fallback | Handles real-time subscription failures |
 | 03-01 | Single temp message pattern | Consistent loading state across voice flow |
-| 03-02 | Combined Tasks 2&3 in single commit | Interdependent changes (timeout uses error states) |
-| 03-02 | 60s full timeout with 30s warning | Gives more time for slow AI processing |
-| 03-02 | processingTimeoutRef pattern | Trackable timeouts that can be cleared on success |
+| 03-02 | Retry with 2s backoff | Automatic recovery from transient failures |
+| 03-02 | Specific error messages | User understands what went wrong and how to fix |
+| 03-02 | 60s timeout with 30s warning | Prevents infinite loading states |
+| 03-03 | Removed red orb | User preference - simpler "I'm listening..." text |
+| 03-03 | Processing as user message | Shows "Processing voice message..." with spinner |
+| 03-03 | Hide container during load | Prevents flash/teleport when entering threads |
+| 03-03 | Real-time includes all roles | Voice transcriptions are user messages from n8n |
+| 03-03 | temp- prefix for optimistic msgs | Enables deduplication when real message arrives |
+| 03-03 | No animation for user messages | Prevents flicker from double animation |
 
 ## Completed Changes
 - [x] Voice recording state machine fixed (isPushToTalk removed)
@@ -39,10 +55,15 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 - [x] Polling removed (trust real-time subscription)
 - [x] Temp message handling simplified (single "temp-voice" message)
 - [x] Thread title auto-update from transcription
-- [x] Retry logic for voice upload (3 attempts with 2s backoff)
-- [x] Error states and user feedback (voiceError state)
-- [x] Processing timeout detection (30s warning, 60s full timeout)
-- [x] Dismissable error UI in chat area
+- [x] Retry logic for voice upload (3 attempts)
+- [x] Error states with specific messages
+- [x] Timeout handling (30s/60s)
+- [x] Visual state indicators (simplified)
+- [x] Message rendering optimized
+- [x] Thread scroll instant (no animation)
+- [x] Loading indicator added
+- [x] Duplicate text messages fixed
+- [x] Message flicker fixed
 
 ---
 
@@ -99,8 +120,9 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 2. **Thread creation timing** - Create BEFORE async operations to prevent errors
 3. **Trust real-time subscriptions** - Polling creates duplicate updates and server load
 4. **Timeout fallbacks** - Essential for reliability when WebSocket fails
-5. **Retry with backoff** - Network resilience without hammering the server
-6. **Trackable timeouts** - Use refs so timeouts can be cleared when response arrives
+5. **Optimistic UI pattern** - Use temp- prefix for easy filtering
+6. **Animation considerations** - User messages should be instant (no animation)
+7. **Container visibility** - Hide during async load to prevent visual artifacts
 
 ### Previous Optimization Insights
 1. **Understand frontend architecture first** - async optimization failed because frontend reads from Supabase
@@ -109,4 +131,4 @@ NemoAI personal AI assistant system - fixing voice message flow for zero bugs an
 
 ---
 
-*State Updated: January 28, 2026*
+*State Updated: January 29, 2026*
