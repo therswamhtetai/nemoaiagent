@@ -380,6 +380,7 @@ export default function NemoAIDashboard() {
   const [showIconPicker, setShowIconPicker] = useState(false)
   const [iconPickerCardId, setIconPickerCardId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isLoadingThread, setIsLoadingThread] = useState(false)  // Hide container during thread load
   const [isServerOnline, setIsServerOnline] = useState(false)
   const [showQuickPrompts, setShowQuickPrompts] = useState(true)
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null)
@@ -1129,6 +1130,8 @@ export default function NemoAIDashboard() {
   const loadConversations = async (threadId?: string) => {
     if (!supabase || useFallbackMode || !userId) return
 
+    setIsLoadingThread(true)  // Hide container during load
+
     try {
       const reversedData = await API.FetchConversations(userId, threadId)
       console.log("[v0] Conversations loaded:", reversedData?.length || 0, "for thread:", threadId || "all")
@@ -1186,15 +1189,21 @@ export default function NemoAIDashboard() {
 
         setMessages(messagesWithAttachments)
         setShowQuickPrompts(false)
-        // Instant scroll to bottom on thread load (no animation)
-        setTimeout(() => scrollToBottom(true), 0)
+        // Instant scroll to bottom, then reveal container
+        setTimeout(() => {
+          scrollToBottom(true)
+          // Reveal after scroll completes (next frame)
+          requestAnimationFrame(() => setIsLoadingThread(false))
+        }, 0)
       } else {
         console.log("[v0] Database returned empty, keeping current messages")
+        setIsLoadingThread(false)  // Reveal even if empty
       }
       setIsServerOnline(true)
     } catch (err) {
       console.error("[v0] Exception loading conversations:", err)
       setIsServerOnline(false)
+      setIsLoadingThread(false)  // Ensure container visible on error
     }
   }
 
@@ -3187,7 +3196,7 @@ export default function NemoAIDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917]">
+              <div className={`flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917] ${isLoadingThread ? 'opacity-0' : 'opacity-100'}`}>
                 <div className="max-w-3xl mx-auto space-y-6" style={{ willChange: 'transform' }}>
                   {/* Voice Error Display */}
                   {voiceError && (
