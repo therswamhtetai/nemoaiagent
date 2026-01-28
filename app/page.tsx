@@ -3196,8 +3196,17 @@ export default function NemoAIDashboard() {
                 </div>
               </div>
             ) : (
-              <div className={`flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917] ${isLoadingThread ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="max-w-3xl mx-auto space-y-6" style={{ willChange: 'transform' }}>
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917] relative">
+                {/* Loading indicator during thread load */}
+                {isLoadingThread && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#1C1917] z-10">
+                    <div className="flex items-center gap-2 text-zinc-500">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Loading conversation...</span>
+                    </div>
+                  </div>
+                )}
+                <div className={`max-w-3xl mx-auto space-y-6 ${isLoadingThread ? 'opacity-0' : 'opacity-100'}`} style={{ willChange: 'transform' }}>
                   {/* Voice Error Display */}
                   {voiceError && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 animate-slide-up">
