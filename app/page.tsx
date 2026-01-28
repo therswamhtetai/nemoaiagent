@@ -452,6 +452,11 @@ export default function NemoAIDashboard() {
   const [slidingTaskId, setSlidingTaskId] = useState<string | null>(null)
   const [slideOffset, setSlideOffset] = useState(0)
 
+  // Sidebar swipe gesture tracking refs
+  const sidebarTouchStartX = useRef<number>(0)
+  const sidebarTouchStartY = useRef<number>(0)
+  const isSidebarSwipe = useRef<boolean>(false)
+
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null)
   const [showNewIdeaForm, setShowNewIdeaForm] = useState(false)
@@ -2080,6 +2085,54 @@ export default function NemoAIDashboard() {
   const markTaskComplete = async (taskId: string) => {
     await updateTask(taskId, { status: "completed" })
   }
+
+  // Sidebar swipe gesture handlers for mobile
+  const handleSidebarTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    sidebarTouchStartX.current = touch.clientX
+    sidebarTouchStartY.current = touch.clientY
+    
+    // Only enable swipe if starting from left edge (40px) or sidebar is already open
+    const isLeftEdge = touch.clientX < 40
+    isSidebarSwipe.current = isLeftEdge || isSidebarOpen
+  }
+
+  const handleSidebarTouchMove = (e: React.TouchEvent) => {
+    if (!isSidebarSwipe.current) return
+    
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - sidebarTouchStartX.current
+    const deltaY = touch.clientY - sidebarTouchStartY.current
+    
+    // If vertical scroll is dominant, cancel sidebar swipe
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
+      isSidebarSwipe.current = false
+    }
+  }
+
+  const handleSidebarTouchEnd = (e: React.TouchEvent) => {
+    if (!isSidebarSwipe.current) return
+    
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - sidebarTouchStartX.current
+    const deltaY = touch.clientY - sidebarTouchStartY.current
+    
+    // Only trigger if horizontal movement is dominant
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      const threshold = 80 // pixels needed to trigger
+      
+      if (!isSidebarOpen && deltaX > threshold) {
+        // Swipe right to open
+        setIsSidebarOpen(true)
+      } else if (isSidebarOpen && deltaX < -threshold) {
+        // Swipe left to close
+        setIsSidebarOpen(false)
+      }
+    }
+    
+    isSidebarSwipe.current = false
+  }
+
   // Added completeTask function for quick task completion
   const completeTask = async (taskId: string) => {
     await updateTask(taskId, { status: "completed" })
@@ -2414,7 +2467,12 @@ export default function NemoAIDashboard() {
   }
 
   return (
-    <div className="flex fixed inset-0 w-full overflow-hidden bg-[#0D0C0B] text-white">
+    <div 
+      className="flex fixed inset-0 w-full overflow-hidden bg-[#0D0C0B] text-white"
+      onTouchStart={handleSidebarTouchStart}
+      onTouchMove={handleSidebarTouchMove}
+      onTouchEnd={handleSidebarTouchEnd}
+    >
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div
