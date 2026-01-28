@@ -1,35 +1,41 @@
 # GSD Project State
 
 ## Current Status
-- **Project**: NemoAI Optimization
-- **Phase**: Response Speed Optimization ✓ COMPLETE
-- **Status**: Optimization Complete
-- **Last activity**: 2026-01-28 - Completed quick-003 (green confetti on task completion)
+- **Project**: NemoAI Voice Message Flow Overhaul
+- **Phase**: 03 - Voice Message Flow Overhaul (1/3 plans complete)
+- **Status**: In progress
+- **Last activity**: 2026-01-28 - Completed 03-01-PLAN.md (voice recording state machine)
 
-Progress: ██████████ 100% (Optimization Complete)
+Progress: ███░░░░░░░ 30%
 
 ## Project Overview
-NemoAI personal AI assistant system optimization. Context window reduction deployed for improved response speed.
+NemoAI personal AI assistant system - fixing voice message flow for zero bugs and high stability.
 
-## Completed Optimization
+## Phase 03: Voice Message Flow Overhaul
 
-### Response Speed Optimization ✓
-- **Status:** Completed
-- **Outcome:** Context window reduced (10→6)
-- **Note:** Async patterns reverted - incompatible with frontend architecture (reads from Supabase)
+### Completed Plans
+- **03-01**: Voice recording state machine ✓ (2026-01-28)
+
+### In Progress
+- **03-02**: Error handling and retry logic (ready to execute)
+- **03-03**: UI polish and human verification (pending)
 
 ## Key Decisions
-- **Frontend Constraint**: Messages must be saved to Supabase before webhook responds (frontend reads from DB)
-- **Context Window**: Set to 6 turns (balance quality vs speed)
+
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
+| 03-01 | Removed isPushToTalk flag | Redundant with isRecording - single source of truth |
+| 03-01 | Thread creation before recording | Prevents "no thread" errors during upload |
+| 03-01 | Trust Supabase real-time subscription | Removed polling - faster updates, less server load |
+| 03-01 | 30s timeout fallback | Handles real-time subscription failures |
+| 03-01 | Single temp message pattern | Consistent loading state across voice flow |
 
 ## Completed Changes
-- [x] Context window reduced from 10 to 6 turns
-- [x] Deployed to n8n
-
-## Reverted (Frontend Architecture Constraint)
-- [~] Async Save User Msg - frontend needs messages in DB
-- [~] Async Save AI Msg - frontend reads from Supabase, not webhook
-- [~] Pre-classification fast path - requires DB save before response
+- [x] Voice recording state machine fixed (isPushToTalk removed)
+- [x] Thread creation timing fixed (before recording starts)
+- [x] Polling removed (trust real-time subscription)
+- [x] Temp message handling simplified (single "temp-voice" message)
+- [x] Thread title auto-update from transcription
 
 ---
 
@@ -40,7 +46,7 @@ NemoAI personal AI assistant system optimization. Context window reduction deplo
 - **Backend:** n8n workflows hosted at https://admin.orcadigital.online  
 - **Database:** Supabase with PostgreSQL
 - **Authentication:** JWT-based system
-- **Notifications:** ntfy service for push notifications
+- **Notifications:** PWA push notifications
 
 ### Active Workflows
 - **Web API Router (Main Brain):** ID `o5t83JWF11dsSfyi` - Routes user messages (OPTIMIZED)
@@ -81,7 +87,13 @@ NemoAI personal AI assistant system optimization. Context window reduction deplo
 
 ## Lessons Learned
 
-### Optimization Insights
+### Voice Message Flow Insights
+1. **State machine simplicity** - Fewer state flags = fewer race conditions
+2. **Thread creation timing** - Create BEFORE async operations to prevent errors
+3. **Trust real-time subscriptions** - Polling creates duplicate updates and server load
+4. **Timeout fallbacks** - Essential for reliability when WebSocket fails
+
+### Previous Optimization Insights
 1. **Understand frontend architecture first** - async optimization failed because frontend reads from Supabase
 2. **Test with real frontend** - JSON validation doesn't catch data flow issues
 3. **Keep backups** - workflow backup enabled quick recovery
