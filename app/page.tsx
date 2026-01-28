@@ -1349,7 +1349,7 @@ export default function NemoAIDashboard() {
       console.log("[v0] Created new thread_id:", threadId)
     }
 
-    const tempUserMsgId = crypto.randomUUID()
+    const tempUserMsgId = `temp-user-${crypto.randomUUID()}`
     const tempUserMsg: Message = {
       id: tempUserMsgId,
       content: userMessage,
