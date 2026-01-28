@@ -1903,6 +1903,47 @@ export default function NemoAIDashboard() {
     }
   }
 
+  // CHANGE: Add retry wrapper for voice upload resilience
+  const uploadWithRetry = async (
+    formData: FormData, 
+    retries = 2,
+    attemptNumber = 1
+  ): Promise<Response> => {
+    try {
+      // Update temp message with retry attempt if not first try
+      if (attemptNumber > 1) {
+        setMessages(prev => prev.map(m => 
+          m.id === 'temp-voice' 
+            ? { ...m, content: `Retrying upload... (attempt ${attemptNumber})` }
+            : m
+        ))
+        console.log(`[Voice] Retrying... (attempt ${attemptNumber})`)
+      }
+
+      const response = await fetch("/api/voice", {
+        method: "POST",
+        body: formData,
+      })
+      
+      // Retry on 502, 503, 504, 429 (server errors and rate limit)
+      if (!response.ok && retries > 0 && [502, 503, 504, 429].includes(response.status)) {
+        console.log(`[Voice] Server error (${response.status}), retrying in 2s... (${retries} attempts left)`)
+        await new Promise(resolve => setTimeout(resolve, 2000)) // 2s backoff
+        return uploadWithRetry(formData, retries - 1, attemptNumber + 1)
+      }
+      
+      return response
+    } catch (error) {
+      // Network error - retry if attempts left
+      if (retries > 0) {
+        console.log(`[Voice] Network error, retrying in 2s... (${retries} left)`)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        return uploadWithRetry(formData, retries - 1, attemptNumber + 1)
+      }
+      throw error
+    }
+  }
+
   // CHANGE: Add sendAudioToN8n function to handle API call and response
   // Updated for async processing - API returns 202, real-time subscription handles AI response
   const sendAudioToN8n = async (audioBlob: Blob) => {
@@ -1949,10 +1990,8 @@ export default function NemoAIDashboard() {
       console.log("[v0] - User ID:", userId || "not set")
       console.log("[v0] - Thread ID:", activeThreadId || "not set")
 
-      const response = await fetch("/api/voice", {
-        method: "POST",
-        body: formData,
-      })
+      // Use retry wrapper for resilient uploads (3 total attempts)
+      const response = await uploadWithRetry(formData, 2)
 
       // Handle 202 Accepted (async processing) - this is the expected response now
       if (response.status === 202) {
@@ -2005,12 +2044,16 @@ export default function NemoAIDashboard() {
 
     } catch (err) {
       console.error("[v0] Error sending audio to n8n:", err)
-      if (err instanceof Error && !err.message.includes('202')) {
-        alert(`Failed to send voice command: ${err.message}. Please try again.`)
-      }
+      
+      // Remove temp messages and clear loading states
       setLoading(false)
       setIsProcessing(false)
       setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
+      
+      // Show user-friendly error message
+      if (err instanceof Error && !err.message.includes('202')) {
+        alert(`Failed to send voice message after 3 attempts. Please try again.`)
+      }
     }
   }
 
