@@ -1899,13 +1899,14 @@ export default function NemoAIDashboard() {
         // Switch UI to chat view immediately
         setShowQuickPrompts(false)
         
-        // Add single temp processing message
+        // Add single temp processing message with isLoading flag for skeleton display
         setMessages([{
           id: "temp-voice",
-          content: "Processing voice...",
+          content: "",
           role: "assistant",
           created_at: new Date().toISOString(),
           thread_id: targetThreadId || "temp",
+          isLoading: true, // Triggers skeleton loader display
         }])
         
         setIsProcessing(true)
@@ -2942,8 +2943,21 @@ export default function NemoAIDashboard() {
 
 
                   {isRecording ? (
-                    /* Listening State - Only show "I'm listening..." with animated dots */
+                    /* Listening State - Show "I'm listening..." with animated orb and pulsing ring */
                     <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
+                      {/* Pulsing orb container */}
+                      <div className="relative w-28 h-28 md:w-36 md:h-36 mb-4">
+                        {/* Pulsing red ring */}
+                        <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-50" />
+                        {/* Secondary pulse for depth */}
+                        <div className="absolute inset-2 rounded-full border-2 border-red-400 animate-pulse" />
+                        {/* Microphone icon in center */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-16 h-16 md:w-20 md:h-20 bg-red-500/20 rounded-full flex items-center justify-center">
+                            <Mic className="w-8 h-8 md:w-10 md:h-10 text-red-400" />
+                          </div>
+                        </div>
+                      </div>
                       <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white font-lettering">
                         I'm listening
 
@@ -3100,13 +3114,23 @@ export default function NemoAIDashboard() {
                           ) : (
                             <button
                               onClick={handlePushToTalk}
-                              className={`p-2.5 rounded-full transition-all ${isRecording
-                                ? "bg-red-500/20 text-red-400 animate-pulse"
-                                : "text-zinc-400 hover:text-white hover:bg-white/5"
-                                }`}
-                              title="Voice input"
+                              disabled={isProcessing && !isRecording}
+                              className={`p-2.5 rounded-full transition-all ${
+                                isRecording
+                                  ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30"
+                                  : isProcessing
+                                    ? "bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-60"
+                                    : "text-zinc-400 hover:text-white hover:bg-white/5"
+                              }`}
+                              title={isRecording ? "Tap to stop recording" : isProcessing ? "Processing..." : "Voice input"}
                             >
-                              <Mic className="w-5 h-5" />
+                              {isRecording ? (
+                                <Mic className="w-5 h-5" />
+                              ) : isProcessing ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                              ) : (
+                                <Mic className="w-5 h-5" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -4805,13 +4829,23 @@ export default function NemoAIDashboard() {
                     ) : (
                       <button
                         onClick={handlePushToTalk}
-                        className={`p-2.5 rounded-full transition-all ${isRecording
-                          ? "bg-red-500/20 text-red-400 animate-pulse"
-                          : "text-zinc-400 hover:text-white hover:bg-white/5"
-                          }`}
-                        title="Voice input"
+                        disabled={isProcessing && !isRecording}
+                        className={`p-2.5 rounded-full transition-all ${
+                          isRecording
+                            ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30"
+                            : isProcessing
+                              ? "bg-zinc-700 text-zinc-500 cursor-not-allowed opacity-60"
+                              : "text-zinc-400 hover:text-white hover:bg-white/5"
+                        }`}
+                        title={isRecording ? "Tap to stop recording" : isProcessing ? "Processing..." : "Voice input"}
                       >
-                        <Mic className="w-5 h-5" />
+                        {isRecording ? (
+                          <Mic className="w-5 h-5" />
+                        ) : isProcessing ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Mic className="w-5 h-5" />
+                        )}
                       </button>
                     )}
                   </div>
