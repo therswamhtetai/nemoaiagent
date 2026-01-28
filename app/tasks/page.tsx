@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Confetti from "react-confetti"
 import { Plus, CheckCircle, Circle, Trash, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,9 +22,18 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTask, setNewTask] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
     loadTasks()
+  }, [])
+
+  useEffect(() => {
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const loadTasks = async () => {
@@ -56,6 +66,12 @@ export default function TasksPage() {
 
     if (!error) {
       setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, completed: !completed } : task)))
+
+      // Trigger confetti only when marking task as complete (not when uncompleting)
+      if (!completed) {
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 3000)
+      }
     }
   }
 
@@ -69,6 +85,15 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      {showConfetti && (
+        <Confetti
+          width={windowSize.width}
+          height={windowSize.height}
+          recycle={false}
+          numberOfPieces={200}
+          colors={['#22c55e', '#16a34a', '#15803d', '#166534', '#4ade80', '#86efac']}
+        />
+      )}
       <header className="border-b border-zinc-800/50 bg-zinc-950/50 backdrop-blur-xl">
         <div className="container mx-auto flex h-14 items-center gap-4 px-4">
           <Button
