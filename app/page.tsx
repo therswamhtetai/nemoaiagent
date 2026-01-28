@@ -398,7 +398,6 @@ export default function NemoAIDashboard() {
     "Connecting dots",
     "Almost there",
   ]
-  const [isPushToTalk, setIsPushToTalk] = useState(false)
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadType, setUploadType] = useState<'document' | 'image' | null>(null)
@@ -1801,101 +1800,85 @@ export default function NemoAIDashboard() {
 
   // CHANGE: Replace handlePushToTalk with new voice recording logic
   const handlePushToTalk = async () => {
-    if (!isPushToTalk && isProcessing) {
-      console.log("[v0] Already processing a recording, ignoring")
+    if (isRecording || isProcessing) {
+      // If already recording, stop recording
+      if (isRecording && mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        // STOP RECORDING - Second tap
+        mediaRecorderRef.current.stop()
+        setIsRecording(false)
+        setOrbAnimating(false) // Deactivate orb animation
+        console.log("[v0] Audio recording stopped")
+      } else if (isProcessing) {
+        console.log("[v0] Already processing a recording, ignoring")
+      }
       return
     }
 
-    if (!isPushToTalk) {
-      // START RECORDING - First tap
-      try {
-        setIsProcessing(true)
-        setOrbAnimating(true)
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        const mediaRecorder = new MediaRecorder(stream)
-        mediaRecorderRef.current = mediaRecorder
-        audioChunksRef.current = []
+    // START RECORDING - First tap
+    try {
+      // Create thread BEFORE starting recording
+      let targetThreadId = currentThreadId
+      if (!targetThreadId) {
+        targetThreadId = crypto.randomUUID()
+        setCurrentThreadId(targetThreadId)
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data)
-          }
+        // Create new thread in UI list immediately
+        const newThread: Thread = {
+          id: targetThreadId,
+          title: "Voice Chat",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
-
-        mediaRecorder.onstop = async () => {
-          // Recording stopped - send to n8n
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
-          await sendAudioToN8n(audioBlob)
-          audioChunksRef.current = []
-          // Stop all audio tracks
-          stream.getTracks().forEach((track) => track.stop())
-          // Reset processing flag after everything is done
-          // setIsProcessing(false) // Moved to finally block in sendAudioToN8n
-        }
-
-        mediaRecorder.start()
-        setIsPushToTalk(true)
-        setIsRecording(true)
-        setOrbAnimating(true) // Activate orb animation when recording starts
-        console.log("[v0] Audio recording started")
-      } catch (err) {
-        console.error("[v0] Error accessing microphone:", err)
-        alert("Unable to access microphone. Please check permissions.")
-        setIsProcessing(false)
+        setThreads((prev) => [newThread, ...prev])
+        window.history.pushState({}, "", "/")
+        console.log("[v0] Created new thread before recording:", targetThreadId)
       }
-    } else {
-      // STOP RECORDING - Second tap
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-        mediaRecorderRef.current.stop()
-        setIsPushToTalk(false)
-        setIsRecording(false)
-        setIsRecording(false)
-        setOrbAnimating(false) // Deactivate orb animation
-        // Play sent sound when recording stops
 
-        // IMMEDIATE UI UPDATE:
-        // 1. Ensure we have a thread
-        let targetThreadId = currentThreadId
-        if (!targetThreadId) {
-          targetThreadId = crypto.randomUUID()
-          setCurrentThreadId(targetThreadId)
+      // Start recording
+      setOrbAnimating(true)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
 
-          // Create new thread in UI list immediately
-          const newThread: Thread = {
-            id: targetThreadId,
-            title: "Voice Chat",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-          setThreads((prev) => [newThread, ...prev])
-          window.history.pushState({}, "", "/")
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
         }
+      }
 
-        // 2. Switch UI to chat view immediately
+      mediaRecorder.onstop = async () => {
+        // Recording stopped - send to n8n
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        
+        // Switch UI to chat view immediately
         setShowQuickPrompts(false)
-        // Ensure messages list is "active" by having at least empty state or loading
-        if (messages.length === 0) {
-          // We need to trigger the view to switch from "Orb" to "Messages"
-          // The view condition is: activeModule === "home" ? (messages.length === 0 ? <Orb> : <Messages>)
-          // So we MUST add a temporary placeholder message OR just rely on loading state if we change the condition.
-          // But changing the rendering condition is risky. 
-          // Better: Add a dummy "Thinking..." message or relying on loading overlay?
-          // The user wants "waiting for reply animation". 
-          // The existing code has: `loading && (...)` inside the message list.
-          // But if `messages.length === 0`, it shows the Orb!
-          // FIX: Add a dummy "Thinking..." message
-          setMessages([{
-            id: "temp-loading-msg",
-            content: "Thinking...",
-            role: "assistant",
-            created_at: new Date().toISOString(),
-            thread_id: targetThreadId || "temp",
-          }])
-        }
-
+        
+        // Add single temp processing message
+        setMessages([{
+          id: "temp-voice",
+          content: "Processing voice...",
+          role: "assistant",
+          created_at: new Date().toISOString(),
+          thread_id: targetThreadId || "temp",
+        }])
+        
+        setIsProcessing(true)
         setLoading(true) // Start loading animation
-        console.log("[v0] Audio recording stopped, switching to thread:", targetThreadId)
+        
+        await sendAudioToN8n(audioBlob)
+        audioChunksRef.current = []
+        // Stop all audio tracks
+        stream.getTracks().forEach((track) => track.stop())
       }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+      console.log("[v0] Audio recording started")
+    } catch (err) {
+      console.error("[v0] Error accessing microphone:", err)
+      alert("Unable to access microphone. Please check permissions.")
+      setOrbAnimating(false)
     }
   }
 
@@ -1938,18 +1921,20 @@ export default function NemoAIDashboard() {
       console.log("[v0] - User ID:", userId || "not set")
       console.log("[v0] - Thread ID:", activeThreadId || "not set")
 
-      // Add a placeholder message to force the view to switch from Orb to Chat List
-      // only if the chat is currently empty.
-      if (messages.length === 0) {
-        const placeholderMsg: Message = {
-          id: "temp-mic-placeholder",
-          content: "Processing voice command...",
-          role: "user",
-          created_at: new Date().toISOString(),
-          thread_id: activeThreadId || "temp",
-        }
-        setMessages([placeholderMsg])
+      // Add a processing indicator message to keep the chat view active
+      // This prevents reverting to the Orb/Home screen
+      const processingMsg: Message = {
+        id: "temp-voice-processing",
+        content: "Processing your voice message...",
+        role: "assistant",
+        created_at: new Date().toISOString(),
+        thread_id: activeThreadId || "temp",
       }
+      setMessages(prev => {
+        // Remove any existing temp messages first
+        const filtered = prev.filter(m => !m.id.startsWith("temp-"))
+        return [...filtered, processingMsg]
+      })
 
       const response = await fetch("/api/voice", {
         method: "POST",
@@ -1960,20 +1945,47 @@ export default function NemoAIDashboard() {
       if (response.status === 202) {
         console.log("[v0] Voice command accepted (202). Waiting for real-time update...")
         
-        // Remove placeholder message
-        setMessages(prev => prev.filter(m => m.id !== "temp-mic-placeholder"))
+        // Start polling for conversation updates since real-time may not always work
+        // Poll every 3 seconds until we get a response or 2 minutes timeout
+        const pollInterval = 3000
+        const maxPolls = 40 // 40 * 3s = 2 minutes max
+        let pollCount = 0
         
-        // Wait a moment for n8n to save the user's transcribed message, then reload
-        setTimeout(async () => {
+        const pollForResponse = async () => {
+          pollCount++
+          console.log(`[v0] Polling for response (${pollCount}/${maxPolls})...`)
+          
           if (activeThreadId) {
-            console.log("[v0] Reloading conversations to get transcribed user message...")
             await loadConversations(activeThreadId)
             await loadThreads()
           }
-        }, 2000) // 2 second delay for transcription to complete
+          
+          // Check if we have an actual assistant message (not our temp one)
+          // This is checked in the next render cycle
+        }
         
-        // Keep loading state active - real-time subscription will turn it off when AI responds
-        // Don't call setLoading(false) here!
+        // Initial poll after 3 seconds (for transcribed user message)
+        const pollTimer = setInterval(async () => {
+          await pollForResponse()
+          
+          // Stop polling after max attempts
+          if (pollCount >= maxPolls) {
+            console.log("[v0] Max polling attempts reached, stopping...")
+            clearInterval(pollTimer)
+            setLoading(false)
+            setIsProcessing(false)
+            // Remove temp message and show what we have
+            setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
+          }
+        }, pollInterval)
+        
+        // Store poll timer reference so real-time callback can clear it
+        // We'll use a ref for this
+        if (typeof window !== 'undefined') {
+          (window as any).__voicePollTimer = pollTimer
+        }
+        
+        // Keep loading state active
         return
       }
 
@@ -1982,23 +1994,17 @@ export default function NemoAIDashboard() {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Legacy path: if we somehow get a 200 with data (shouldn't happen with new API)
-      const contentType = response.headers.get("content-type")
+      // Legacy path: if we somehow get a 200 with data
       const responseText = await response.text()
-
-      console.log("[v0] Response content-type:", contentType)
-      console.log("[v0] Response text:", responseText.substring(0, 200))
-
       if (responseText && responseText.trim() !== "") {
         let data
         try {
           data = JSON.parse(responseText)
+          if (data?.audio_base64) {
+            playAudioResponse(data.audio_base64)
+          }
         } catch (jsonError) {
-          console.error("[v0] Failed to parse JSON. Response was:", responseText)
-        }
-
-        if (data?.audio_base64) {
-          playAudioResponse(data.audio_base64)
+          console.error("[v0] Failed to parse JSON:", jsonError)
         }
       }
 
@@ -2008,23 +2014,18 @@ export default function NemoAIDashboard() {
         await loadThreads()
       }
 
-      console.log("[v0] Voice response received")
       setLoading(false)
       setIsProcessing(false)
+      setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
 
     } catch (err) {
       console.error("[v0] Error sending audio to n8n:", err)
-      // Only show error for actual network failures, not async processing
       if (err instanceof Error && !err.message.includes('202')) {
-        alert(
-          `Failed to send voice command: ${err.message}. Please try again.`,
-        )
+        alert(`Failed to send voice command: ${err.message}. Please try again.`)
       }
-      // Stop loading on error
       setLoading(false)
       setIsProcessing(false)
-      // Cleanup the temp message if it exists
-      setMessages(prev => prev.filter(m => m.id !== "temp-mic-placeholder"))
+      setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
     }
   }
 
@@ -2843,7 +2844,7 @@ export default function NemoAIDashboard() {
                   {/* Logo at top center - much bigger and higher */}
 
 
-                  {isPushToTalk ? (
+                  {isRecording ? (
                     /* Listening State - Only show "I'm listening..." with animated dots */
                     <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
                       <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white font-lettering">
@@ -3002,7 +3003,7 @@ export default function NemoAIDashboard() {
                           ) : (
                             <button
                               onClick={handlePushToTalk}
-                              className={`p-2.5 rounded-full transition-all ${isPushToTalk
+                              className={`p-2.5 rounded-full transition-all ${isRecording
                                 ? "bg-red-500/20 text-red-400 animate-pulse"
                                 : "text-zinc-400 hover:text-white hover:bg-white/5"
                                 }`}
@@ -4695,7 +4696,7 @@ export default function NemoAIDashboard() {
                     ) : (
                       <button
                         onClick={handlePushToTalk}
-                        className={`p-2.5 rounded-full transition-all ${isPushToTalk
+                        className={`p-2.5 rounded-full transition-all ${isRecording
                           ? "bg-red-500/20 text-red-400 animate-pulse"
                           : "text-zinc-400 hover:text-white hover:bg-white/5"
                           }`}
