@@ -955,6 +955,17 @@ export default function NemoAIDashboard() {
           return [...filtered, newMessage]
         })
         
+        // Update thread title from first user message (transcribed voice)
+        if (newMessage.role === "user" && currentThreadId) {
+          // Check if thread title is still default "Voice Chat"
+          const currentThread = threads.find(t => t.id === currentThreadId)
+          if (currentThread && currentThread.title === "Voice Chat") {
+            // Use first 50 chars of transcribed message as title
+            const newTitle = newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? "..." : "")
+            updateThreadTitle(currentThreadId, newTitle)
+          }
+        }
+        
         // Stop loading states when assistant message arrives
         if (newMessage.role === "assistant") {
           setLoading(false)
@@ -970,7 +981,7 @@ export default function NemoAIDashboard() {
       console.log('[v0] Cleaning up real-time subscription')
       unsubscribe()
     }
-  }, [currentThreadId, userId, useFallbackMode])
+  }, [currentThreadId, userId, useFallbackMode, threads])
 
   useEffect(() => {
     // Instant scroll to bottom when messages change
