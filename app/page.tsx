@@ -2963,24 +2963,10 @@ export default function NemoAIDashboard() {
 
 
                   {isRecording ? (
-                    /* Listening State - Show "I'm listening..." with animated orb and pulsing ring */
-                    <div className="text-center mb-4 md:mb-6 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
-                      {/* Pulsing orb container */}
-                      <div className="relative w-28 h-28 md:w-36 md:h-36 mb-4">
-                        {/* Pulsing red ring */}
-                        <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-50" />
-                        {/* Secondary pulse for depth */}
-                        <div className="absolute inset-2 rounded-full border-2 border-red-400 animate-pulse" />
-                        {/* Microphone icon in center */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-16 h-16 md:w-20 md:h-20 bg-red-500/20 rounded-full flex items-center justify-center">
-                            <Mic className="w-8 h-8 md:w-10 md:h-10 text-red-400" />
-                          </div>
-                        </div>
-                      </div>
+                    /* Listening State - Show "I'm listening..." text only (no orb) */
+                    <div className="text-center mb-8 md:mb-10 h-[220px] md:h-[320px] flex flex-col items-center justify-end">
                       <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white font-lettering">
                         I'm listening
-
                         <span className="inline-flex ml-1">
                           <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
                           <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
