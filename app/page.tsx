@@ -427,6 +427,8 @@ export default function NemoAIDashboard() {
   // CHANGE: Add refs for MediaRecorder and audio context
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
+  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const longProcessingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const attachmentMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -442,6 +444,7 @@ export default function NemoAIDashboard() {
   }, [])
 
   const [isProcessing, setIsProcessing] = useState(false)
+  const [voiceError, setVoiceError] = useState<string | null>(null)
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
@@ -968,6 +971,15 @@ export default function NemoAIDashboard() {
         
         // Stop loading states when assistant message arrives
         if (newMessage.role === "assistant") {
+          // Clear processing timeouts
+          if (processingTimeoutRef.current) {
+            clearTimeout(processingTimeoutRef.current)
+            processingTimeoutRef.current = null
+          }
+          if (longProcessingTimeoutRef.current) {
+            clearTimeout(longProcessingTimeoutRef.current)
+            longProcessingTimeoutRef.current = null
+          }
           setLoading(false)
           setIsProcessing(false)
           // Reload threads to update sidebar with new thread title
@@ -980,6 +992,15 @@ export default function NemoAIDashboard() {
     return () => {
       console.log('[v0] Cleaning up real-time subscription')
       unsubscribe()
+      // Clear processing timeouts
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current)
+        processingTimeoutRef.current = null
+      }
+      if (longProcessingTimeoutRef.current) {
+        clearTimeout(longProcessingTimeoutRef.current)
+        longProcessingTimeoutRef.current = null
+      }
     }
   }, [currentThreadId, userId, useFallbackMode, threads])
 
@@ -1836,6 +1857,9 @@ export default function NemoAIDashboard() {
     }
 
     // START RECORDING - First tap
+    // Clear any previous voice error
+    setVoiceError(null)
+    
     try {
       // Create thread BEFORE starting recording
       let targetThreadId = currentThreadId
@@ -1898,7 +1922,16 @@ export default function NemoAIDashboard() {
       console.log("[v0] Audio recording started")
     } catch (err) {
       console.error("[v0] Error accessing microphone:", err)
-      alert("Unable to access microphone. Please check permissions.")
+      // Set specific error message for microphone permission errors
+      let errorMessage = "Unable to access microphone. Please check permissions."
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError') {
+          errorMessage = "Microphone access denied. Please enable in browser settings."
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = "No microphone found. Please connect a microphone."
+        }
+      }
+      setVoiceError(errorMessage)
       setOrbAnimating(false)
     }
   }
@@ -1997,18 +2030,39 @@ export default function NemoAIDashboard() {
       if (response.status === 202) {
         console.log("[v0] Voice command accepted (202). Waiting for real-time update...")
         
-        // Add timeout fallback: if real-time subscription doesn't deliver within 30s, fetch manually
-        setTimeout(() => {
+        // Clear any existing timeouts
+        if (processingTimeoutRef.current) clearTimeout(processingTimeoutRef.current)
+        if (longProcessingTimeoutRef.current) clearTimeout(longProcessingTimeoutRef.current)
+        
+        // After 30s: Update message to show it's taking longer
+        longProcessingTimeoutRef.current = setTimeout(() => {
           if (isProcessing) {
-            console.log("[v0] Timeout fallback: Manually fetching conversations")
+            console.log("[v0] Processing taking longer than 30s...")
+            setMessages(prev => prev.map(m => 
+              m.id === 'temp-voice' 
+                ? { ...m, content: "Processing is taking longer than usual..." }
+                : m
+            ))
+          }
+        }, 30000)
+        
+        // After 60s: Full timeout - force refresh and show error
+        processingTimeoutRef.current = setTimeout(() => {
+          console.log('[v0] Processing timeout (60s) - forcing refresh')
+          if (isProcessing) {
+            // Force reload conversations to check if message arrived
             if (activeThreadId) {
               loadConversations(activeThreadId)
               loadThreads()
             }
             setLoading(false)
             setIsProcessing(false)
+            setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
+            
+            // Show timeout error
+            setVoiceError('Processing timed out. Your message may have been saved - check above.')
           }
-        }, 30000)
+        }, 60000)
         
         // Let real-time subscription handle the response
         return
@@ -2050,10 +2104,25 @@ export default function NemoAIDashboard() {
       setIsProcessing(false)
       setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
       
-      // Show user-friendly error message
-      if (err instanceof Error && !err.message.includes('202')) {
-        alert(`Failed to send voice message after 3 attempts. Please try again.`)
+      // Set specific error messages based on error type
+      let errorMessage = "Failed to send voice message. Please try again."
+      
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        errorMessage = "Network error. Please check your connection and try again."
+      } else if (err instanceof Error) {
+        // Check for HTTP status codes from response
+        if (err.message.includes('401')) {
+          errorMessage = "Session expired. Please refresh and log in again."
+        } else if (err.message.includes('413')) {
+          errorMessage = "Audio file too large. Please record a shorter message."
+        } else if (err.message.includes('429')) {
+          errorMessage = "Too many requests. Please wait a moment."
+        } else if (!err.message.includes('202')) {
+          errorMessage = `Failed to send voice message after 3 attempts. Please try again.`
+        }
       }
+      
+      setVoiceError(errorMessage)
     }
   }
 
@@ -3082,6 +3151,18 @@ export default function NemoAIDashboard() {
             ) : (
               <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917]">
                 <div className="max-w-3xl mx-auto space-y-6">
+                  {/* Voice Error Display */}
+                  {voiceError && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 animate-slide-up">
+                      <p className="text-red-400 text-sm">{voiceError}</p>
+                      <button 
+                        onClick={() => setVoiceError(null)}
+                        className="text-red-400 hover:text-red-300 underline text-xs mt-2 transition-colors"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
                   {messages.map((msg, index) => (
                     <div
                       key={msg.id || index}
