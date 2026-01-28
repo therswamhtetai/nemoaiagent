@@ -412,16 +412,16 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4 pr-4">
-                      <h3 className={`text-sm font-medium leading-tight ${notification.is_read ? 'text-white/70' : 'text-white'
+                      <h3 className={`text-base font-medium leading-tight ${notification.is_read ? 'text-white/70' : 'text-white'
                         }`}>
                         {notification.title}
                       </h3>
-                      <span className="text-[10px] text-white/30 whitespace-nowrap flex-shrink-0">
+                      <span className="text-xs text-white/30 whitespace-nowrap flex-shrink-0">
                         {formatTimeAgo(notification.created_at)}
                       </span>
                     </div>
 
-                    <p className={`text-xs mt-1 transition-all ${isExpanded ? 'text-white/90 whitespace-pre-wrap' : 'text-white/50 line-clamp-1'
+                    <p className={`text-sm mt-1 transition-all ${isExpanded ? 'text-white/90 whitespace-pre-wrap' : 'text-white/50 line-clamp-1'
                       }`}>
                       {notification.body}
                     </p>
@@ -429,7 +429,7 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
                     {/* Expanded Content or Footer */}
                     {isExpanded && (
                       <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between animate-fade-in">
-                        <span className="text-[10px] uppercase tracking-wider text-white/30">
+                        <span className="text-xs uppercase tracking-wider text-white/30">
                           {notification.type}
                         </span>
                         {!notification.is_read && (
