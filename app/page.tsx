@@ -3222,7 +3222,7 @@ export default function NemoAIDashboard() {
                   {messages.map((msg, index) => (
                     <div
                       key={msg.id || index}
-                      className={`animate-slide-up ${msg.role === "user" ? "flex justify-end" : ""}`}
+                      className={`${msg.role === "assistant" ? "animate-slide-up" : ""} ${msg.role === "user" ? "flex justify-end" : ""}`}
                     >
                       {msg.role === "user" ? (
                         /* User message - separate bubbles for attachment and text */
