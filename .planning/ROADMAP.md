@@ -2,129 +2,68 @@
 
 **Project:** Personal AI Assistant System with n8n Workflows  
 **Architecture:** Next.js Frontend + n8n Backend + Supabase Database  
-**Current Focus:** Reminder System Implementation (Phase 03)  
+**Current Status:** Optimization Complete  
 
 ---
 
-## Phase 01: Daily Briefing Dynamic Workflow Architecture
+## Completed: Response Speed Optimization
 
-**Status:** Completed
-**Goal:** Eliminate hardcoded user chains by implementing dynamic loop-based daily briefing workflow that scales to unlimited users.
-
-**Current Problems:**
-- Hardcoded user_ids (5 users = 30+ duplicate nodes)
-- Not callable from main chat interface
-- Only schedule-triggered, no on-demand capability
-- Linear scaling - each new user adds 6 nodes
-
-**Target State:**
-- Single dynamic workflow with loop iteration
-- Constant node count regardless of user count
-- Both scheduled and on-demand execution
-- Integrated with Web API Router for chat access
-- Scalable to unlimited users without workflow changes
-
-**Plans:** 1 active plan (analysis), others TBD
-
-- [ ] 01-daily-briefing-v2/01-analysis-PLAN.md — Analyze and Architect V2
-
-### Plan Structure
-
-| Wave | Plans | Description |
-|------|-------|-------------|
-| Wave 1 | 01-01, 01-02 | Foundation: Database optimization + Core loop architecture |
-| Wave 2 | 01-03, 01-04 | Integration: Briefing generation + Web API Router |
-| Wave 3 | 01-05 | Migration: Testing + Safe deployment |
-
-### Plan Details
-
-**Phase 01-01: Database Analysis & Query Optimization** (Wave 1)
-- Analyze current users and tasks table structure
-- Optimize queries for dynamic user iteration
-- Design efficient task fetching and categorization
-- Performance benchmarking for scaling
-
-**Phase 01-02: Core Loop Architecture** (Wave 1)
-- Build multi-trigger workflow (schedule + manual + webhook)
-- Implement dynamic user iteration with Split In Batches
-- Add error handling and batch processing
-- Create aggregation and completion logic
-
-**Phase 01-03: Briefing Generation Refactor** (Wave 2)
-- Migrate task categorization to dynamic context
-- Integrate user-aware LLM briefing generation
-- Implement personalized notification delivery
-- Add retry logic and email fallback
-
-**Phase 01-04: Web API Router Integration** (Wave 2)
-- Create on-demand briefing sub-workflow
-- Add daily briefing tool to main chat router
-- Implement authentication and rate limiting
-- Enable "Today's briefing" chat commands
-
-**Phase 01-05: Testing & Migration** (Wave 3)
-- Parallel testing and output validation
-- Performance benchmarking comparison
-- Zero-downtime migration execution
-- Post-migration monitoring and optimization
-
-### Success Metrics
-
-**Functional Requirements:**
-- [ ] Dynamic user iteration supporting unlimited users
-- [ ] Multi-trigger execution (scheduled + on-demand + chat)
-- [ ] Consistent briefing quality and format
-- [ ] Reliable notification delivery to user channels
-
-**Performance Requirements:**
-- [ ] < 30 seconds per user briefing generation
-- [ ] < 5 minutes total execution for all users
-- [ ] Database queries < 100ms response time
-- [ ] Zero missed briefings during migration
-
-**Architecture Improvements:**
-- [ ] Node count: 30+ → ~15 (constant)
-- [ ] User scaling: Linear → Dynamic (unlimited)
-- [ ] Maintenance: Manual updates → Automatic
-- [ ] Integration: Standalone → Chat-integrated
-
----
-
-## Future Phases (Planned)
-
-### Phase 02: Response Speed Optimization
-**Priority:** High
-**Status:** Completed
+**Status:** Completed  
 **Goal:** Reduce response time from 10-20 seconds to 3-5 seconds
 
 **Completed:**
-- [x] Reduced context windows (10 → 6) - reduces token processing
-- [x] Fixed expression syntax in Save to Long-term Memory
+- [x] Reduced context window (10 → 6) - reduces token processing
 - [x] Deployed optimized workflow to n8n
 
 **Reverted (incompatible with frontend architecture):**
 - [~] Async memory saving - frontend reads from Supabase, not webhook
 - [~] Pre-classification - requires DB save before response
 
-**Future consideration:**
-- [ ] Smart caching for common queries (separate initiative)
+**Lesson Learned:** Frontend reads messages from Supabase database, so all messages must be saved before the webhook responds. This architectural constraint prevents async patterns.
 
-### Phase 03: Reminder System Implementation
-**Priority:** Medium  
-**Goal:** Users can set specific time reminders via chat
+---
 
-**Key Initiatives:**
-- Database schema design (reminders table)
-- Reminder checker workflow (5-minute intervals)
-- Integration with ops-secretary for time extraction
-- Multi-channel notifications (ntfy, email)
+## Active Phases
+
+### Phase 03: Voice Message Flow Overhaul
+**Priority:** High  
+**Goal:** Complete fix and overhaul of voice message logic for zero bugs and high stability  
+**Status:** Ready for Execution
+**Plans:** 3 plans in 3 waves
+
+**Scope:**
+Voice message flow from Home Screen → Recording → Processing → Display
+
+**Key Requirements:**
+- User taps microphone → "listening" status → taps again to send
+- New chat thread opens immediately on send
+- User message shows "processing" status with skeleton loader during audio upload
+- Audio sent to n8n Voice Pipeline workflow for transcription
+- n8n processes and returns transcribed message + AI response
+- Both messages saved to Supabase
+- Determine best rendering approach: Supabase fetch vs webhook response
+- Evaluate Supabase Realtime vs webhook-triggered frontend update
+
+**Critical Issues to Fix:**
+- UI flickering
+- Missing messages
+- Transmission errors
+- Threads failing to load after sending voice/text messages
+
+Plans:
+- [ ] 03-01-PLAN.md — Fix voice recording state machine and thread handling
+- [ ] 03-02-PLAN.md — Add error handling and retry logic
+- [ ] 03-03-PLAN.md — UI polish and human verification
+
+---
+
+## Future Phases (Planned)
 
 ### Phase 04: Advanced Features & Integrations
 **Priority:** Medium  
 **Goal:** Enhance system capabilities with new features
 
 **Key Initiatives:**
-- Voice input/output improvements
 - Multi-language support expansion
 - Advanced AI model integration
 - Third-party service integrations
@@ -134,11 +73,6 @@
 ## Technical Debt & Improvements
 
 ### Current Known Issues
-
-**High Priority:**
-- Response speed optimization needed
-- Memory auto-save blocking main flows
-- Daily briefing hardcoded structure (being addressed)
 
 **Medium Priority:**
 - Limited error handling in some workflows
@@ -170,12 +104,6 @@
 ---
 
 ## Risk Assessment
-
-### High Risk Areas
-- **Daily Briefing Migration:** Risk of missed notifications
-  - **Mitigation:** Parallel testing, zero-downtime migration
-- **Response Speed Degradation:** As user base grows
-  - **Mitigation:** Caching, async operations, optimization
 
 ### Medium Risk Areas
 - **LLM API Rate Limits:** During bulk operations
@@ -215,10 +143,8 @@
 
 ## Project Timeline
 
-### Q1 2026 (Current Focus)
-- **January:** Daily Briefing Dynamic Architecture (Phase 01)
-- **February:** Response Speed Optimization (Phase 02)
-- **March:** Reminder System Implementation (Phase 03)
+### Q1 2026 (Current)
+- **January:** Response Speed Optimization - COMPLETED
 
 ### Q2 2026
 - **April:** Advanced Features Planning
