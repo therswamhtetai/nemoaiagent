@@ -532,15 +532,21 @@ export default function NemoAIDashboard() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // Debounced scroll to bottom - prevents jank during rapid message updates
+  // Scroll to bottom - instant for initial load, debounced for new messages
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((instant = false) => {
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current)
     }
-    scrollTimeoutRef.current = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    }, 100)
+    if (instant) {
+      // Instant scroll for initial thread load - no animation
+      messagesEndRef.current?.scrollIntoView({ behavior: "instant" as ScrollBehavior })
+    } else {
+      // Debounced smooth scroll for new messages
+      scrollTimeoutRef.current = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+      }, 100)
+    }
   }, [])
 
   // Cleanup scroll timeout on unmount
@@ -1180,6 +1186,8 @@ export default function NemoAIDashboard() {
 
         setMessages(messagesWithAttachments)
         setShowQuickPrompts(false)
+        // Instant scroll to bottom on thread load (no animation)
+        setTimeout(() => scrollToBottom(true), 0)
       } else {
         console.log("[v0] Database returned empty, keeping current messages")
       }
