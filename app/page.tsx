@@ -2087,14 +2087,24 @@ export default function NemoAIDashboard() {
   }
 
   // Sidebar swipe gesture handlers for mobile
+  // Sidebar width on mobile is 280px
+  const SIDEBAR_WIDTH = 280
+  const SWIPE_EDGE_ZONE = 40 // pixels from left edge to detect open swipe
+  const SWIPE_THRESHOLD = 60 // minimum pixels to trigger open/close
+  const MIN_SWIPE_DISTANCE = 15 // minimum distance before recognizing as swipe
+  
   const handleSidebarTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0]
     sidebarTouchStartX.current = touch.clientX
     sidebarTouchStartY.current = touch.clientY
     
-    // Only enable swipe if starting from left edge (40px) or sidebar is already open
-    const isLeftEdge = touch.clientX < 40
-    isSidebarSwipe.current = isLeftEdge || isSidebarOpen
+    // Determine if this touch can be a sidebar swipe:
+    // 1. If sidebar is CLOSED: only swipe from left edge (within SWIPE_EDGE_ZONE)
+    // 2. If sidebar is OPEN: only swipe from sidebar area OR backdrop (touch started inside or near sidebar)
+    const isLeftEdge = touch.clientX < SWIPE_EDGE_ZONE
+    const isOnSidebarOrBackdrop = isSidebarOpen && touch.clientX < SIDEBAR_WIDTH + 50 // sidebar + small margin
+    
+    isSidebarSwipe.current = isLeftEdge || isOnSidebarOrBackdrop
   }
 
   const handleSidebarTouchMove = (e: React.TouchEvent) => {
@@ -2104,33 +2114,39 @@ export default function NemoAIDashboard() {
     const deltaX = touch.clientX - sidebarTouchStartX.current
     const deltaY = touch.clientY - sidebarTouchStartY.current
     
+    // Only start recognizing as swipe after minimum distance
+    if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE) {
+      return // Not enough movement yet
+    }
+    
     // If vertical scroll is dominant, cancel sidebar swipe
-    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
       isSidebarSwipe.current = false
     }
   }
 
   const handleSidebarTouchEnd = (e: React.TouchEvent) => {
-    if (!isSidebarSwipe.current) return
+    if (!isSidebarSwipe.current) {
+      return
+    }
     
     const touch = e.changedTouches[0]
     const deltaX = touch.clientX - sidebarTouchStartX.current
     const deltaY = touch.clientY - sidebarTouchStartY.current
     
-    // Only trigger if horizontal movement is dominant
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      const threshold = 80 // pixels needed to trigger
-      
-      if (!isSidebarOpen && deltaX > threshold) {
-        // Swipe right to open
+    // Reset the swipe flag immediately to prevent double-triggers
+    isSidebarSwipe.current = false
+    
+    // Only trigger if horizontal movement is dominant and exceeds minimum distance
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > MIN_SWIPE_DISTANCE) {
+      if (!isSidebarOpen && deltaX > SWIPE_THRESHOLD) {
+        // Swipe right to open (only works from left edge, validated in touchStart)
         setIsSidebarOpen(true)
-      } else if (isSidebarOpen && deltaX < -threshold) {
-        // Swipe left to close
+      } else if (isSidebarOpen && deltaX < -SWIPE_THRESHOLD) {
+        // Swipe left to close (only works from sidebar area, validated in touchStart)
         setIsSidebarOpen(false)
       }
     }
-    
-    isSidebarSwipe.current = false
   }
 
   // Added completeTask function for quick task completion
@@ -2478,6 +2494,14 @@ export default function NemoAIDashboard() {
         <div
           className="fixed inset-0 bg-black/60 z-30 md:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
+          onTouchEnd={(e) => {
+            // Only close on tap, not on swipe (swipe is handled by parent)
+            const touch = e.changedTouches[0]
+            if (touch && Math.abs(touch.clientX - sidebarTouchStartX.current) < 10) {
+              setIsSidebarOpen(false)
+            }
+          }}
+          style={{ touchAction: 'none' }} // Prevent browser gesture interference
         />
       )}
 
@@ -4608,12 +4632,7 @@ export default function NemoAIDashboard() {
         )}
       </div >
 
-      {/* Mobile Sidebar Overlay */}
-      {
-        isSidebarOpen && (
-          <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
-        )
-      }
+
 
       {/* Contact Modal */}
       {
