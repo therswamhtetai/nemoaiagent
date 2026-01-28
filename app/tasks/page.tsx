@@ -92,6 +92,7 @@ export default function TasksPage() {
           recycle={false}
           numberOfPieces={200}
           colors={['#22c55e', '#16a34a', '#15803d', '#166534', '#4ade80', '#86efac']}
+          style={{ position: 'fixed', top: 0, left: 0, zIndex: 50 }}
         />
       )}
       <header className="border-b border-zinc-800/50 bg-zinc-950/50 backdrop-blur-xl">
