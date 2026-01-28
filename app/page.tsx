@@ -940,18 +940,28 @@ export default function NemoAIDashboard() {
       userId,
       currentThreadId,
       (newMessage) => {
-        console.log('[v0] Real-time: New assistant message received')
+        console.log('[v0] Real-time: New message received', newMessage.role)
+        
         // Add the new message to the messages array
         setMessages(prev => {
+          // Remove any temp messages first
+          const filtered = prev.filter(m => !m.id.startsWith("temp-"))
+          
           // Check if message already exists (prevent duplicates)
-          if (prev.some(m => m.id === newMessage.id)) {
-            return prev
+          if (filtered.some(m => m.id === newMessage.id)) {
+            return filtered
           }
-          return [...prev, newMessage]
+          
+          return [...filtered, newMessage]
         })
-        // Stop loading states
-        setLoading(false)
-        setIsProcessing(false)
+        
+        // Stop loading states when assistant message arrives
+        if (newMessage.role === "assistant") {
+          setLoading(false)
+          setIsProcessing(false)
+          // Reload threads to update sidebar with new thread title
+          loadThreads()
+        }
       }
     )
 
@@ -1886,7 +1896,6 @@ export default function NemoAIDashboard() {
   // Updated for async processing - API returns 202, real-time subscription handles AI response
   const sendAudioToN8n = async (audioBlob: Blob) => {
     // Capture the thread ID at the start of the function to ensure consistency
-    // If currentThreadId is set (which it should be from handlePushToTalk), use it.
     let activeThreadId = currentThreadId
 
     // Fallback if state hasn't updated yet (though it should have in handlePushToTalk)
@@ -1895,6 +1904,14 @@ export default function NemoAIDashboard() {
       // but for safety let's check URL or generate one.
       const params = new URLSearchParams(window.location.search)
       activeThreadId = params.get("thread_id")
+      
+      // Last resort: create thread synchronously
+      if (!activeThreadId) {
+        console.warn("[v0] Voice message sent without thread - creating one")
+        activeThreadId = crypto.randomUUID()
+        setCurrentThreadId(activeThreadId)
+        window.history.pushState({}, "", "/")
+      }
     }
 
     // Force UI update to show "Thinking" state if not already
@@ -1921,21 +1938,6 @@ export default function NemoAIDashboard() {
       console.log("[v0] - User ID:", userId || "not set")
       console.log("[v0] - Thread ID:", activeThreadId || "not set")
 
-      // Add a processing indicator message to keep the chat view active
-      // This prevents reverting to the Orb/Home screen
-      const processingMsg: Message = {
-        id: "temp-voice-processing",
-        content: "Processing your voice message...",
-        role: "assistant",
-        created_at: new Date().toISOString(),
-        thread_id: activeThreadId || "temp",
-      }
-      setMessages(prev => {
-        // Remove any existing temp messages first
-        const filtered = prev.filter(m => !m.id.startsWith("temp-"))
-        return [...filtered, processingMsg]
-      })
-
       const response = await fetch("/api/voice", {
         method: "POST",
         body: formData,
@@ -1945,47 +1947,20 @@ export default function NemoAIDashboard() {
       if (response.status === 202) {
         console.log("[v0] Voice command accepted (202). Waiting for real-time update...")
         
-        // Start polling for conversation updates since real-time may not always work
-        // Poll every 3 seconds until we get a response or 2 minutes timeout
-        const pollInterval = 3000
-        const maxPolls = 40 // 40 * 3s = 2 minutes max
-        let pollCount = 0
-        
-        const pollForResponse = async () => {
-          pollCount++
-          console.log(`[v0] Polling for response (${pollCount}/${maxPolls})...`)
-          
-          if (activeThreadId) {
-            await loadConversations(activeThreadId)
-            await loadThreads()
-          }
-          
-          // Check if we have an actual assistant message (not our temp one)
-          // This is checked in the next render cycle
-        }
-        
-        // Initial poll after 3 seconds (for transcribed user message)
-        const pollTimer = setInterval(async () => {
-          await pollForResponse()
-          
-          // Stop polling after max attempts
-          if (pollCount >= maxPolls) {
-            console.log("[v0] Max polling attempts reached, stopping...")
-            clearInterval(pollTimer)
+        // Add timeout fallback: if real-time subscription doesn't deliver within 30s, fetch manually
+        setTimeout(() => {
+          if (isProcessing) {
+            console.log("[v0] Timeout fallback: Manually fetching conversations")
+            if (activeThreadId) {
+              loadConversations(activeThreadId)
+              loadThreads()
+            }
             setLoading(false)
             setIsProcessing(false)
-            // Remove temp message and show what we have
-            setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
           }
-        }, pollInterval)
+        }, 30000)
         
-        // Store poll timer reference so real-time callback can clear it
-        // We'll use a ref for this
-        if (typeof window !== 'undefined') {
-          (window as any).__voicePollTimer = pollTimer
-        }
-        
-        // Keep loading state active
+        // Let real-time subscription handle the response
         return
       }
 
@@ -2016,7 +1991,6 @@ export default function NemoAIDashboard() {
 
       setLoading(false)
       setIsProcessing(false)
-      setMessages(prev => prev.filter(m => !m.id.startsWith("temp-")))
 
     } catch (err) {
       console.error("[v0] Error sending audio to n8n:", err)
