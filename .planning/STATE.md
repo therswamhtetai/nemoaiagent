@@ -4,7 +4,7 @@
 - **Project**: NemoAI Voice Message Flow Overhaul
 - **Phase**: 03 - Voice Message Flow Overhaul (COMPLETE)
 - **Status**: Phase completed, ready for next phase
-- **Last activity**: 2026-01-29 - Completed all 3 plans with human verification
+- **Last activity**: 2026-01-29 - Added Exa.ai deep search to Market Intel Agent (Quick Task 005)
 
 Progress: ██████████ 100%
 
@@ -80,7 +80,7 @@ NemoAI personal AI assistant system - voice message flow completely overhauled w
 - **Web API Router (Main Brain):** ID `o5t83JWF11dsSfyi` - Routes user messages (OPTIMIZED)
 - **Ops Secretary:** ID `M9qgqvtsa5nuHUQ3` - Task management
 - **Business Strategist:** ID `DvvZiJ0n2HvbkAax` - Business analysis
-- **Market Intel Agent:** ID `Td29kBFdqAqSxBpo` - Web search
+- **Market Intel Agent:** ID `Td29kBFdqAqSxBpo` - Web search (Tavily + Exa.ai deep search)
 - **Daily Briefing:** ID `mBFd8G3ujZjK7-N` - Scheduled task summaries
 - **Task Manager:** ID `JWwLi4Zo4Zqh7igS` - Task CRUD operations
 - **Calendar Manager:** ID `GTRv70JqhEekrbLN` - Google Calendar integration
@@ -110,6 +110,7 @@ NemoAI personal AI assistant system - voice message flow completely overhauled w
 | 001 | 2026-01-28 | Fixed router message saving issues |
 | 002 | 2026-01-28 | Notification font size + modal popup |
 | 003 | 2026-01-28 | Green confetti on task completion |
+| 005 | 2026-01-29 | Added Exa.ai deep search to Market Intel Agent |
 
 ---
 

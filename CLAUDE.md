@@ -50,7 +50,7 @@ You are working on **NemoAI**, a personal AI assistant system built with n8n wor
 │                                                              │
 │ ┌─────────────────────────────────────────────────────┐    │
 │ │            DAILY BRIEFING (Standalone)               │    │
-│ │           Schedule Trigger → ntfy Push               │    │
+│ │           Schedule Trigger → PWA Push                │    │
 │ └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
         │
@@ -97,8 +97,9 @@ You are working on **NemoAI**, a personal AI assistant system built with n8n wor
 - **Google Gemini**: LLM provider (models/gemini-3-flash-preview)
 - **Google Calendar**: Calendar integration
 - **Apify**: Facebook page scraping
-- **Tavily**: Web search API
-- **ntfy**: Push notifications
+- **Tavily**: Web search API (quick, surface-level searches)
+- **Exa.ai**: Deep research API (comprehensive market analysis, competitor research)
+- **Push Notifications**: PWA push via `https://agent.nemoautomation.services/api/notifications/send`
 
 ---
 
@@ -153,7 +154,7 @@ Use slash command `/n8n-workflow` to access the complete workflow guide for crea
 | `o5t83JWF11dsSfyi` | Web API Router | Main brain - routes user messages to appropriate tools |
 | `M9qgqvtsa5nuHUQ3` | Ops Secretary | Task management (CRUD + status updates) |
 | `DvvZiJ0n2HvbkAax` | Business Strategist | Business analysis, SWOT, ROI calculations |
-| `Td29kBFdqAqSxBpo` | Market Intel Agent | Real-time web search for prices, news |
+| `Td29kBFdqAqSxBpo` | Market Intel Agent | Real-time web search (Tavily + Exa.ai deep research) |
 | `JWwLi4Zo4Zqh7igS` | Task Manager | Creates tasks in database |
 | `GTRv70JqhEekrbLN` | Calendar Manager | Google Calendar check/schedule |
 | `M61NswfHOOsFxrL6` | Contact Manager | Contact CRUD operations |
@@ -165,60 +166,24 @@ Use slash command `/n8n-workflow` to access the complete workflow guide for crea
 | `JuKoBjeKk5F-e6KNVtR4t` | Voice Pipeline | Audio transcription → Router |
 | `OPF7ii_KCDkOlZiJqT-BE` | Auth System | User login validation |
 | `rk_RR1SePy-TNVo68mZRu` | Idea Manager | Ideas CRUD operations |
+| `OPqleYbWDbxnuHa6` | Push Notification Sender | PWA push notification sub-workflow |
+| `Z58rzRryBOFRtBcj` | Broadcast Notification v2 | Send broadcast to all users via PWA push |
 
 ---
 
 ## 🎯 CURRENT PRIORITIES (What to Build/Fix)
 
-### Priority A: Response Speed Optimization
+### Response Speed Optimization (Completed)
 **Goal**: Reduce response time from 10-20 seconds to 3-5 seconds
 
-**Problems Identified**:
-1. Memory auto-save blocks response (adds 3-5 sec)
-2. AI Agent classifies every message (even simple ones)
-3. No caching for common queries
+**Completed**:
+- [x] Reduced `contextWindowLength` from 10 to 6
 
-**Tasks**:
-- [ ] Make "Save to Long-term Memory" async (don't wait for completion)
-- [ ] Add pre-classification Switch node for simple commands
-- [ ] Reduce `contextWindowLength` from 10 to 5-6
-- [ ] Add caching for gold price, dollar rate queries (5 min cache)
+**Reverted** (incompatible with frontend architecture - frontend reads from Supabase, not webhook):
+- Async memory saving
+- Pre-classification Switch node
 
-### Priority C: Daily Briefing Integration
-**Goal**: Dynamic briefing system that scales with users + on-demand trigger
-
-**Current Problems**:
-1. Hardcoded user_ids (5 users = 30+ duplicate nodes)
-2. Not callable from main chat ("Today's briefing" doesn't work)
-3. Single trigger time only
-
-**Tasks**:
-- [ ] Refactor to single dynamic workflow with Loop
-- [ ] Add `daily_briefing` tool to Web API Router
-- [ ] Support on-demand requests via chat
-
-### Priority D: Reminder System (NEW FEATURE)
-**Goal**: Users can set specific time reminders via chat
-
-**Requirements**:
-1. Database: Add `reminders` table or `reminder_time` column to tasks
-2. New workflow: Reminder Checker (runs every 5 mins)
-3. Integration: ops_secretary extracts reminder time from user message
-4. Notification: Push via ntfy at specified time
-
-**Database Schema**:
-```sql
-CREATE TABLE reminders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id),
-  task_id UUID REFERENCES tasks(id),  -- Optional link
-  title VARCHAR(255) NOT NULL,
-  remind_at TIMESTAMP NOT NULL,
-  channel VARCHAR(50) DEFAULT 'ntfy',
-  is_sent BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+**Lesson Learned**: Frontend reads messages from Supabase database, so all messages must be saved before the webhook responds. This architectural constraint prevents async patterns.
 
 ---
 
@@ -290,7 +255,7 @@ id UUID PRIMARY KEY
 user_id UUID
 content TEXT
 content_type VARCHAR -- 'conversation', 'note', 'idea'
-embedding VECTOR(768)
+embedding VECTOR(3072)
 metadata JSONB
 created_at TIMESTAMP
 ```
@@ -503,7 +468,7 @@ n8n_get_workflow --id "o5t83JWF11dsSfyi"  # Web API Router
 
 - Owner prefers simple explanations (non-technical background)
 - System uses Myanmar language for some user-facing content
-- ntfy is the notification channel (not Telegram)
+- Push notifications via PWA (not ntfy or Telegram)
 - Frontend is TypeScript-based, already built
 - All workflows should maintain ZERO MARKDOWN POLICY in AI responses
 
