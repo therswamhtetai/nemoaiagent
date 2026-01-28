@@ -4,7 +4,7 @@ import type React from "react"
 import type { PromptCard } from "@/lib/types"
 import * as API from "@/lib/services/api"
 
-import { useState, useRef, useEffect, useTransition } from "react"
+import { useState, useRef, useEffect, useTransition, useCallback, useMemo, memo } from "react"
 import Confetti from "react-confetti"
 import {
   Search,
@@ -532,8 +532,28 @@ export default function NemoAIDashboard() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
 
-  // Helper to render message content with markdown-like formatting
-  const renderMessageContent = (content: string) => {
+  // Debounced scroll to bottom - prevents jank during rapid message updates
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const scrollToBottom = useCallback(() => {
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current)
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, 100)
+  }, [])
+
+  // Cleanup scroll timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Memoized helper to render message content with markdown-like formatting
+  const renderMessageContent = useCallback((content: string) => {
     // Handle Headers (###, ##, ####)
     let processed = content
       .replace(/^#### (.*$)/gim, '<h4 class="text-base font-bold mt-2 mb-1 text-white/90">$1</h4>')
@@ -547,7 +567,7 @@ export default function NemoAIDashboard() {
       )
 
     return <div dangerouslySetInnerHTML={{ __html: processed }} className="whitespace-pre-wrap font-sans" />
-  }
+  }, [])
   const getTimeBasedGreeting = () => {
     return currentGreeting || "Good day!"
   }
@@ -1005,9 +1025,9 @@ export default function NemoAIDashboard() {
   }, [currentThreadId, userId, useFallbackMode, threads])
 
   useEffect(() => {
-    // Instant scroll to bottom when messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" })
-  }, [messages])
+    // Use debounced scroll for smooth performance during rapid updates
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
   useEffect(() => {
     if (activeModule === "crm") {
@@ -3174,7 +3194,7 @@ export default function NemoAIDashboard() {
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917]">
-                <div className="max-w-3xl mx-auto space-y-6">
+                <div className="max-w-3xl mx-auto space-y-6" style={{ willChange: 'transform' }}>
                   {/* Voice Error Display */}
                   {voiceError && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 animate-slide-up">
