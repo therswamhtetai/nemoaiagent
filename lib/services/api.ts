@@ -29,11 +29,10 @@ export const SubscribeToConversations = (
             (payload) => {
                 console.log('[Realtime] New message received:', payload.new)
                 const newMessage = payload.new as Message
-                // Only trigger callback for assistant messages (AI responses)
-                // User messages are already shown optimistically
-                if (newMessage.role === 'assistant') {
-                    onNewMessage(newMessage)
-                }
+                // Include all messages (both user and assistant)
+                // Voice transcriptions come as user messages from n8n
+                // Deduplication is handled in the callback (page.tsx)
+                onNewMessage(newMessage)
             }
         )
         .subscribe((status) => {
