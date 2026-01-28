@@ -71,7 +71,7 @@ export default function TasksPage() {
       // Trigger confetti only when marking task as complete (not when uncompleting)
       if (!completed) {
         setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 3000)
+        setTimeout(() => setShowConfetti(false), 7000)
       }
     }
   }
@@ -92,6 +92,7 @@ export default function TasksPage() {
           height={windowSize.height}
           recycle={false}
           numberOfPieces={300}
+          gravity={0.15}
           colors={['#22c55e', '#16a34a', '#15803d', '#166534', '#4ade80', '#86efac']}
           style={{ 
             position: 'fixed', 

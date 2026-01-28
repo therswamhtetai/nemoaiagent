@@ -2165,9 +2165,9 @@ export default function NemoAIDashboard() {
   // Added completeTask function for quick task completion
   const completeTask = async (taskId: string) => {
     await updateTask(taskId, { status: "completed" })
-    // Trigger confetti celebration
+    // Trigger confetti celebration - 7 seconds allows confetti to fall from top to bottom
     setShowConfetti(true)
-    setTimeout(() => setShowConfetti(false), 3000)
+    setTimeout(() => setShowConfetti(false), 7000)
   }
 
   // Added updateTaskStatus function for toggling task completion
@@ -2507,6 +2507,7 @@ export default function NemoAIDashboard() {
           height={windowSize.height}
           recycle={false}
           numberOfPieces={300}
+          gravity={0.15}
           colors={['#22c55e', '#16a34a', '#15803d', '#166534', '#4ade80', '#86efac']}
           style={{ 
             position: 'fixed', 
