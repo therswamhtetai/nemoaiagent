@@ -16,6 +16,13 @@ import {
   Smartphone
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
 interface Notification {
   id: string
@@ -60,8 +67,8 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
   const [pushStatus, setPushStatus] = useState<string>('')
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
-  // New state for expanded processing
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // State for modal notification view
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
 
   // Check device and push support
   useEffect(() => {
@@ -246,16 +253,17 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
     }
   }
 
-  // Toggle notification expansion
-  const toggleNotification = (id: string, isRead: boolean) => {
-    if (expandedId === id) {
-      setExpandedId(null)
-    } else {
-      setExpandedId(id)
-      if (!isRead) {
-        markAsRead(id)
-      }
+  // Open notification in modal
+  const openNotificationModal = (notification: Notification) => {
+    setSelectedNotification(notification)
+    if (!notification.is_read) {
+      markAsRead(notification.id)
     }
+  }
+
+  // Close notification modal
+  const closeNotificationModal = () => {
+    setSelectedNotification(null)
   }
 
   // Mark all as read
@@ -388,25 +396,23 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
           notifications.map((notification) => {
             const IconComponent = typeIcons[notification.type] || Bell
             const iconColor = typeColors[notification.type] || 'text-white/60'
-            const isExpanded = expandedId === notification.id
 
             return (
               <div
                 key={notification.id}
-                onClick={() => toggleNotification(notification.id, notification.is_read)}
-                className={`group relative overflow-hidden rounded-xl border transition-all duration-200 cursor-pointer ${isExpanded
-                    ? 'bg-white/10 border-white/20 shadow-lg'
-                    : notification.is_read
-                      ? 'bg-transparent border-transparent hover:bg-white/5'
-                      : 'bg-white/[0.03] border-white/10 hover:border-white/20'
-                  }`}
+                onClick={() => openNotificationModal(notification)}
+                className={`group relative overflow-hidden rounded-xl border transition-all duration-200 cursor-pointer ${
+                  notification.is_read
+                    ? 'bg-transparent border-transparent hover:bg-white/5'
+                    : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+                }`}
               >
                 {!notification.is_read && (
                   <div className="absolute top-3 right-3 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
                 )}
 
                 <div className="p-3 flex gap-3">
-                  <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${isExpanded ? 'bg-white/10' : ''} ${iconColor}`}>
+                  <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${iconColor}`}>
                     <IconComponent className="w-4 h-4" />
                   </div>
 
@@ -421,24 +427,9 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
                       </span>
                     </div>
 
-                    <p className={`text-sm mt-1 transition-all ${isExpanded ? 'text-white/90 whitespace-pre-wrap' : 'text-white/50 line-clamp-1'
-                      }`}>
+                    <p className="text-sm mt-1 text-white/50 line-clamp-1">
                       {notification.body}
                     </p>
-
-                    {/* Expanded Content or Footer */}
-                    {isExpanded && (
-                      <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between animate-fade-in">
-                        <span className="text-xs uppercase tracking-wider text-white/30">
-                          {notification.type}
-                        </span>
-                        {!notification.is_read && (
-                          <span className="text-[10px] text-orange-400 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Mark read
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -446,6 +437,44 @@ export default function NotificationCenter({ userId, onClose }: NotificationCent
           })
         )}
       </div>
+
+      {/* Notification Detail Modal */}
+      <Dialog open={!!selectedNotification} onOpenChange={(open) => !open && closeNotificationModal()}>
+        <DialogContent className="bg-[#1C1917] border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              {selectedNotification && (() => {
+                const IconComponent = typeIcons[selectedNotification.type] || Bell
+                const iconColor = typeColors[selectedNotification.type] || 'text-white/60'
+                return (
+                  <div className={`p-2 rounded-lg bg-white/10 ${iconColor}`}>
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                )
+              })()}
+              <span className="text-xs uppercase tracking-wider text-white/40">
+                {selectedNotification?.type}
+              </span>
+            </div>
+            <DialogTitle className="text-lg font-semibold text-white">
+              {selectedNotification?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-white/70 whitespace-pre-wrap mt-2">
+              {selectedNotification?.body}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+            <span className="text-xs text-white/40">
+              {selectedNotification && formatTimeAgo(selectedNotification.created_at)}
+            </span>
+            {selectedNotification && !selectedNotification.is_read && (
+              <span className="text-xs text-green-400 flex items-center gap-1">
+                <Check className="w-3 h-3" /> Marked as read
+              </span>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
