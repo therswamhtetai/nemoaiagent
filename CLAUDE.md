@@ -251,11 +251,11 @@ created_at, updated_at TIMESTAMP
 
 ### knowledge_base (Vector Store)
 ```sql
-id UUID PRIMARY KEY
+id BIGINT PRIMARY KEY  -- Note: Uses bigint, not UUID
 user_id UUID
 content TEXT
 content_type VARCHAR -- 'conversation', 'note', 'idea'
-embedding VECTOR(3072)
+embedding VECTOR(3072)  -- Updated from 768 for gemini-embedding-001
 metadata JSONB
 created_at TIMESTAMP
 ```
