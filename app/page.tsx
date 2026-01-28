@@ -1919,14 +1919,14 @@ export default function NemoAIDashboard() {
         // Switch UI to chat view immediately
         setShowQuickPrompts(false)
         
-        // Add single temp processing message with isLoading flag for skeleton display
-        setMessages([{
+        // Add processing message as user message (preserves existing conversation)
+        setMessages(prev => [...prev, {
           id: "temp-voice",
-          content: "",
-          role: "assistant",
+          content: "Processing voice message...",
+          role: "user",
           created_at: new Date().toISOString(),
           thread_id: targetThreadId || "temp",
-          isLoading: true, // Triggers skeleton loader display
+          isProcessing: true, // Flag for showing spinner
         }])
         
         setIsProcessing(true)
@@ -3221,10 +3221,17 @@ export default function NemoAIDashboard() {
                             </div>
                           )}
 
-                          {/* Text Bubble */}
+                          {/* Text Bubble - with processing indicator if isProcessing */}
                           {msg.content && (
                             <div className="bg-[#2A2826] rounded-2xl px-4 py-3 text-sm text-white/90 break-words whitespace-pre-wrap">
-                              {renderMessageContent(msg.content)}
+                              {(msg as any).isProcessing ? (
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="w-4 h-4 animate-spin text-white/60" />
+                                  <span>{msg.content}</span>
+                                </div>
+                              ) : (
+                                renderMessageContent(msg.content)
+                              )}
                             </div>
                           )}
                         </div>
