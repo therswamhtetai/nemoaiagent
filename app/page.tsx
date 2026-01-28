@@ -5,6 +5,7 @@ import type { PromptCard } from "@/lib/types"
 import * as API from "@/lib/services/api"
 
 import { useState, useRef, useEffect, useTransition } from "react"
+import Confetti from "react-confetti"
 import {
   Search,
   Sparkles,
@@ -525,6 +526,10 @@ export default function NemoAIDashboard() {
   const [greetingReady, setGreetingReady] = useState(false)
   const [isInputFocused, setIsInputFocused] = useState(false)
 
+  // Confetti state for task completion celebration
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+
   // Helper to render message content with markdown-like formatting
   const renderMessageContent = (content: string) => {
     // Handle Headers (###, ##, ####)
@@ -699,6 +704,14 @@ export default function NemoAIDashboard() {
     const interval = setInterval(updateTimeAndWeather, 60000)
 
     return () => clearInterval(interval)
+  }, [])
+
+  // Window size tracking for confetti
+  useEffect(() => {
+    const updateSize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
   }, [])
 
   // Auto-focus chat input on mount
@@ -2152,6 +2165,9 @@ export default function NemoAIDashboard() {
   // Added completeTask function for quick task completion
   const completeTask = async (taskId: string) => {
     await updateTask(taskId, { status: "completed" })
+    // Trigger confetti celebration
+    setShowConfetti(true)
+    setTimeout(() => setShowConfetti(false), 3000)
   }
 
   // Added updateTaskStatus function for toggling task completion
@@ -2483,12 +2499,30 @@ export default function NemoAIDashboard() {
   }
 
   return (
-    <div 
-      className="flex fixed inset-0 w-full overflow-hidden bg-[#0D0C0B] text-white"
-      onTouchStart={handleSidebarTouchStart}
-      onTouchMove={handleSidebarTouchMove}
-      onTouchEnd={handleSidebarTouchEnd}
-    >
+    <>
+      {/* Confetti celebration for task completion */}
+      {showConfetti && windowSize.width > 0 && (
+        <Confetti
+          width={windowSize.width}
+          height={windowSize.height}
+          recycle={false}
+          numberOfPieces={300}
+          colors={['#22c55e', '#16a34a', '#15803d', '#166534', '#4ade80', '#86efac']}
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            zIndex: 9999,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+      <div 
+        className="flex fixed inset-0 w-full overflow-hidden bg-[#0D0C0B] text-white"
+        onTouchStart={handleSidebarTouchStart}
+        onTouchMove={handleSidebarTouchMove}
+        onTouchEnd={handleSidebarTouchEnd}
+      >
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div
@@ -5711,6 +5745,7 @@ export default function NemoAIDashboard() {
           <Home className="w-5 h-5" />
         </button>
       )}
-    </div>
+      </div>
+    </>
   )
 }
