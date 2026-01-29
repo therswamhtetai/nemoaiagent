@@ -489,6 +489,8 @@ export default function NemoAIDashboard() {
   const [selectedCompetitor, setSelectedCompetitor] = useState<any>(null)
   const [showCompetitorModal, setShowCompetitorModal] = useState(false)
   const [loadingMarketData, setLoadingMarketData] = useState(false)
+  const [platformFilter, setPlatformFilter] = useState<'all' | 'facebook' | 'tiktok'>('all')
+  const [refreshCooldown, setRefreshCooldown] = useState(0) // Cooldown timer in seconds
 
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showNotificationPanel, setShowNotificationPanel] = useState(false)
@@ -2506,7 +2508,7 @@ export default function NemoAIDashboard() {
 
 
 
-  // Refresh market data via webhook
+  // Refresh market data via webhook with 60-second cooldown
   const refreshMarketData = async () => {
     try {
       console.log(`[v0-debug] Triggering market data refresh webhook... UserID: ${userId}`)
@@ -2514,7 +2516,21 @@ export default function NemoAIDashboard() {
         console.error("[v0-debug] UserID is missing upon refresh!")
         return
       }
+      
+      // Start loading and cooldown
       setLoadingMarketData(true)
+      setRefreshCooldown(60) // 60 second cooldown
+
+      // Start cooldown timer
+      const cooldownInterval = setInterval(() => {
+        setRefreshCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(cooldownInterval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
 
       const response = await fetch("/api/monitor", {
         method: "POST",
@@ -2533,6 +2549,7 @@ export default function NemoAIDashboard() {
       }
     } catch (error) {
       console.error("[v0] Error triggering webhook:", error)
+      setRefreshCooldown(0) // Reset cooldown on error
     } finally {
       setLoadingMarketData(false)
     }
@@ -4191,117 +4208,382 @@ export default function NemoAIDashboard() {
                   {/* Refresh Button Moved to Modal */}
                 </div>
 
-                {/* Competitor Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {competitors.map((competitor) => {
-                    const latestStats = getLatestStats(competitor.id)
-
-                    return (
-                      <Card
-                        key={competitor.id}
-                        onClick={() => {
-                          setSelectedCompetitor({ ...competitor, stats: latestStats })
-                          setShowCompetitorModal(true)
-                        }}
-                        className="p-5 bg-[#1A1918] border border-[#2A2826] hover:bg-[#222120] transition-all cursor-pointer"
-                      >
-                        <div className="space-y-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <h3 className="font-bold text-lg">{competitor.name}</h3>
-                              <p className="text-sm text-white/60">{competitor.platform}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {latestStats?.is_running_ads ? (
-                                <div className="flex flex-col items-end gap-1">
-                                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/25 text-green-300 border border-green-500/50">
-                                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                                    <span className="text-xs font-semibold">Ads ON</span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">
-                                  <span className="w-2 h-2 bg-zinc-500 rounded-full" />
-                                  <span className="text-xs font-semibold">No Ads</span>
-                                </div>
-                              )}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteCompetitor(competitor.id)
-                                }}
-                                className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
-                                title="Delete competitor"
-                              >
-                                <Trash2 className="w-4 h-4 text-white/40 group-hover:text-red-400" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {latestStats ? (
-                            <>
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-white/70">📉 Followers</span>
-                                  <span className="font-semibold">
-                                    {latestStats.follower_count >= 1000
-                                      ? `${(latestStats.follower_count / 1000).toFixed(1)}k`
-                                      : latestStats.follower_count}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="text-white/70">🔥 Viral Score</span>
-                                    <span className="font-semibold">{latestStats.viral_score || 0}/10</span>
-                                  </div>
-                                  <div className="w-full bg-white/10 rounded-full h-2">
-                                    <div
-                                      className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all"
-                                      style={{ width: `${((latestStats.viral_score || 0) / 10) * 100}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {latestStats.summary_analysis && (
-                                <div className="pt-2 border-t border-white/10">
-                                  <p className="text-xs text-white/60 line-clamp-2">
-                                    📝 {latestStats.summary_analysis}
-                                  </p>
-                                  <p className="text-xs text-white/40 mt-2 italic">Click to view full analysis →</p>
-                                </div>
-                              )}
-
-                              {latestStats.scraped_at && (
-                                <div className="pt-2 text-xs text-white/40 border-t border-white/10">
-                                  <p>🕐 Last scraped: {new Date(latestStats.scraped_at).toLocaleString()}</p>
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="text-center py-4">
-                              <p className="text-sm text-white/40">No data available</p>
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    )
-                  })}
+                {/* Platform Filter Tabs */}
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setPlatformFilter('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      platformFilter === 'all'
+                        ? 'bg-white/10 text-white border border-white/20'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setPlatformFilter('facebook')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                      platformFilter === 'facebook'
+                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" preserveAspectRatio="xMidYMid meet">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    </span>
+                    Facebook
+                  </button>
+                  <button
+                    onClick={() => setPlatformFilter('tiktok')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                      platformFilter === 'tiktok'
+                        ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" preserveAspectRatio="xMidYMid meet">
+                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                      </svg>
+                    </span>
+                    TikTok
+                  </button>
                 </div>
 
+                {/* ═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 1: PAGES & PROFILES (is_post === false)
+                    Completely independent section for Facebook Pages and TikTok Profiles
+                ═══════════════════════════════════════════════════════════════════════════════ */}
+                {(() => {
+                  const pages = competitors.filter(c => !c.is_post)
+                  const filteredPages = pages.filter(c => 
+                    platformFilter === 'all' || c.platform === platformFilter
+                  )
+
+                  if (pages.length === 0) return null
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Section Header */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-1 h-6 bg-blue-400/60 rounded-full"></div>
+                        <h2 className="text-xl font-bold text-white">Pages & Profiles</h2>
+                        <span className="px-2 py-0.5 text-xs font-medium bg-white/10 rounded-full text-white/60">{filteredPages.length}</span>
+                      </div>
+
+                      {filteredPages.length > 0 ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                          {filteredPages.map((competitor) => {
+                            const latestStats = getLatestStats(competitor.id)
+                            const viralScore = latestStats?.viral_score || 0
+                            
+                            return (
+                              <div
+                                key={competitor.id}
+                                onClick={() => {
+                                  setSelectedCompetitor({ ...competitor, stats: latestStats })
+                                  setShowCompetitorModal(true)
+                                }}
+                                className="group relative bg-[#141413] rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:bg-[#1a1a19]"
+                              >
+                                {/* Platform Accent Bar */}
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-500/50" />
+                                
+                                <div className="p-5 md:p-6">
+                                  {/* Header Row */}
+                                  <div className="flex items-start gap-4 mb-5">
+                                    {/* Large Platform Logo */}
+                                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center flex-shrink-0 bg-[#2A2826]">
+                                      {competitor.platform === 'facebook' ? (
+                                        <svg className="w-7 h-7 md:w-8 md:h-8 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor">
+                                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                        </svg>
+                                      ) : (
+                                        <svg className="w-7 h-7 md:w-8 md:h-8 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor">
+                                          <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                                        </svg>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Title & Meta */}
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="text-lg md:text-xl font-bold text-white truncate group-hover:text-white/90">{competitor.name}</h3>
+                                      <p className="text-sm text-white/50 capitalize mt-0.5">{competitor.platform} {competitor.platform === 'tiktok' ? 'Profile' : 'Page'}</p>
+                                    </div>
+                                    
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      {latestStats?.is_running_ads && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/20">
+                                          <span className="w-2 h-2 bg-blue-300 rounded-full animate-pulse" />
+                                          <span className="text-xs font-semibold text-blue-200">ADS</span>
+                                        </div>
+                                      )}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          deleteCompetitor(competitor.id)
+                                        }}
+                                        className="p-2 hover:bg-[#2A2826] rounded-xl transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-white/40 hover:text-white/70" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  
+                                  {latestStats ? (
+                                    <>
+                                      {/* Stats Grid */}
+                                      <div className="grid grid-cols-3 gap-3 mb-5">
+                                        {/* Followers */}
+                                        <div className="bg-white/5 rounded-xl p-3 md:p-4">
+                                          <p className="text-[10px] md:text-xs text-white/40 uppercase tracking-wider font-medium mb-1">
+                                            {competitor.platform === 'tiktok' ? 'Fans' : 'Followers'}
+                                          </p>
+                                          <p className="text-xl md:text-2xl font-bold text-white">
+                                            {latestStats.follower_count >= 1000000
+                                              ? `${(latestStats.follower_count / 1000000).toFixed(1)}M`
+                                              : latestStats.follower_count >= 1000
+                                              ? `${(latestStats.follower_count / 1000).toFixed(1)}K`
+                                              : latestStats.follower_count}
+                                          </p>
+                                        </div>
+                                        
+                                        {/* Viral Score with Ring */}
+                                        <div className="bg-white/5 rounded-xl p-3 md:p-4">
+                                          <p className="text-[10px] md:text-xs text-white/40 uppercase tracking-wider font-medium mb-1">Viral</p>
+                                          <div className="flex items-center gap-2">
+                                            <div className="relative w-8 h-8 md:w-10 md:h-10">
+                                              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                                <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/10" />
+                                                <circle 
+                                                  cx="18" cy="18" r="15" fill="none" 
+                                                  stroke="#9CA3AF" 
+                                                  strokeWidth="3" 
+                                                  strokeDasharray={`${viralScore * 9.42} 100`}
+                                                  strokeLinecap="round"
+                                                />
+                                              </svg>
+                                              <span className="absolute inset-0 flex items-center justify-center text-xs md:text-sm font-bold text-white">{viralScore}</span>
+                                            </div>
+                                            <span className="text-white/40 text-xs">/10</span>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Ads Status */}
+                                        <div className="bg-white/5 rounded-xl p-3 md:p-4">
+                                          <p className="text-[10px] md:text-xs text-white/40 uppercase tracking-wider font-medium mb-1">Ads</p>
+                                          <p className={`text-lg md:text-xl font-bold ${latestStats.is_running_ads ? 'text-blue-200' : 'text-white/30'}`}>
+                                            {latestStats.is_running_ads ? 'Active' : 'None'}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Summary */}
+                                      {latestStats.summary_analysis && (
+                                        <div className="bg-white/5 rounded-xl p-4">
+                                          <p className="text-sm text-white/70 line-clamp-2 leading-relaxed">
+                                            {latestStats.summary_analysis}
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Footer */}
+                                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                                        <span className="text-xs text-white/30">
+                                          Updated {latestStats.scraped_at ? new Date(latestStats.scraped_at).toLocaleDateString() : 'N/A'}
+                                        </span>
+                                        <span className="text-xs text-white/40 group-hover:text-white/60 transition-colors">
+                                          Click for details →
+                                        </span>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="text-center py-8">
+                                      <p className="text-sm text-white/40">No analysis data yet</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-8 bg-[#141413] rounded-2xl text-center">
+                          <p className="text-white/40">No {platformFilter === 'all' ? '' : platformFilter} pages tracked yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* ═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 2: POSTS, REELS & VIDEOS (is_post === true)
+                    Completely independent section for individual content analysis
+                ═══════════════════════════════════════════════════════════════════════════════ */}
+                {(() => {
+                  const posts = competitors.filter(c => c.is_post === true)
+                  const filteredPosts = posts.filter(c => 
+                    platformFilter === 'all' || c.platform === platformFilter
+                  )
+
+                  if (posts.length === 0) return null
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Section Header */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-1 h-6 bg-yellow-400/50 rounded-full"></div>
+                        <h2 className="text-xl font-bold text-white">Posts & Videos</h2>
+                        <span className="px-2 py-0.5 text-xs font-medium bg-white/10 rounded-full text-white/60">{filteredPosts.length}</span>
+                      </div>
+
+                      {filteredPosts.length > 0 ? (
+                        <div className="space-y-3">
+                          {filteredPosts.map((competitor) => {
+                            const latestStats = getLatestStats(competitor.id)
+                            const viralScore = latestStats?.viral_score || 0
+                            
+                            return (
+                              <div
+                                key={competitor.id}
+                                onClick={() => {
+                                  setSelectedCompetitor({ ...competitor, stats: latestStats })
+                                  setShowCompetitorModal(true)
+                                }}
+                                className="group relative bg-[#141413] rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:bg-[#1a1a19]"
+                              >
+                                {/* Left Accent */}
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-500/50" />
+                                
+                                <div className="p-4 md:p-5 pl-5 md:pl-6 flex items-center gap-4">
+                                  {/* Platform Icon */}
+                                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#2A2826]">
+                                    {competitor.platform === 'facebook' ? (
+                                      <svg className="w-6 h-6 md:w-7 md:h-7 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-6 h-6 md:w-7 md:h-7 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                                      </svg>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Content */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-zinc-500/20 text-zinc-300">
+                                        {competitor.platform === 'tiktok' ? 'VIDEO' : 'POST'}
+                                      </span>
+                                    </div>
+                                    <h3 className="font-semibold text-white truncate">{competitor.name}</h3>
+                                    {latestStats?.summary_analysis && (
+                                      <p className="text-xs text-white/50 mt-1 line-clamp-1">{latestStats.summary_analysis}</p>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Stats */}
+                                  {latestStats && (
+                                    <div className="hidden sm:flex items-center gap-6 flex-shrink-0">
+                                      {/* Viral Score */}
+                                      <div className="text-center">
+                                        <div className="relative w-10 h-10">
+                                          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                            <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/10" />
+                                            <circle 
+                                              cx="18" cy="18" r="15" fill="none" 
+                                              stroke="#9CA3AF"
+                                              strokeWidth="3" 
+                                              strokeDasharray={`${viralScore * 9.42} 100`}
+                                              strokeLinecap="round"
+                                            />
+                                          </svg>
+                                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">{viralScore}</span>
+                                        </div>
+                                        <p className="text-[10px] text-white/40 mt-1">VIRAL</p>
+                                      </div>
+                                      
+                                      {/* Engagement */}
+                                      {latestStats.follower_count > 0 && (
+                                        <div className="text-center">
+                                          <p className="text-lg font-bold text-white">
+                                            {latestStats.follower_count >= 1000 
+                                              ? `${(latestStats.follower_count / 1000).toFixed(1)}K` 
+                                              : latestStats.follower_count}
+                                          </p>
+                                          <p className="text-[10px] text-white/40">{competitor.platform === 'tiktok' ? 'VIEWS' : 'LIKES'}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Mobile Stats */}
+                                  {latestStats && (
+                                    <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
+                                      <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                                        viralScore >= 7 ? 'bg-blue-500/20 text-blue-200' :
+                                        viralScore >= 4 ? 'bg-zinc-500/20 text-zinc-300' :
+                                        'bg-white/10 text-white/60'
+                                      }`}>
+                                        {viralScore}/10
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Delete Button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      deleteCompetitor(competitor.id)
+                                    }}
+                                    className="p-2 hover:bg-[#2A2826] rounded-lg transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-white/40 hover:text-white/70" />
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-8 bg-[#141413] rounded-2xl text-center">
+                          <p className="text-white/40">No {platformFilter === 'all' ? '' : platformFilter} posts tracked yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Empty State - Only show when no competitors at all */}
                 {competitors.length === 0 && !loadingMarketData && (
                   <Card className="p-12 bg-[#1A1918] border border-[#2A2826] text-center">
                     <TrendingUp className="w-12 h-12 mx-auto mb-4 text-white/20" />
                     <p className="text-white/40 mb-4">No competitor data available yet.</p>
+                    <p className="text-white/30 text-sm mb-6">
+                      Ask NemoAI to monitor a Facebook page, TikTok profile, or analyze a specific post/video.
+                    </p>
                     <Button
                       onClick={refreshMarketData}
-                      disabled={loadingMarketData}
+                      disabled={loadingMarketData || refreshCooldown > 0}
                       variant="outline"
                       className="border-white/10 text-white hover:bg-white/10"
                     >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
-                      Refresh Data
+                      {refreshCooldown > 0 ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 rounded-full border-2 border-white/30 border-t-white/80 animate-spin" />
+                          Wait {refreshCooldown}s
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
+                          Refresh Data
+                        </>
+                      )}
                     </Button>
                   </Card>
                 )}
@@ -4316,34 +4598,90 @@ export default function NemoAIDashboard() {
                       className="w-full md:max-w-3xl h-full md:h-auto md:max-h-[80vh] overflow-y-auto custom-scrollbar-dark bg-[#1A1918] border border-[#2A2826] rounded-none md:rounded-xl"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="p-6 space-y-6">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h2 className="text-2xl font-bold">{selectedCompetitor.name}</h2>
-                            <p className="text-white/60">{selectedCompetitor.platform}</p>
-                            {selectedCompetitor.stats?.scraped_at && (
-                              <p className="text-xs text-white/40 mt-1">
-                                Last updated: {new Date(selectedCompetitor.stats.scraped_at).toLocaleDateString()} at{" "}
-                                {new Date(selectedCompetitor.stats.scraped_at).toLocaleTimeString()}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              onClick={refreshMarketData}
-                              disabled={loadingMarketData}
-                              size="sm"
-                              className="bg-white/10 hover:bg-white/20 border border-white/10"
-                            >
-                              <RefreshCw className={`w-4 h-4 mr-2 ${loadingMarketData ? "animate-spin" : ""}`} />
-                              Refresh Analysis
-                            </Button>
+                      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+                        {/* Modal Header - Responsive Layout */}
+                        <div className="space-y-4">
+                          {/* Top row: Logo, Title, Close button */}
+                          <div className="flex items-start gap-3">
+                            {/* Platform Logo */}
+                            <div className="flex-shrink-0">
+                              {selectedCompetitor.platform === 'facebook' ? (
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#2A2826] flex items-center justify-center">
+                                  <svg className="w-5 h-5 md:w-6 md:h-6 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor" preserveAspectRatio="xMidYMid meet">
+                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                                  </svg>
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#2A2826] flex items-center justify-center">
+                                  <svg className="w-5 h-5 md:w-6 md:h-6 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor" preserveAspectRatio="xMidYMid meet">
+                                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Title and subtitle */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-lg md:text-2xl font-bold truncate">{selectedCompetitor.name}</h2>
+                                {selectedCompetitor.is_post && (
+                                  <span className="px-2 py-0.5 text-[10px] md:text-xs font-medium rounded bg-zinc-500/20 text-zinc-300 border border-zinc-500/20 flex-shrink-0">
+                                    {selectedCompetitor.platform === 'tiktok' ? 'VIDEO' : 'POST'}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-white/60 capitalize">{selectedCompetitor.platform} {selectedCompetitor.is_post ? (selectedCompetitor.platform === 'tiktok' ? 'Video' : 'Post') : 'Page'}</p>
+                              {selectedCompetitor.stats?.scraped_at && (
+                                <p className="text-xs text-white/40 mt-1 hidden md:block">
+                                  Last updated: {new Date(selectedCompetitor.stats.scraped_at).toLocaleDateString()} at {new Date(selectedCompetitor.stats.scraped_at).toLocaleTimeString()}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Close button - always visible */}
                             <button
                               onClick={() => setShowCompetitorModal(false)}
-                              className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white"
+                              className="flex-shrink-0 p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white"
                             >
                               <X className="w-5 h-5" />
                             </button>
+                          </div>
+                          
+                          {/* Refresh button row - below on mobile */}
+                          <div className="flex items-center justify-between gap-2">
+                            {selectedCompetitor.stats?.scraped_at && (
+                              <p className="text-xs text-white/40 md:hidden">
+                                Updated: {new Date(selectedCompetitor.stats.scraped_at).toLocaleDateString()}
+                              </p>
+                            )}
+                            <Button
+                              onClick={refreshMarketData}
+                              disabled={loadingMarketData || refreshCooldown > 0}
+                              size="sm"
+                              className={`ml-auto border border-white/10 ${
+                                refreshCooldown > 0 
+                                  ? 'bg-white/5 text-white/50 cursor-not-allowed' 
+                                  : 'bg-white/10 hover:bg-white/20'
+                              }`}
+                            >
+                              {refreshCooldown > 0 ? (
+                                <>
+                                  <div className="w-4 h-4 mr-2 rounded-full border-2 border-white/30 border-t-white/80 animate-spin" />
+                                  <span className="hidden sm:inline">Wait </span>{refreshCooldown}s
+                                </>
+                              ) : loadingMarketData ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                  <span className="hidden sm:inline">Analyzing...</span>
+                                  <span className="sm:hidden">...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-4 h-4 sm:mr-2" />
+                                  <span className="hidden sm:inline">Refresh Analysis</span>
+                                </>
+                              )}
+                            </Button>
                           </div>
                         </div>
 
@@ -4351,9 +4689,17 @@ export default function NemoAIDashboard() {
                           <>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                               <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
-                                <p className="text-xs text-white/60 font-semibold mb-2">👥 Followers</p>
+                                <p className="text-xs text-white/60 font-semibold mb-2">
+                                  {selectedCompetitor.platform === 'tiktok' 
+                                    ? (selectedCompetitor.is_post ? '👁️ Views' : '👥 Fans')
+                                    : (selectedCompetitor.is_post ? '👍 Reactions' : '👥 Followers')}
+                                </p>
                                 <p className="text-xl md:text-2xl font-bold text-white">
-                                  {(selectedCompetitor.stats.follower_count / 1000).toFixed(1)}K
+                                  {selectedCompetitor.stats.follower_count >= 1000000
+                                    ? `${(selectedCompetitor.stats.follower_count / 1000000).toFixed(1)}M`
+                                    : selectedCompetitor.stats.follower_count >= 1000
+                                    ? `${(selectedCompetitor.stats.follower_count / 1000).toFixed(1)}K`
+                                    : selectedCompetitor.stats.follower_count}
                                 </p>
                               </div>
                               <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
@@ -4366,7 +4712,7 @@ export default function NemoAIDashboard() {
                                 </div>
                                 <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
                                   <div
-                                    className="bg-gradient-to-r from-purple-400 to-purple-600 h-1.5 rounded-full"
+                                    className="h-1.5 rounded-full bg-zinc-400"
                                     style={{
                                       width: `${((selectedCompetitor.stats.viral_score || 0) / 10) * 100}%`,
                                     }}
@@ -4374,29 +4720,47 @@ export default function NemoAIDashboard() {
                                 </div>
                               </div>
                               <div
-                                className={`p-4 rounded-lg border ${selectedCompetitor.stats.is_running_ads
-                                  ? "bg-[#1A1918] border-[#2A2826]"
+                                className={`p-4 rounded-lg border ${selectedCompetitor.stats.is_running_ads && !selectedCompetitor.is_post
+                                  ? "bg-green-500/10 border-green-500/30"
                                   : "bg-[#1A1918] border-[#2A2826]"
                                   }`}
                               >
-                                <p className="text-xs font-semibold mb-2">📢 Ads Running</p>
-                                <p className="text-xl font-bold">
-                                  {selectedCompetitor.stats.is_running_ads ? (
-                                    <span className="text-green-400">Active</span>
-                                  ) : (
-                                    <span className="text-gray-400">Inactive</span>
-                                  )}
-                                </p>
+                                {selectedCompetitor.is_post ? (
+                                  <>
+                                    <p className="text-xs text-white/60 font-semibold mb-2">📌 Content Type</p>
+                                    <p className="text-xl font-bold text-white capitalize">
+                                      {selectedCompetitor.platform === 'tiktok' ? 'Video' : 'Post'}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-xs font-semibold mb-2">📢 Ads Running</p>
+                                    <p className="text-xl font-bold">
+                                      {selectedCompetitor.stats.is_running_ads ? (
+                                        <span className="text-green-400">Active</span>
+                                      ) : (
+                                        <span className="text-gray-400">Inactive</span>
+                                      )}
+                                    </p>
+                                  </>
+                                )}
                               </div>
                               <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
-                                <p className="text-xs text-white/60 font-semibold mb-2">📅 Data Age</p>
-                                <p className="text-sm text-white">
-                                  {Math.floor(
-                                    (Date.now() - new Date(selectedCompetitor.stats.scraped_at).getTime()) /
-                                    (1000 * 60 * 60),
-                                  )}
-                                  h ago
+                                <p className="text-xs text-white/60 font-semibold mb-2">
+                                  {selectedCompetitor.is_post ? '📌 Type' : '📅 Data Age'}
                                 </p>
+                                {selectedCompetitor.is_post ? (
+                                  <p className="text-sm text-white capitalize">
+                                    {selectedCompetitor.platform === 'tiktok' ? 'TikTok Video' : 'Facebook Post'}
+                                  </p>
+                                ) : (
+                                  <p className="text-sm text-white">
+                                    {Math.floor(
+                                      (Date.now() - new Date(selectedCompetitor.stats.scraped_at).getTime()) /
+                                      (1000 * 60 * 60),
+                                    )}h ago
+                                  </p>
+                                )}
                               </div>
                             </div>
 

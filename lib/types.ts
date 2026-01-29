@@ -60,8 +60,9 @@ export interface Contact {
 export interface Competitor {
     id: string
     name: string
-    platform: string
+    platform: 'facebook' | 'tiktok'
     url: string
+    is_post: boolean
     created_at: string
     updated_at: string
 }
