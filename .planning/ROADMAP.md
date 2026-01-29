@@ -56,9 +56,35 @@ Plans:
 
 ---
 
+## Current Phase
+
+### Phase 04: TikTok & Viral Analysis for Social Scout
+**Priority:** High  
+**Goal:** Transform Social Scout into multi-platform competitor intelligence with viral analysis
+**Status:** Planning Complete - Ready for Execution
+
+**Scope:**
+- TikTok profile and video scraping
+- Viral content analysis with actionable tips
+- Facebook individual post support
+- Automated competitor ad monitoring
+
+**Plans:** 5 waves
+- [ ] 04-01-PLAN.md — Database foundation (monitor_ads columns)
+- [ ] 04-02-PLAN.md — Platform detection & routing
+- [ ] 04-03-PLAN.md — TikTok + FB Posts scrapers
+- [ ] 04-04-PLAN.md — AI analysis updates + viral analysis
+- [ ] 04-05-PLAN.md — Ad monitoring cron workflow
+
+**Todos:** 10 items in `.planning/todos/pending/` (Social Scout related)
+
+**Estimated Time:** 3-4 hours
+
+---
+
 ## Future Phases (Planned)
 
-### Phase 04: Advanced Features & Integrations
+### Phase 05: Advanced Features & Integrations
 **Priority:** Medium  
 **Goal:** Enhance system capabilities with new features
 

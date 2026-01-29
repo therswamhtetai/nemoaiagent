@@ -1,36 +1,34 @@
 # GSD Project State
 
 ## Current Status
-- **Project**: NemoAI Voice Message Flow Overhaul
-- **Phase**: 03 - Voice Message Flow Overhaul (COMPLETE)
-- **Status**: Phase completed, ready for next phase
-- **Last activity**: 2026-01-29 - Added Exa.ai deep search to Market Intel Agent (Quick Task 005)
+- **Project**: NemoAI Personal AI Assistant
+- **Phase**: 04 - TikTok & Viral Analysis for Social Scout
+- **Status**: Planning complete, ready for Wave 1
+- **Last activity**: 2026-01-29 - Created Phase 04 plans (5 waves, 10 todos)
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Project Overview
-NemoAI personal AI assistant system - voice message flow completely overhauled with zero bugs and high stability.
+NemoAI personal AI assistant system - adding multi-platform competitor intelligence with TikTok support and viral content analysis.
 
-## Phase 03: Voice Message Flow Overhaul ✓ COMPLETE
+## Phase 04: TikTok & Viral Analysis for Social Scout
 
-### Completed Plans
-- **03-01**: Voice recording state machine ✓ (2026-01-28)
-- **03-02**: Error handling and retry logic ✓ (2026-01-29)
-- **03-03**: UI polish and human verification ✓ (2026-01-29)
+### Wave Status
+- [ ] **04-01**: Database Foundation (monitor_ads columns)
+- [ ] **04-02**: Platform Detection & Routing
+- [ ] **04-03**: Scrapers (TikTok + FB Posts)
+- [ ] **04-04**: AI Analysis Updates + Viral Analysis
+- [ ] **04-05**: Ad Monitoring Cron Workflow
 
-### Summary of Changes
-- Voice recording state machine fixed (single source of truth)
-- Thread creation timing fixed (before recording starts)
-- Polling removed (trust Supabase real-time subscription)
-- Automatic retry logic added (3 attempts with 2s backoff)
-- Comprehensive error messages implemented
-- Processing timeout handling (30s warning, 60s timeout)
-- UI polished with "I'm listening..." indicator
-- Message duplication and flicker issues fixed
-- Instant thread scroll (no flash/animation)
-- Loading indicator during thread load
+### Scope
+- 10 todos from `.planning/todos/pending/`
+- 1 existing workflow to modify (Social Scout)
+- 1 new workflow to create (Ad Monitor)
+- 2 database columns to add
 
-## Key Decisions
+## Previous Phase: Voice Message Flow ✓ COMPLETE
+
+### Key Decisions (Phase 03)
 
 | Phase | Decision | Rationale |
 |-------|----------|-----------|
@@ -97,9 +95,8 @@ NemoAI personal AI assistant system - voice message flow completely overhauled w
 ## Accumulated Context
 
 ### Pending Todos
-- 12 items in `.planning/todos/pending/`
-- 10 new: Social Scout TikTok & Viral Analysis enhancement
-- 2 existing: Skills system, Google services integration
+- 10 items in `.planning/todos/pending/` (Social Scout TikTok feature)
+- 2 items in `.planning/todos/pending/` (Skills system, Google services - deferred)
 
 ---
 
