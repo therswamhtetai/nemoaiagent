@@ -4821,6 +4821,68 @@ export default function NemoAIDashboard() {
                                 </div>
                               </div>
                             )}
+
+                            {/* Recent Posts Grid */}
+                            {(() => {
+                              // Parse recent_posts - could be string JSON or already parsed array
+                              let posts: any[] = [];
+                              try {
+                                if (selectedCompetitor.stats.recent_posts) {
+                                  posts = typeof selectedCompetitor.stats.recent_posts === 'string'
+                                    ? JSON.parse(selectedCompetitor.stats.recent_posts)
+                                    : selectedCompetitor.stats.recent_posts;
+                                }
+                              } catch { posts = []; }
+
+                              if (!Array.isArray(posts) || posts.length === 0) return null;
+
+                              return (
+                                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                    <span>📸</span>
+                                    <span>Recent Posts</span>
+                                  </h3>
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                                    {posts.slice(0, 5).map((post: any, index: number) => (
+                                      <a
+                                        key={post.url || index}
+                                        href={post.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group block bg-[#1A1918] rounded-lg border border-[#2A2826] overflow-hidden hover:border-white/30 transition-colors"
+                                      >
+                                        {/* Thumbnail - square aspect ratio */}
+                                        <div className="aspect-square relative bg-black/20">
+                                          {(post.videoThumbnail || post.image || post.images?.[0]) ? (
+                                            <img
+                                              src={post.videoThumbnail || post.image || post.images?.[0]}
+                                              alt=""
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/10">
+                                              <span className="text-2xl text-white/30">📄</span>
+                                            </div>
+                                          )}
+                                          {/* Video indicator overlay */}
+                                          {(post.isVideo || post.videoUrl) && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                              <span className="text-2xl">▶️</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        {/* Caption */}
+                                        <div className="p-2">
+                                          <p className="text-xs text-white/70 line-clamp-2">
+                                            {post.text || 'No caption'}
+                                          </p>
+                                        </div>
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </>
                         )}
                       </div>
