@@ -108,6 +108,7 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 | 002 | 2026-01-28 | Notification font size + modal popup |
 | 003 | 2026-01-28 | Green confetti on task completion |
 | 005 | 2026-01-29 | Added Exa.ai deep search to Market Intel Agent |
+| 006 | 2026-01-29 | Added Recent Posts grid to Market Intel modal |
 
 ---
 
