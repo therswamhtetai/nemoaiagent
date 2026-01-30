@@ -1,14 +1,14 @@
 # NemoAI Project Roadmap
 
-**Project:** Personal AI Assistant System with n8n Workflows  
-**Architecture:** Next.js Frontend + n8n Backend + Supabase Database  
-**Current Status:** Optimization Complete  
+**Project:** Personal AI Assistant System with n8n Workflows
+**Architecture:** Next.js Frontend + n8n Backend + Supabase Database
+**Current Status:** Phase 05 Ready for Execution
 
 ---
 
 ## Completed: Response Speed Optimization
 
-**Status:** Completed  
+**Status:** Completed
 **Goal:** Reduce response time from 10-20 seconds to 3-5 seconds
 
 **Completed:**
@@ -26,9 +26,9 @@
 ## Completed Phases
 
 ### Phase 03: Voice Message Flow Overhaul
-**Priority:** High  
-**Goal:** Complete fix and overhaul of voice message logic for zero bugs and high stability  
-**Status:** ✓ Completed (2026-01-29)
+**Priority:** High
+**Goal:** Complete fix and overhaul of voice message logic for zero bugs and high stability
+**Status:** Completed (2026-01-29)
 **Plans:** 3 plans in 3 waves
 
 **Accomplishments:**
@@ -44,10 +44,10 @@
 - [x] Human verification passed
 
 **Critical Issues Fixed:**
-- ✓ UI flickering - eliminated
-- ✓ Missing messages - fixed with real-time subscription
-- ✓ Transmission errors - retry logic handles
-- ✓ Threads failing to load - instant scroll + loading indicator
+- UI flickering - eliminated
+- Missing messages - fixed with real-time subscription
+- Transmission errors - retry logic handles
+- Threads failing to load - instant scroll + loading indicator
 
 Plans:
 - [x] 03-01-PLAN.md — Fix voice recording state machine and thread handling
@@ -56,12 +56,10 @@ Plans:
 
 ---
 
-## Current Phase
-
 ### Phase 04: TikTok & Viral Analysis for Social Scout
-**Priority:** High  
+**Priority:** High
 **Goal:** Transform Social Scout into multi-platform competitor intelligence with viral analysis
-**Status:** Planning Complete - Ready for Execution
+**Status:** Completed (2026-01-30)
 
 **Scope:**
 - TikTok profile and video scraping
@@ -69,23 +67,37 @@ Plans:
 - Facebook individual post support
 - Automated competitor ad monitoring
 
-**Plans:** 5 waves
-- [ ] 04-01-PLAN.md — Database foundation (monitor_ads columns)
-- [ ] 04-02-PLAN.md — Platform detection & routing
-- [ ] 04-03-PLAN.md — TikTok + FB Posts scrapers
-- [ ] 04-04-PLAN.md — AI analysis updates + viral analysis
-- [ ] 04-05-PLAN.md — Ad monitoring cron workflow
+**Plans:** 5 plans in 5 waves
+- [x] 04-01-PLAN.md — Database foundation (monitor_ads columns)
+- [x] 04-02-PLAN.md — Platform detection & routing
+- [x] 04-03-PLAN.md — TikTok + FB Posts scrapers
+- [x] 04-04-PLAN.md — AI analysis updates + viral analysis
+- [x] 04-05-PLAN.md — Ad monitoring cron workflow
 
-**Todos:** 10 items in `.planning/todos/pending/` (Social Scout related)
+---
 
-**Estimated Time:** 3-4 hours
+### Phase 05: System Prompt Clarification & Confirmation Protocol
+**Priority:** High
+**Goal:** AI agent asks clarifying questions instead of guessing, and confirms before executing tasks
+**Status:** Completed (2026-01-31)
+**Depends on:** Phase 04 (Complete)
+
+**Accomplishments:**
+- [x] Added numbered quick-reply options (1, 2, 3...) for faster user interaction
+- [x] Uncertainty handling with numbered choices instead of guessing
+- [x] Confirmation protocol with quick options before all actions
+- [x] Comprehensive tool usage protocols for all 12 tools
+- [x] Human verification passed
+
+**Plans:** 1 plan in 1 wave
+- [x] 05-01-PLAN.md — Update system prompt with clarification and confirmation protocols
 
 ---
 
 ## Future Phases (Planned)
 
-### Phase 05: Advanced Features & Integrations
-**Priority:** Medium  
+### Phase 06: Advanced Features & Integrations
+**Priority:** Medium
 **Goal:** Enhance system capabilities with new features
 
 **Key Initiatives:**
@@ -204,6 +216,6 @@ Plans:
 
 ---
 
-*Last Updated: January 29, 2026*
+*Last Updated: January 30, 2026*
 *Next Review: February 15, 2026*
 *Document Owner: NemoAI Development Team*
