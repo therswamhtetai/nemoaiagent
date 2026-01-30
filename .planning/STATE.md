@@ -3,10 +3,10 @@
 ## Current Status
 - **Project**: NemoAI Personal AI Assistant
 - **Phase**: 04 - TikTok & Viral Analysis for Social Scout
-- **Status**: Wave 4 complete - Viral Analysis deployed
-- **Last activity**: 2026-01-30 - Completed 04-04-PLAN.md (AI Analysis Updates)
+- **Status**: Phase 04 COMPLETE - All 5 waves delivered
+- **Last activity**: 2026-01-30 - Completed 04-05-PLAN.md (Ad Monitoring Cron)
 
-Progress: ████████░░ 80%
+Progress: ██████████ 100%
 
 ## Project Overview
 NemoAI personal AI assistant system - adding multi-platform competitor intelligence with TikTok support and viral content analysis.
@@ -18,7 +18,7 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 - [x] **04-02**: Platform Detection & Routing ✓
 - [x] **04-03**: Scrapers (TikTok + FB Posts) ✓
 - [x] **04-04**: AI Analysis Updates + Viral Analysis ✓
-- [ ] **04-05**: Ad Monitoring Cron Workflow
+- [x] **04-05**: Ad Monitoring Cron Workflow ✓
 
 ### Scope
 - 10 todos from `.planning/todos/pending/`
@@ -39,6 +39,9 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 | 04-02 | Two-level routing architecture | Platform Router → FB Post Router enables granular scraper selection |
 | 04-04 | Viral Analysis only for TikTok videos | Profile analysis doesn't need deep hook/structure analysis |
 | 04-04 | Shared Gemini model across LLM chains | Reduces credential complexity, consistent behavior |
+| 04-05 | 30-minute schedule interval | Balanced frequency for timely notifications without excessive API calls |
+| 04-05 | Change detection logic (false → true only) | Notify only when competitors START running ads to prevent spam |
+| 04-05 | Manual activation required | n8n API limitation - active field is read-only |
 
 ### Key Decisions (Phase 03)
 
@@ -97,7 +100,8 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 - **Contact Manager:** ID `M61NswfHOOsFxrL6` - Contact operations
 - **Preference Manager:** ID `7g0eMB0yVqi8yMmQ` - User preferences
 - **Memory Tools:** Save and Retrieve knowledge
-- **Social Scout:** ID `HCV-51qLaCdcxHGx2yBcO` - Facebook scraping
+- **Social Scout:** ID `HCV-51qLaCdcxHGx2yBcO` - Multi-platform scraping (FB + TikTok)
+- **Competitor Ad Monitor:** ID `dKGN8ZoDSqtPCqEq` - Automated ad monitoring (requires manual activation)
 - **Voice Pipeline:** ID `JuKoBjeKk5F-e6KNVtR4t` - Audio processing
 - **Auth System:** ID `OPF7ii_KCDkOlZiJqT-BE` - User validation
 - **Idea Manager:** ID `rk_RR1SePy-TNVo68mZRu` - Ideas CRUD
@@ -107,7 +111,7 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 ## Accumulated Context
 
 ### Pending Todos
-- 10 items in `.planning/todos/pending/` (Social Scout TikTok feature)
+- 0 items in `.planning/todos/pending/` for Phase 04 (all complete)
 - 2 items in `.planning/todos/pending/` (Skills system, Google services - deferred)
 
 ---
@@ -140,6 +144,12 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 2. **Test with real frontend** - JSON validation doesn't catch data flow issues
 3. **Keep backups** - workflow backup enabled quick recovery
 
+### Phase 04 Insights
+1. **n8n API limitations** - Active field is read-only; workflows must be manually activated in UI
+2. **Change detection patterns** - Track previous state to detect meaningful changes (false → true)
+3. **Scheduled workflows** - 30-minute intervals balance timeliness with API cost efficiency
+4. **Multi-platform architecture** - Router → Platform Router → Scraper enables extensible design
+
 ---
 
-*State Updated: January 29, 2026*
+*State Updated: January 30, 2026*
