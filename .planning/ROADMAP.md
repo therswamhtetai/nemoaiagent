@@ -2,7 +2,7 @@
 
 **Project:** Personal AI Assistant System with n8n Workflows
 **Architecture:** Next.js Frontend + n8n Backend + Supabase Database
-**Current Status:** Phase 05 Ready for Execution
+**Current Status:** Phase 07 Ready for Execution
 
 ---
 
@@ -91,6 +91,24 @@ Plans:
 
 **Plans:** 1 plan in 1 wave
 - [x] 05-01-PLAN.md — Update system prompt with clarification and confirmation protocols
+
+---
+
+## Active Phase
+
+### Phase 07: Social Watch Tool for Querying Saved Competitor Data
+**Priority:** High
+**Goal:** Add tool for querying and analyzing saved competitor data without re-scraping
+**Status:** Planned
+**Depends on:** None (independent)
+
+**Scope:**
+- New Social Watch n8n workflow for database queries
+- Tool registration in Web API Router
+- Agent differentiation between saved data queries vs fresh scraping
+
+**Plans:** 1 plan in 1 wave
+- [ ] 07-01-PLAN.md — Create Social Watch workflow and register as tool
 
 ---
 
@@ -216,6 +234,6 @@ Plans:
 
 ---
 
-*Last Updated: January 30, 2026*
+*Last Updated: January 31, 2026*
 *Next Review: February 15, 2026*
 *Document Owner: NemoAI Development Team*
