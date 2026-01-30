@@ -456,10 +456,6 @@ export default function NemoAIDashboard() {
   const [slidingTaskId, setSlidingTaskId] = useState<string | null>(null)
   const [slideOffset, setSlideOffset] = useState(0)
 
-  // Sidebar swipe gesture tracking refs
-  const sidebarTouchStartX = useRef<number>(0)
-  const sidebarTouchStartY = useRef<number>(0)
-  const isSidebarSwipe = useRef<boolean>(false)
 
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [editingIdeaId, setEditingIdeaId] = useState<string | null>(null)
@@ -1191,12 +1187,11 @@ export default function NemoAIDashboard() {
 
         setMessages(messagesWithAttachments)
         setShowQuickPrompts(false)
-        // Instant scroll to bottom, then reveal container
+        // Scroll instantly behind the loading overlay, then reveal after 300ms
+        scrollToBottom(true)
         setTimeout(() => {
-          scrollToBottom(true)
-          // Reveal after scroll completes (next frame)
-          requestAnimationFrame(() => setIsLoadingThread(false))
-        }, 0)
+          setIsLoadingThread(false)
+        }, 300)
       } else {
         console.log("[v0] Database returned empty, keeping current messages")
         setIsLoadingThread(false)  // Reveal even if empty
@@ -1443,7 +1438,7 @@ export default function NemoAIDashboard() {
       }
 
       const tempAssistantMsg: Message = {
-        id: crypto.randomUUID(),
+        id: `temp-assistant-${crypto.randomUUID()}`,
         content: assistantContent,
         role: "assistant",
         created_at: new Date().toISOString(),
@@ -1457,7 +1452,7 @@ export default function NemoAIDashboard() {
     } catch (error) {
       console.error("[v0] Webhook error:", error)
       const errorMsg: Message = {
-        id: crypto.randomUUID(),
+        id: `temp-error-${crypto.randomUUID()}`,
         content: "Error: Network error. Please check your connection and try again.",
         role: "assistant",
         created_at: new Date().toISOString(),
@@ -2287,69 +2282,6 @@ export default function NemoAIDashboard() {
     await updateTask(taskId, { status: "completed" })
   }
 
-  // Sidebar swipe gesture handlers for mobile
-  // Sidebar width on mobile is 280px
-  const SIDEBAR_WIDTH = 280
-  const SWIPE_EDGE_ZONE = 40 // pixels from left edge to detect open swipe
-  const SWIPE_THRESHOLD = 60 // minimum pixels to trigger open/close
-  const MIN_SWIPE_DISTANCE = 15 // minimum distance before recognizing as swipe
-  
-  const handleSidebarTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    sidebarTouchStartX.current = touch.clientX
-    sidebarTouchStartY.current = touch.clientY
-    
-    // Determine if this touch can be a sidebar swipe:
-    // 1. If sidebar is CLOSED: only swipe from left edge (within SWIPE_EDGE_ZONE)
-    // 2. If sidebar is OPEN: only swipe from sidebar area OR backdrop (touch started inside or near sidebar)
-    const isLeftEdge = touch.clientX < SWIPE_EDGE_ZONE
-    const isOnSidebarOrBackdrop = isSidebarOpen && touch.clientX < SIDEBAR_WIDTH + 50 // sidebar + small margin
-    
-    isSidebarSwipe.current = isLeftEdge || isOnSidebarOrBackdrop
-  }
-
-  const handleSidebarTouchMove = (e: React.TouchEvent) => {
-    if (!isSidebarSwipe.current) return
-    
-    const touch = e.touches[0]
-    const deltaX = touch.clientX - sidebarTouchStartX.current
-    const deltaY = touch.clientY - sidebarTouchStartY.current
-    
-    // Only start recognizing as swipe after minimum distance
-    if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE) {
-      return // Not enough movement yet
-    }
-    
-    // If vertical scroll is dominant, cancel sidebar swipe
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.5) {
-      isSidebarSwipe.current = false
-    }
-  }
-
-  const handleSidebarTouchEnd = (e: React.TouchEvent) => {
-    if (!isSidebarSwipe.current) {
-      return
-    }
-    
-    const touch = e.changedTouches[0]
-    const deltaX = touch.clientX - sidebarTouchStartX.current
-    const deltaY = touch.clientY - sidebarTouchStartY.current
-    
-    // Reset the swipe flag immediately to prevent double-triggers
-    isSidebarSwipe.current = false
-    
-    // Only trigger if horizontal movement is dominant and exceeds minimum distance
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > MIN_SWIPE_DISTANCE) {
-      if (!isSidebarOpen && deltaX > SWIPE_THRESHOLD) {
-        // Swipe right to open (only works from left edge, validated in touchStart)
-        setIsSidebarOpen(true)
-      } else if (isSidebarOpen && deltaX < -SWIPE_THRESHOLD) {
-        // Swipe left to close (only works from sidebar area, validated in touchStart)
-        setIsSidebarOpen(false)
-      }
-    }
-  }
-
   // Added completeTask function for quick task completion
   const completeTask = async (taskId: string) => {
     await updateTask(taskId, { status: "completed" })
@@ -2758,25 +2690,14 @@ export default function NemoAIDashboard() {
           }}
         />
       )}
-      <div 
+      <div
         className="flex fixed inset-0 w-full overflow-hidden bg-[#0D0C0B] text-white"
-        onTouchStart={handleSidebarTouchStart}
-        onTouchMove={handleSidebarTouchMove}
-        onTouchEnd={handleSidebarTouchEnd}
       >
       {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-30 md:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
-          onTouchEnd={(e) => {
-            // Only close on tap, not on swipe (swipe is handled by parent)
-            const touch = e.changedTouches[0]
-            if (touch && Math.abs(touch.clientX - sidebarTouchStartX.current) < 10) {
-              setIsSidebarOpen(false)
-            }
-          }}
-          style={{ touchAction: 'none' }} // Prevent browser gesture interference
         />
       )}
 
@@ -2949,6 +2870,21 @@ export default function NemoAIDashboard() {
               ))}
             </div>
           </div>
+
+          {/* Settings - Fixed at sidebar bottom */}
+          <div className="mt-auto border-t border-[#2A2826] p-3">
+            <button
+              onClick={() => {
+                loadUserSettings()
+                setShowSettingsModal(true)
+                setIsSidebarOpen(false)
+              }}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#2A2826] transition-all duration-200"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="text-sm font-medium">Settings</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3008,17 +2944,6 @@ export default function NemoAIDashboard() {
                     {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                   </span>
                 )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8 hover:bg-white/10 text-white/70 hover:text-white"
-                onClick={() => {
-                  loadUserSettings()
-                  setShowSettingsModal(true)
-                }}
-              >
-                <Settings className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -3250,17 +3175,19 @@ export default function NemoAIDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark bg-[#1C1917] relative">
-                {/* Loading indicator during thread load */}
+              <div className="flex-1 relative bg-[#1C1917]">
+                {/* Loading overlay - fixed to viewport, chat loads and scrolls behind this */}
                 {isLoadingThread && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#1C1917] z-10">
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#1C1917] z-10 pointer-events-none">
                     <div className="flex items-center gap-2 text-zinc-500">
                       <Loader2 className="w-5 h-5 animate-spin" />
                       <span>Loading conversation...</span>
                     </div>
                   </div>
                 )}
-                <div className={`max-w-3xl mx-auto space-y-6 ${isLoadingThread ? 'opacity-0' : 'opacity-100'}`} style={{ willChange: 'transform' }}>
+                {/* Scrollable content - loads and scrolls behind overlay */}
+                <div className="absolute inset-0 overflow-y-auto p-4 md:p-6 custom-scrollbar-dark">
+                <div className="max-w-3xl mx-auto space-y-6">
                   {/* Voice Error Display */}
                   {voiceError && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 animate-slide-up">
@@ -3403,6 +3330,7 @@ export default function NemoAIDashboard() {
                     </div>
                   )}
                   <div ref={messagesEndRef} />
+                </div>
                 </div>
               </div>
             )
