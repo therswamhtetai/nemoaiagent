@@ -244,7 +244,7 @@
             },
             {
               "fieldId": "recent_posts",
-              "fieldValue": "={{ JSON.stringify($('Apify').item.json) }}"
+              "fieldValue": "={{ JSON.stringify($('Get Dataset').all().map(item => item.json)) }}"
             },
             {
               "fieldId": "is_running_ads",

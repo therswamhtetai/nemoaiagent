@@ -35,7 +35,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googlePalmApi",
         "sendHeaders": true,
@@ -49,7 +49,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"models/embedding-001\",\n  \"taskType\": \"RETRIEVAL_DOCUMENT\",\n  \"title\": \"Memory\",\n  \"content\": {\n    \"parts\": [{\n      \"text\": {{ JSON.stringify($('Memory Save Input').item.json.content) }}\n    }]\n  }\n}",
+        "jsonBody": "={\n  \"model\": \"models/gemini-embedding-001\",\n  \"taskType\": \"RETRIEVAL_DOCUMENT\",\n  \"title\": \"Memory\",\n  \"content\": {\n    \"parts\": [{\n      \"text\": {{ JSON.stringify($('Memory Save Input').item.json.content) }}\n    }]\n  }\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -288,7 +288,7 @@
           },
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\n  \"model\": \"models/embedding-001\",\n  \"taskType\": \"RETRIEVAL_DOCUMENT\",\n  \"title\": \"Memory\",\n  \"content\": {\n    \"parts\": [{\n      \"text\": {{ JSON.stringify($('Memory Save Input').item.json.content) }}\n    }]\n  }\n}",
+          "jsonBody": "={\n  \"model\": \"models/gemini-embedding-001\",\n  \"taskType\": \"RETRIEVAL_DOCUMENT\",\n  \"title\": \"Memory\",\n  \"content\": {\n    \"parts\": [{\n      \"text\": {{ JSON.stringify($('Memory Save Input').item.json.content) }}\n    }]\n  }\n}",
           "options": {}
         },
         "type": "n8n-nodes-base.httpRequest",

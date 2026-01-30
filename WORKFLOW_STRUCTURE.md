@@ -241,7 +241,7 @@
 - `Generate Embedding` - Google Embedding API
 - `Create a row` - Supabase knowledge_base
 
-**Model**: `models/embedding-001` (768 dimensions)
+**Model**: `models/gemini-embedding-001` (3072 dimensions)
 
 ---
 

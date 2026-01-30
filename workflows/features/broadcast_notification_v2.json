@@ -1,0 +1,264 @@
+{
+  "name": "Nemo - Broadcast Notification v2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [180, 240],
+      "id": "chat-trigger",
+      "name": "Broadcast Input",
+      "webhookId": "broadcast-chat-v2"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, username, full_name FROM users WHERE is_active = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [400, 240],
+      "id": "fetch-users",
+      "name": "Get All Active Users",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputMessage = $('Broadcast Input').first().json.chatInput;\nconst users = $input.all();\n\n// Prepare notifications for each user\nconst notifications = users.map(user => ({\n  json: {\n    user_id: user.json.id,\n    title: 'NemoAI Broadcast',\n    message: inputMessage,\n    type: 'broadcast'\n  }\n}));\n\nreturn notifications;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [620, 240],
+      "id": "prepare-broadcasts",
+      "name": "Prepare Broadcast Messages"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OPqleYbWDbxnuHa6",
+          "mode": "list",
+          "cachedResultName": "Nemo - Push Notification Sender"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $json.user_id }}",
+            "title": "={{ $json.title }}",
+            "message": "={{ $json.message }}",
+            "type": "={{ $json.type }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [840, 240],
+      "id": "send-push",
+      "name": "Send Push Notification"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.all();\nconst successCount = results.filter(r => r.json.success === true).length;\nconst failCount = results.length - successCount;\n\nreturn [{\n  json: {\n    success: true,\n    message: `Broadcast sent to ${successCount} users` + (failCount > 0 ? ` (${failCount} failed)` : ''),\n    total_users: results.length,\n    sent: successCount,\n    failed: failCount\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 240],
+      "id": "summarize",
+      "name": "Summarize Results"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [180, 440],
+      "id": "manual-trigger",
+      "name": "Manual Test"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulate chat input for testing\nreturn [{\n  json: {\n    chatInput: 'System Maintenance: NemoAI will be updated tonight at 2 AM MMT. Thank you for your patience!'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 440],
+      "id": "test-data",
+      "name": "Test Message"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, username, full_name FROM users WHERE is_active = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [620, 440],
+      "id": "fetch-users-test",
+      "name": "Get Users (Test)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JbItbwVcQiGCLFAC",
+          "name": "NemoAIDatabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputMessage = $('Test Message').first().json.chatInput;\nconst users = $input.all();\n\nconst notifications = users.map(user => ({\n  json: {\n    user_id: user.json.id,\n    title: 'NemoAI Broadcast',\n    message: inputMessage,\n    type: 'broadcast'\n  }\n}));\n\nreturn notifications;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 440],
+      "id": "prepare-test",
+      "name": "Prepare Test Broadcast"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "OPqleYbWDbxnuHa6",
+          "mode": "list",
+          "cachedResultName": "Nemo - Push Notification Sender"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $json.user_id }}",
+            "title": "={{ $json.title }}",
+            "message": "={{ $json.message }}",
+            "type": "={{ $json.type }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1060, 440],
+      "id": "send-push-test",
+      "name": "Send Push (Test)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.all();\nconst successCount = results.filter(r => r.json.success === true).length;\n\nreturn [{\n  json: {\n    message: `Test broadcast sent to ${successCount} users`,\n    total: results.length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1280, 440],
+      "id": "test-result",
+      "name": "Test Result"
+    }
+  ],
+  "connections": {
+    "Broadcast Input": {
+      "main": [
+        [
+          {
+            "node": "Get All Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Active Users": {
+      "main": [
+        [
+          {
+            "node": "Prepare Broadcast Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Broadcast Messages": {
+      "main": [
+        [
+          {
+            "node": "Send Push Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Push Notification": {
+      "main": [
+        [
+          {
+            "node": "Summarize Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Test Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Message": {
+      "main": [
+        [
+          {
+            "node": "Get Users (Test)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Users (Test)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Test Broadcast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Test Broadcast": {
+      "main": [
+        [
+          {
+            "node": "Send Push (Test)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Push (Test)": {
+      "main": [
+        [
+          {
+            "node": "Test Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  }
+}

@@ -2538,7 +2538,7 @@ export default function NemoAIDashboard() {
         body: JSON.stringify({
           trigger: "manual_refresh",
           user_id: userId,  // Add explicit user_id for N8N workflow
-          link: selectedCompetitor?.url || "" // Send competitor URL
+          link: selectedCompetitor?.original_url || selectedCompetitor?.url || "" // Prefer original_url (post URL) over url (may be page URL)
         }),
       })
 
@@ -4687,82 +4687,98 @@ export default function NemoAIDashboard() {
 
                         {selectedCompetitor.stats && (
                           <>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
-                                <p className="text-xs text-white/60 font-semibold mb-2">
-                                  {selectedCompetitor.platform === 'tiktok' 
-                                    ? (selectedCompetitor.is_post ? '👁️ Views' : '👥 Fans')
-                                    : (selectedCompetitor.is_post ? '👍 Reactions' : '👥 Followers')}
-                                </p>
-                                <p className="text-xl md:text-2xl font-bold text-white">
-                                  {selectedCompetitor.stats.follower_count >= 1000000
-                                    ? `${(selectedCompetitor.stats.follower_count / 1000000).toFixed(1)}M`
-                                    : selectedCompetitor.stats.follower_count >= 1000
-                                    ? `${(selectedCompetitor.stats.follower_count / 1000).toFixed(1)}K`
-                                    : selectedCompetitor.stats.follower_count}
-                                </p>
-                              </div>
-                              <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
-                                <p className="text-xs text-white/60 font-semibold mb-2">🔥 Viral Score</p>
-                                <div className="flex items-baseline gap-2">
-                                  <p className="text-xl md:text-2xl font-bold text-white">
-                                    {selectedCompetitor.stats.viral_score || 0}
-                                  </p>
-                                  <p className="text-xs text-white/50">/10</p>
-                                </div>
-                                <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
-                                  <div
-                                    className="h-1.5 rounded-full bg-zinc-400"
-                                    style={{
-                                      width: `${((selectedCompetitor.stats.viral_score || 0) / 10) * 100}%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                              <div
-                                className={`p-4 rounded-lg border ${selectedCompetitor.stats.is_running_ads && !selectedCompetitor.is_post
-                                  ? "bg-green-500/10 border-green-500/30"
-                                  : "bg-[#1A1918] border-[#2A2826]"
-                                  }`}
-                              >
-                                {selectedCompetitor.is_post ? (
-                                  <>
-                                    <p className="text-xs text-white/60 font-semibold mb-2">📌 Content Type</p>
-                                    <p className="text-xl font-bold text-white capitalize">
-                                      {selectedCompetitor.platform === 'tiktok' ? 'Video' : 'Post'}
+                            {/* Parse post data for post-specific metrics */}
+                            {(() => {
+                              let postMetrics = { likes: 0, comments: 0, shares: 0, views: 0 };
+                              if (selectedCompetitor.is_post && selectedCompetitor.stats.recent_posts) {
+                                try {
+                                  const posts = typeof selectedCompetitor.stats.recent_posts === 'string'
+                                    ? JSON.parse(selectedCompetitor.stats.recent_posts)
+                                    : selectedCompetitor.stats.recent_posts;
+                                  const post = Array.isArray(posts) ? posts[0] : posts;
+                                  
+                                  // DEBUG: Log the actual data structure
+                                  console.log('[DEBUG] Post data for metrics:', post);
+                                  console.log('[DEBUG] Post keys:', post ? Object.keys(post) : 'no post');
+                                  
+                                  if (post) {
+                                    // Extract post metrics from Apify Facebook Posts Scraper fields
+                                    // Primary fields: likes, comments, shares, viewsCount
+                                    // Also check reaction breakdowns: reactionLikeCount, etc.
+                                    postMetrics.likes = post.likes || post.reactionLikeCount || post.reactions || post.likesCount || 0;
+                                    postMetrics.comments = post.comments || post.commentsCount || 0;
+                                    postMetrics.shares = post.shares || post.sharesCount || 0;
+                                    postMetrics.views = post.viewsCount || post.views || post.videoViewCount || 0;
+                                    
+                                    console.log('[DEBUG] Extracted postMetrics:', postMetrics);
+                                  }
+                                } catch (e) { 
+                                  console.error('[DEBUG] Error parsing recent_posts:', e);
+                                }
+                              }
+
+                              return (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
+                                    <p className="text-xs text-white/60 font-semibold mb-2">
+                                      {selectedCompetitor.is_post 
+                                        ? (selectedCompetitor.platform === 'tiktok' ? '👁️ Views' : '👍 Reactions')
+                                        : (selectedCompetitor.platform === 'tiktok' ? '👥 Fans' : '👥 Followers')}
                                     </p>
-                                  </>
-                                ) : (
-                                  <>
-                                    <p className="text-xs font-semibold mb-2">📢 Ads Running</p>
-                                    <p className="text-xl font-bold">
-                                      {selectedCompetitor.stats.is_running_ads ? (
-                                        <span className="text-green-400">Active</span>
-                                      ) : (
-                                        <span className="text-gray-400">Inactive</span>
-                                      )}
+                                    <p className="text-xl md:text-2xl font-bold text-white">
+                                      {(() => {
+                                        const count = selectedCompetitor.is_post 
+                                          ? (selectedCompetitor.platform === 'tiktok' ? postMetrics.views : postMetrics.likes)
+                                          : selectedCompetitor.stats.follower_count;
+                                        if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+                                        if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+                                        return count || 0;
+                                      })()}
                                     </p>
-                                  </>
-                                )}
-                              </div>
-                              <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
-                                <p className="text-xs text-white/60 font-semibold mb-2">
-                                  {selectedCompetitor.is_post ? '📌 Type' : '📅 Data Age'}
-                                </p>
-                                {selectedCompetitor.is_post ? (
-                                  <p className="text-sm text-white capitalize">
-                                    {selectedCompetitor.platform === 'tiktok' ? 'TikTok Video' : 'Facebook Post'}
-                                  </p>
-                                ) : (
-                                  <p className="text-sm text-white">
-                                    {Math.floor(
-                                      (Date.now() - new Date(selectedCompetitor.stats.scraped_at).getTime()) /
-                                      (1000 * 60 * 60),
-                                    )}h ago
-                                  </p>
-                                )}
-                              </div>
-                            </div>
+                                  </div>
+                                  <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
+                                    <p className="text-xs text-white/60 font-semibold mb-2">🔥 Viral Score</p>
+                                    <div className="flex items-baseline gap-2">
+                                      <p className="text-xl md:text-2xl font-bold text-white">
+                                        {selectedCompetitor.stats.viral_score || 0}
+                                      </p>
+                                      <p className="text-xs text-white/50">/10</p>
+                                    </div>
+                                    <div className="w-full bg-white/10 rounded-full h-1.5 mt-2">
+                                      <div
+                                        className="h-1.5 rounded-full bg-zinc-400"
+                                        style={{
+                                          width: `${((selectedCompetitor.stats.viral_score || 0) / 10) * 100}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="p-4 bg-[#1A1918] rounded-lg border border-[#2A2826]">
+                                    <p className="text-xs text-white/60 font-semibold mb-2">
+                                      {selectedCompetitor.is_post ? '🔄 Shares' : '📢 Ads Running'}
+                                    </p>
+                                    {selectedCompetitor.is_post ? (
+                                      <p className="text-xl md:text-2xl font-bold text-white">
+                                        {(() => {
+                                          const count = postMetrics.shares;
+                                          if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+                                          if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+                                          return count || 0;
+                                        })()}
+                                      </p>
+                                    ) : (
+                                      <p className="text-xl font-bold">
+                                        {selectedCompetitor.stats.is_running_ads ? (
+                                          <span className="text-green-400">Active</span>
+                                        ) : (
+                                          <span className="text-gray-400">Inactive</span>
+                                        )}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
                             {selectedCompetitor.stats.summary_analysis && (
                               <div className="p-4 bg-white/5 rounded-lg border border-white/10">
@@ -4822,67 +4838,18 @@ export default function NemoAIDashboard() {
                               </div>
                             )}
 
-                            {/* Recent Posts Grid */}
-                            {(() => {
-                              // Parse recent_posts - could be string JSON or already parsed array
-                              let posts: any[] = [];
-                              try {
-                                if (selectedCompetitor.stats.recent_posts) {
-                                  posts = typeof selectedCompetitor.stats.recent_posts === 'string'
-                                    ? JSON.parse(selectedCompetitor.stats.recent_posts)
-                                    : selectedCompetitor.stats.recent_posts;
-                                }
-                              } catch { posts = []; }
-
-                              if (!Array.isArray(posts) || posts.length === 0) return null;
-
-                              return (
-                                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                    <span>📸</span>
-                                    <span>Recent Posts</span>
-                                  </h3>
-                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                                    {posts.slice(0, 5).map((post: any, index: number) => (
-                                      <a
-                                        key={post.url || index}
-                                        href={post.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="group block bg-[#1A1918] rounded-lg border border-[#2A2826] overflow-hidden hover:border-white/30 transition-colors"
-                                      >
-                                        {/* Thumbnail - square aspect ratio */}
-                                        <div className="aspect-square relative bg-black/20">
-                                          {(post.videoThumbnail || post.image || post.images?.[0]) ? (
-                                            <img
-                                              src={post.videoThumbnail || post.image || post.images?.[0]}
-                                              alt=""
-                                              className="w-full h-full object-cover"
-                                            />
-                                          ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/10">
-                                              <span className="text-2xl text-white/30">📄</span>
-                                            </div>
-                                          )}
-                                          {/* Video indicator overlay */}
-                                          {(post.isVideo || post.videoUrl) && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                              <span className="text-2xl">▶️</span>
-                                            </div>
-                                          )}
-                                        </div>
-                                        {/* Caption */}
-                                        <div className="p-2">
-                                          <p className="text-xs text-white/70 line-clamp-2">
-                                            {post.text || 'No caption'}
-                                          </p>
-                                        </div>
-                                      </a>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                            {/* Visit Link */}
+                            <a
+                              href={selectedCompetitor.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/20 transition-colors w-full md:w-auto"
+                            >
+                              <span>Visit {selectedCompetitor.is_post ? 'Post' : 'Page'}</span>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
                           </>
                         )}
                       </div>

@@ -3,10 +3,10 @@
 ## Current Status
 - **Project**: NemoAI Personal AI Assistant
 - **Phase**: 04 - TikTok & Viral Analysis for Social Scout
-- **Status**: Wave 1 complete - Database foundation ready
-- **Last activity**: 2026-01-30 - Completed 04-01-PLAN.md (Database Foundation)
+- **Status**: Wave 4 complete - Viral Analysis deployed
+- **Last activity**: 2026-01-30 - Completed 04-04-PLAN.md (AI Analysis Updates)
 
-Progress: ██░░░░░░░░ 20%
+Progress: ████████░░ 80%
 
 ## Project Overview
 NemoAI personal AI assistant system - adding multi-platform competitor intelligence with TikTok support and viral content analysis.
@@ -15,9 +15,9 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 
 ### Wave Status
 - [x] **04-01**: Database Foundation (monitor_ads columns) ✓
-- [ ] **04-02**: Platform Detection & Routing
-- [ ] **04-03**: Scrapers (TikTok + FB Posts)
-- [ ] **04-04**: AI Analysis Updates + Viral Analysis
+- [x] **04-02**: Platform Detection & Routing ✓
+- [x] **04-03**: Scrapers (TikTok + FB Posts) ✓
+- [x] **04-04**: AI Analysis Updates + Viral Analysis ✓
 - [ ] **04-05**: Ad Monitoring Cron Workflow
 
 ### Scope
@@ -35,6 +35,10 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 | 04-01 | Combined Tasks 1.1 and 1.2 into single migration | Both tasks modify competitors table - atomic execution reduces complexity |
 | 04-01 | Used partial index for monitor_ads column | Most competitors won't be monitored - partial index saves space and improves cron query performance |
 | 04-01 | Migrated platform field from category to platform values | Normalized 'Software', 'Restaurant' values to 'facebook'/'tiktok' for multi-platform routing |
+| 04-02 | Extended URL pattern detection | Added /share/p/, /share/v/, /share/r/ patterns for Facebook share URLs |
+| 04-02 | Two-level routing architecture | Platform Router → FB Post Router enables granular scraper selection |
+| 04-04 | Viral Analysis only for TikTok videos | Profile analysis doesn't need deep hook/structure analysis |
+| 04-04 | Shared Gemini model across LLM chains | Reduces credential complexity, consistent behavior |
 
 ### Key Decisions (Phase 03)
 

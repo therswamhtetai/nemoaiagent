@@ -62,6 +62,7 @@ export interface Competitor {
     name: string
     platform: 'facebook' | 'tiktok'
     url: string
+    original_url?: string  // Preserves the original submitted URL (post URL) even after url is updated to page URL
     is_post: boolean
     created_at: string
     updated_at: string
