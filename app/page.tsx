@@ -2508,18 +2508,24 @@ export default function NemoAIDashboard() {
 
 
 
-  // Refresh market data via webhook with 60-second cooldown
+  // Refresh market data via webhook with 180-second cooldown (TikTok scraping can take up to 3 minutes)
   const refreshMarketData = async () => {
+    // PREVENT DUPLICATE REQUESTS: Block if already loading or in cooldown
+    if (loadingMarketData || refreshCooldown > 0) {
+      console.log(`[v0-debug] Request blocked - loading: ${loadingMarketData}, cooldown: ${refreshCooldown}s`)
+      return
+    }
+
     try {
       console.log(`[v0-debug] Triggering market data refresh webhook... UserID: ${userId}`)
       if (!userId) {
         console.error("[v0-debug] UserID is missing upon refresh!")
         return
       }
-      
-      // Start loading and cooldown
+
+      // Start loading and cooldown IMMEDIATELY to prevent double-clicks
       setLoadingMarketData(true)
-      setRefreshCooldown(60) // 60 second cooldown
+      setRefreshCooldown(180) // 180 second (3 minute) cooldown for TikTok scraping
 
       // Start cooldown timer
       const cooldownInterval = setInterval(() => {
@@ -2537,21 +2543,26 @@ export default function NemoAIDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           trigger: "manual_refresh",
-          user_id: userId,  // Add explicit user_id for N8N workflow
-          link: selectedCompetitor?.original_url || selectedCompetitor?.url || "" // Prefer original_url (post URL) over url (may be page URL)
+          user_id: userId,
+          link: selectedCompetitor?.url || ""
         }),
       })
 
       if (response.ok) {
-        console.log("[v0] Webhook triggered successfully")
-        // Wait a bit then reload data - Increased to 5s to allow scraper to finish
-        setTimeout(() => loadMarketData(), 5000)
+        console.log("[v0] Webhook triggered successfully - scraping in progress")
+        // Poll for data every 15s until cooldown expires (scraper may take up to 3 minutes)
+        const pollInterval = setInterval(() => {
+          loadMarketData()
+        }, 15000)
+        // Stop polling after 170 seconds
+        setTimeout(() => clearInterval(pollInterval), 170000)
       }
     } catch (error) {
       console.error("[v0] Error triggering webhook:", error)
       setRefreshCooldown(0) // Reset cooldown on error
     } finally {
-      setLoadingMarketData(false)
+      // Keep loading indicator for a bit longer since scraping is async
+      setTimeout(() => setLoadingMarketData(false), 5000)
     }
   }
 
@@ -2584,6 +2595,32 @@ export default function NemoAIDashboard() {
     } catch (error) {
       console.error("[v0] Error deleting competitor:", error)
       alert("Error deleting competitor")
+    }
+  }
+
+  // Toggle ad monitoring for a competitor
+  const toggleAdMonitoring = async (competitorId: string, currentValue: boolean) => {
+    if (!supabase || useFallbackMode) return
+
+    try {
+      console.log(`[v0] Toggling ad monitoring for ${competitorId}: ${currentValue} -> ${!currentValue}`)
+
+      const { error } = await supabase
+        .from('competitors')
+        .update({ monitor_ads: !currentValue })
+        .eq('id', competitorId)
+
+      if (error) throw error
+
+      // Update local state
+      setCompetitors(competitors.map((c) =>
+        c.id === competitorId ? { ...c, monitor_ads: !currentValue } : c
+      ))
+
+      console.log("[v0] Ad monitoring toggled successfully")
+    } catch (error) {
+      console.error("[v0] Error toggling ad monitoring:", error)
+      alert("Error updating ad monitoring")
     }
   }
 
@@ -4313,25 +4350,17 @@ export default function NemoAIDashboard() {
                                       <p className="text-sm text-white/50 capitalize mt-0.5">{competitor.platform} {competitor.platform === 'tiktok' ? 'Profile' : 'Page'}</p>
                                     </div>
                                     
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                      {latestStats?.is_running_ads && (
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/20">
-                                          <span className="w-2 h-2 bg-blue-300 rounded-full animate-pulse" />
-                                          <span className="text-xs font-semibold text-blue-200">ADS</span>
-                                        </div>
-                                      )}
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          deleteCompetitor(competitor.id)
-                                        }}
-                                        className="p-2 hover:bg-[#2A2826] rounded-xl transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Delete"
-                                      >
-                                        <Trash2 className="w-4 h-4 text-white/40 hover:text-white/70" />
-                                      </button>
-                                    </div>
+                                    {/* Delete Action */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        deleteCompetitor(competitor.id)
+                                      }}
+                                      className="p-2 hover:bg-[#2A2826] rounded-xl transition-colors flex-shrink-0"
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="w-4 h-4 text-white/40 hover:text-white/70" />
+                                    </button>
                                   </div>
                                   
                                   {latestStats ? (
@@ -4393,9 +4422,33 @@ export default function NemoAIDashboard() {
                                       
                                       {/* Footer */}
                                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                                        <span className="text-xs text-white/30">
-                                          Updated {latestStats.scraped_at ? new Date(latestStats.scraped_at).toLocaleDateString() : 'N/A'}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          {/* Ad Monitoring Toggle */}
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              toggleAdMonitoring(competitor.id, competitor.monitor_ads || false)
+                                            }}
+                                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all ${
+                                              competitor.monitor_ads
+                                                ? 'bg-green-500/20 border border-green-500/30 text-green-300'
+                                                : 'bg-white/5 border border-white/10 text-white/40 hover:text-white/60'
+                                            }`}
+                                            title={competitor.monitor_ads ? "Ad monitoring enabled" : "Enable ad monitoring"}
+                                          >
+                                            <Bell className={`w-3 h-3 ${competitor.monitor_ads ? 'fill-current' : ''}`} />
+                                            <span className="text-[10px] font-medium">Monitor</span>
+                                          </button>
+                                          {latestStats?.is_running_ads && (
+                                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/20 border border-blue-500/20">
+                                              <span className="w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse" />
+                                              <span className="text-[10px] font-semibold text-blue-200">ADS</span>
+                                            </div>
+                                          )}
+                                          <span className="text-xs text-white/30 ml-1">
+                                            · Updated {latestStats.scraped_at ? new Date(latestStats.scraped_at).toLocaleDateString() : 'N/A'}
+                                          </span>
+                                        </div>
                                         <span className="text-xs text-white/40 group-hover:text-white/60 transition-colors">
                                           Click for details →
                                         </span>
@@ -4420,144 +4473,7 @@ export default function NemoAIDashboard() {
                   )
                 })()}
 
-                {/* ═══════════════════════════════════════════════════════════════════════════════
-                    SECTION 2: POSTS, REELS & VIDEOS (is_post === true)
-                    Completely independent section for individual content analysis
-                ═══════════════════════════════════════════════════════════════════════════════ */}
-                {(() => {
-                  const posts = competitors.filter(c => c.is_post === true)
-                  const filteredPosts = posts.filter(c => 
-                    platformFilter === 'all' || c.platform === platformFilter
-                  )
-
-                  if (posts.length === 0) return null
-
-                  return (
-                    <div className="space-y-6">
-                      {/* Section Header */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-1 h-6 bg-yellow-400/50 rounded-full"></div>
-                        <h2 className="text-xl font-bold text-white">Posts & Videos</h2>
-                        <span className="px-2 py-0.5 text-xs font-medium bg-white/10 rounded-full text-white/60">{filteredPosts.length}</span>
-                      </div>
-
-                      {filteredPosts.length > 0 ? (
-                        <div className="space-y-3">
-                          {filteredPosts.map((competitor) => {
-                            const latestStats = getLatestStats(competitor.id)
-                            const viralScore = latestStats?.viral_score || 0
-                            
-                            return (
-                              <div
-                                key={competitor.id}
-                                onClick={() => {
-                                  setSelectedCompetitor({ ...competitor, stats: latestStats })
-                                  setShowCompetitorModal(true)
-                                }}
-                                className="group relative bg-[#141413] rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:bg-[#1a1a19]"
-                              >
-                                {/* Left Accent */}
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-500/50" />
-                                
-                                <div className="p-4 md:p-5 pl-5 md:pl-6 flex items-center gap-4">
-                                  {/* Platform Icon */}
-                                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#2A2826]">
-                                    {competitor.platform === 'facebook' ? (
-                                      <svg className="w-6 h-6 md:w-7 md:h-7 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                                      </svg>
-                                    ) : (
-                                      <svg className="w-6 h-6 md:w-7 md:h-7 text-[#B1ADA1]" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-                                      </svg>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Content */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-zinc-500/20 text-zinc-300">
-                                        {competitor.platform === 'tiktok' ? 'VIDEO' : 'POST'}
-                                      </span>
-                                    </div>
-                                    <h3 className="font-semibold text-white truncate">{competitor.name}</h3>
-                                    {latestStats?.summary_analysis && (
-                                      <p className="text-xs text-white/50 mt-1 line-clamp-1">{latestStats.summary_analysis}</p>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Stats */}
-                                  {latestStats && (
-                                    <div className="hidden sm:flex items-center gap-6 flex-shrink-0">
-                                      {/* Viral Score */}
-                                      <div className="text-center">
-                                        <div className="relative w-10 h-10">
-                                          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                                            <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="3" className="text-white/10" />
-                                            <circle 
-                                              cx="18" cy="18" r="15" fill="none" 
-                                              stroke="#9CA3AF"
-                                              strokeWidth="3" 
-                                              strokeDasharray={`${viralScore * 9.42} 100`}
-                                              strokeLinecap="round"
-                                            />
-                                          </svg>
-                                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">{viralScore}</span>
-                                        </div>
-                                        <p className="text-[10px] text-white/40 mt-1">VIRAL</p>
-                                      </div>
-                                      
-                                      {/* Engagement */}
-                                      {latestStats.follower_count > 0 && (
-                                        <div className="text-center">
-                                          <p className="text-lg font-bold text-white">
-                                            {latestStats.follower_count >= 1000 
-                                              ? `${(latestStats.follower_count / 1000).toFixed(1)}K` 
-                                              : latestStats.follower_count}
-                                          </p>
-                                          <p className="text-[10px] text-white/40">{competitor.platform === 'tiktok' ? 'VIEWS' : 'LIKES'}</p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Mobile Stats */}
-                                  {latestStats && (
-                                    <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
-                                      <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
-                                        viralScore >= 7 ? 'bg-blue-500/20 text-blue-200' :
-                                        viralScore >= 4 ? 'bg-zinc-500/20 text-zinc-300' :
-                                        'bg-white/10 text-white/60'
-                                      }`}>
-                                        {viralScore}/10
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Delete Button */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      deleteCompetitor(competitor.id)
-                                    }}
-                                    className="p-2 hover:bg-[#2A2826] rounded-lg transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-white/40 hover:text-white/70" />
-                                  </button>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <div className="p-8 bg-[#141413] rounded-2xl text-center">
-                          <p className="text-white/40">No {platformFilter === 'all' ? '' : platformFilter} posts tracked yet.</p>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
+                {/* Posts section removed - individual post analysis handled via chat interface */}
 
                 {/* Empty State - Only show when no competitors at all */}
                 {competitors.length === 0 && !loadingMarketData && (
