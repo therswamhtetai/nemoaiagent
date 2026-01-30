@@ -3,10 +3,10 @@
 ## Current Status
 - **Project**: NemoAI Personal AI Assistant
 - **Phase**: 04 - TikTok & Viral Analysis for Social Scout
-- **Status**: Planning complete, ready for Wave 1
-- **Last activity**: 2026-01-29 - Created Phase 04 plans (5 waves, 10 todos)
+- **Status**: Wave 1 complete - Database foundation ready
+- **Last activity**: 2026-01-30 - Completed 04-01-PLAN.md (Database Foundation)
 
-Progress: ░░░░░░░░░░ 0%
+Progress: ██░░░░░░░░ 20%
 
 ## Project Overview
 NemoAI personal AI assistant system - adding multi-platform competitor intelligence with TikTok support and viral content analysis.
@@ -14,7 +14,7 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 ## Phase 04: TikTok & Viral Analysis for Social Scout
 
 ### Wave Status
-- [ ] **04-01**: Database Foundation (monitor_ads columns)
+- [x] **04-01**: Database Foundation (monitor_ads columns) ✓
 - [ ] **04-02**: Platform Detection & Routing
 - [ ] **04-03**: Scrapers (TikTok + FB Posts)
 - [ ] **04-04**: AI Analysis Updates + Viral Analysis
@@ -27,6 +27,14 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 - 2 database columns to add
 
 ## Previous Phase: Voice Message Flow ✓ COMPLETE
+
+### Key Decisions (Phase 04)
+
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
+| 04-01 | Combined Tasks 1.1 and 1.2 into single migration | Both tasks modify competitors table - atomic execution reduces complexity |
+| 04-01 | Used partial index for monitor_ads column | Most competitors won't be monitored - partial index saves space and improves cron query performance |
+| 04-01 | Migrated platform field from category to platform values | Normalized 'Software', 'Restaurant' values to 'facebook'/'tiktok' for multi-platform routing |
 
 ### Key Decisions (Phase 03)
 
