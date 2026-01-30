@@ -111,8 +111,9 @@ NemoAI personal AI assistant system - adding multi-platform competitor intellige
 ## Accumulated Context
 
 ### Pending Todos
-- 0 items in `.planning/todos/pending/` for Phase 04 (all complete)
-- 2 items in `.planning/todos/pending/` (Skills system, Google services - deferred)
+- 16 items in `.planning/todos/pending/`
+- New (2026-01-30): Thread navigation glitch, System prompt upgrade, Social Watch tool, Theme color enforcement
+- Deferred: Skills system, Google services
 
 ---
 
