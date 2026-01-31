@@ -1,0 +1,518 @@
+{
+  "name": "Nemo - Bug Report Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bug-report",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "webhookId": "bug-report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst raw = item.json || {};\n\nlet body = raw.body ?? raw;\nif (typeof body === 'string') {\n  try {\n    body = JSON.parse(body);\n  } catch (e) {\n    body = {};\n  }\n}\nif (body && typeof body === 'object' && body.body && typeof body.body === 'object') {\n  body = body.body;\n}\n\nconst userId = (body.user_id || body.userId || body.user || raw.user_id || raw.userId || '').toString();\nconst username = (body.username || raw.username || '').toString();\nconst fullName = (body.full_name || body.fullName || raw.full_name || raw.fullName || '').toString();\nconst email = (body.email || raw.email || '').toString();\nconst description = (body.description || raw.description || '').toString();\nconst appVersion = (body.app_version || body.appVersion || raw.app_version || raw.appVersion || '').toString();\nconst screen = (body.screen || raw.screen || '').toString();\nconst clientTimestamp = (body.client_timestamp || body.clientTimestamp || raw.client_timestamp || raw.clientTimestamp || '').toString();\nconst userAgent = (body.user_agent || body.userAgent || raw.user_agent || raw.userAgent || raw.headers?.['user-agent'] || '').toString();\nconst clientLanguage = (body.client_language || body.clientLanguage || raw.client_language || raw.clientLanguage || '').toString();\nconst timezoneOffsetMin = (body.timezone_offset_min || body.timezoneOffsetMin || raw.timezone_offset_min || raw.timezoneOffsetMin || '').toString();\nconst viewport = (body.viewport || raw.viewport || '').toString();\n\nconst photoBinary = item.binary?.photo;\nconst hasPhoto = !!(photoBinary && photoBinary.data);\n\nreturn [\n  {\n    json: {\n      user_id: userId,\n      username,\n      full_name: fullName,\n      email,\n      description,\n      app_version: appVersion,\n      screen,\n      client_timestamp: clientTimestamp,\n      user_agent: userAgent,\n      client_language: clientLanguage,\n      timezone_offset_min: timezoneOffsetMin,\n      viewport,\n      has_photo: hasPhoto,\n      received_at: $now.toISO(),\n    },\n    binary: hasPhoto ? { photo: photoBinary } : {},\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "id": "normalize-input",
+      "name": "Normalize Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !$json.user_id }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        720,
+        160
+      ],
+      "id": "if-missing-user",
+      "name": "Missing user_id?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: false, error_code: 'BAD_REQUEST', message: 'Missing user_id' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        60
+      ],
+      "id": "build-missing-user-error",
+      "name": "Build Missing user_id Error"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        980,
+        160
+      ],
+      "id": "respond-missing-user",
+      "name": "Respond Missing user_id"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ],
+      "id": "fetch-last-submitted",
+      "name": "Fetch Last Submitted"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst base = item.json || {};\n\nconst throttleSec = 120;\nconst nowMs = Date.now();\n\n// Simple per-user throttle using workflow static data\nconst workflowStaticData = $getWorkflowStaticData('global');\nworkflowStaticData.bugReportLastSubmittedAt = workflowStaticData.bugReportLastSubmittedAt || {};\n\nconst userId = (base.user_id || '').toString();\nconst lastMs = userId ? Number(workflowStaticData.bugReportLastSubmittedAt[userId] || 0) : 0;\n\nlet rateLimited = false;\nlet retryAfterSec = 0;\n\nif (lastMs && Number.isFinite(lastMs)) {\n  const deltaSec = (nowMs - lastMs) / 1000;\n  if (deltaSec < throttleSec) {\n    rateLimited = true;\n    retryAfterSec = Math.max(1, Math.ceil(throttleSec - deltaSec));\n  }\n}\n\n// Only record the throttle timestamp for allowed submissions\nif (!rateLimited && userId) {\n  workflowStaticData.bugReportLastSubmittedAt[userId] = nowMs;\n}\n\nreturn [{\n  json: {\n    ...base,\n    throttle_sec: throttleSec,\n    rate_limited: rateLimited,\n    retry_after_sec: retryAfterSec,\n  },\n  binary: item.binary || {},\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        300
+      ],
+      "id": "check-rate-limit",
+      "name": "Check Rate Limit"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.rate_limited }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        300
+      ],
+      "id": "if-rate-limited",
+      "name": "Rate limited?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const retry = $json.retry_after_sec || 60;\nreturn [{ json: { success: false, error_code: 'RATE_LIMITED', message: `Please wait ${retry} seconds before sending another report.` } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        100
+      ],
+      "id": "build-rate-limited-error",
+      "name": "Build RATE_LIMITED Error"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1460,
+        180
+      ],
+      "id": "respond-rate-limited",
+      "name": "Respond RATE_LIMITED"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        360
+      ],
+      "id": "record-submitted",
+      "name": "Record Submitted"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst data = item.json || {};\n\nconst adminChatId = '5913104251';\nif (!adminChatId) {\n  return [{ json: { success: false, error_code: 'MISSING_ADMIN_CHAT_ID', message: 'Admin Telegram destination is not configured.' } }];\n}\n\nconst NL = String.fromCharCode(10);\n\nconst identity = [\n  data.user_id ? `user_id: ${data.user_id}` : null,\n  data.username ? `username: ${data.username}` : null,\n  data.full_name ? `full_name: ${data.full_name}` : null,\n  data.email ? `email: ${data.email}` : null,\n].filter(Boolean).join(NL);\n\nconst contextLines = [\n  data.client_timestamp ? `client_timestamp: ${data.client_timestamp}` : null,\n  data.received_at ? `received_at: ${data.received_at}` : null,\n  data.app_version ? `app_version: ${data.app_version}` : null,\n  data.screen ? `screen: ${data.screen}` : null,\n  data.client_language ? `language: ${data.client_language}` : null,\n  data.timezone_offset_min ? `tz_offset_min: ${data.timezone_offset_min}` : null,\n  data.viewport ? `viewport: ${data.viewport}` : null,\n  data.user_agent ? `user_agent: ${data.user_agent}` : null,\n].filter(Boolean).join(NL);\n\nconst desc = (data.description || '').toString().trim();\nconst descForCaption = desc.length > 700 ? desc.slice(0, 700) + '…' : desc;\n\nconst caption = `<b>Bug report</b>\n\n${identity}\n\n<b>Description</b>\n${descForCaption || '(no description)'}\n\n<b>Context</b>\n${contextLines}`.slice(0, 1000);\nconst text = `<b>Bug report</b>\n\n${identity}\n\n<b>Description</b>\n${desc || '(no description)'}\n\n<b>Context</b>\n${contextLines}`;\n\nreturn [{\n  json: {\n    ...data,\n    admin_chat_id: adminChatId,\n    telegram_caption: caption,\n    telegram_text: text,\n  },\n  binary: item.binary || {},\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        360
+      ],
+      "id": "format-telegram",
+      "name": "Format Telegram"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success === false }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1940,
+        220
+      ],
+      "id": "if-preflight-error",
+      "name": "Preflight error?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2180,
+        220
+      ],
+      "id": "respond-preflight-error",
+      "name": "Respond Preflight Error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_photo }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2180,
+        420
+      ],
+      "id": "if-has-photo",
+      "name": "Has photo?"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendPhoto",
+        "chatId": "={{ $json.admin_chat_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "photo",
+        "additionalFields": {
+          "caption": "={{ $json.telegram_caption }}",
+          "parse_mode": "HTML",
+          "disableNotification": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "alwaysOutputData": true,
+      "position": [
+        2420,
+        320
+      ],
+      "id": "telegram-send-photo",
+      "name": "Telegram Send Photo",
+      "credentials": {
+        "telegramApi": {
+          "id": "mfwXZNcKABwcoNXi",
+          "name": "NemoAI Bug"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.admin_chat_id }}",
+        "text": "={{ $json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "alwaysOutputData": true,
+      "position": [
+        2420,
+        520
+      ],
+      "id": "telegram-send-message",
+      "name": "Telegram Send Message",
+      "credentials": {
+        "telegramApi": {
+          "id": "mfwXZNcKABwcoNXi",
+          "name": "NemoAI Bug"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        360
+      ],
+      "id": "build-success",
+      "name": "Build Success"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2660,
+        420
+      ],
+      "id": "respond-success",
+      "name": "Respond Success"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Missing user_id?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missing user_id?": {
+      "main": [
+        [
+          {
+            "node": "Build Missing user_id Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Last Submitted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Missing user_id Error": {
+      "main": [
+        [
+          {
+            "node": "Respond Missing user_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Last Submitted": {
+      "main": [
+        [
+          {
+            "node": "Check Rate Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Rate Limit": {
+      "main": [
+        [
+          {
+            "node": "Rate limited?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rate limited?": {
+      "main": [
+        [
+          {
+            "node": "Build RATE_LIMITED Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Submitted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build RATE_LIMITED Error": {
+      "main": [
+        [
+          {
+            "node": "Respond RATE_LIMITED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Submitted": {
+      "main": [
+        [
+          {
+            "node": "Format Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Telegram": {
+      "main": [
+        [
+          {
+            "node": "Preflight error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preflight error?": {
+      "main": [
+        [
+          {
+            "node": "Respond Preflight Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has photo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has photo?": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Photo": {
+      "main": [
+        [
+          {
+            "node": "Build Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send Message": {
+      "main": [
+        [
+          {
+            "node": "Build Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
