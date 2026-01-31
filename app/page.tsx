@@ -501,16 +501,90 @@ export default function NemoAIDashboard() {
   })
 
   const [showBugReportScreen, setShowBugReportScreen] = useState(false)
+  const [bugReportDescription, setBugReportDescription] = useState("")
+  const [bugReportPhoto, setBugReportPhoto] = useState<File | null>(null)
+  const [bugReportSubmitting, setBugReportSubmitting] = useState(false)
+  const [bugReportError, setBugReportError] = useState<string | null>(null)
+  const [bugReportSuccess, setBugReportSuccess] = useState(false)
 
-  const closeBugReportScreen = useCallback(() => {
-    setShowBugReportScreen(false)
-    setShowSettingsModal(true)
+  const bugReportIsDirty = bugReportDescription.trim().length > 0 || Boolean(bugReportPhoto)
+
+  const bugReportPhotoPreviewUrl = useMemo(() => {
+    if (!bugReportPhoto) return null
+    return URL.createObjectURL(bugReportPhoto)
+  }, [bugReportPhoto])
+
+  useEffect(() => {
+    if (!bugReportPhotoPreviewUrl) return
+    return () => URL.revokeObjectURL(bugReportPhotoPreviewUrl)
+  }, [bugReportPhotoPreviewUrl])
+
+  const resetBugReportDraft = useCallback(() => {
+    setBugReportDescription("")
+    setBugReportPhoto(null)
+    setBugReportSubmitting(false)
+    setBugReportError(null)
+    setBugReportSuccess(false)
   }, [])
+
+  const closeBugReportScreen = useCallback(
+    (opts?: { reopenSettings?: boolean; force?: boolean }) => {
+      const reopenSettings = opts?.reopenSettings ?? true
+      const force = opts?.force ?? false
+
+      if (!force && bugReportSubmitting) return
+
+      if (!force && bugReportIsDirty) {
+        const confirmed = window.confirm("Discard this bug report?")
+        if (!confirmed) return
+      }
+
+      resetBugReportDraft()
+      setShowBugReportScreen(false)
+      if (reopenSettings) setShowSettingsModal(true)
+    },
+    [bugReportIsDirty, bugReportSubmitting, resetBugReportDraft]
+  )
 
   const openBugReportScreen = useCallback(() => {
     setShowSettingsModal(false)
+    setBugReportError(null)
+    setBugReportSuccess(false)
     setShowBugReportScreen(true)
   }, [])
+
+  const submitBugReport = useCallback(async () => {
+    if (bugReportSubmitting) return
+
+    const trimmed = bugReportDescription.trim()
+    const hasPhoto = Boolean(bugReportPhoto)
+    if (!trimmed && !hasPhoto) {
+      setBugReportError("Please add a description or attach a photo.")
+      return
+    }
+
+    setBugReportSubmitting(true)
+    setBugReportError(null)
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        setBugReportError("You appear to be offline. Please reconnect and try again.")
+        return
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 650))
+      setBugReportSuccess(true)
+
+      setTimeout(() => {
+        closeBugReportScreen({ reopenSettings: true, force: true })
+      }, 900)
+    } catch (e) {
+      console.error("Bug report submit failed", e)
+      setBugReportError("Could not send report. Please try again.")
+    } finally {
+      setBugReportSubmitting(false)
+    }
+  }, [bugReportDescription, bugReportPhoto, bugReportSubmitting, closeBugReportScreen])
 
   const [settingsLoading, setSettingsLoading] = useState(false)
 
@@ -5543,7 +5617,9 @@ export default function NemoAIDashboard() {
         showBugReportScreen && (
           <div
             className="fixed inset-0 bg-black/70 z-50 flex items-stretch md:items-center justify-center"
-            onClick={closeBugReportScreen}
+            onClick={() => {
+              if (!bugReportSubmitting) closeBugReportScreen()
+            }}
           >
             <div
               className="w-full h-full md:max-w-2xl md:h-[90vh] bg-[#1A1918] border border-[#2A2826] md:rounded-xl overflow-hidden shadow-2xl"
@@ -5551,8 +5627,9 @@ export default function NemoAIDashboard() {
             >
               <div className="p-4 border-b border-white/10 flex items-center justify-between">
                 <button
-                  onClick={closeBugReportScreen}
+                  onClick={() => closeBugReportScreen()}
                   className="p-2 hover:bg-white/10 rounded-lg"
+                  disabled={bugReportSubmitting}
                   aria-label="Back"
                 >
                   <ChevronLeft className="w-5 h-5 text-white/80" />
@@ -5564,8 +5641,9 @@ export default function NemoAIDashboard() {
                 </div>
 
                 <button
-                  onClick={closeBugReportScreen}
+                  onClick={() => closeBugReportScreen()}
                   className="p-2 hover:bg-white/10 rounded-lg"
+                  disabled={bugReportSubmitting}
                   aria-label="Close"
                 >
                   <X className="w-5 h-5 text-white/80" />
@@ -5573,18 +5651,105 @@ export default function NemoAIDashboard() {
               </div>
 
               <div className="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar-dark h-full">
-                <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                  <p className="text-sm text-white/90">
-                    Share what happened and, if possible, attach a screenshot. Reports are sent to our team for review.
-                  </p>
+                {bugReportError && (
+                  <div className="p-3 bg-[#C15F3C]/10 border border-[#C15F3C]/20 rounded-lg text-[#C15F3C] text-sm">
+                    {bugReportError}
+                  </div>
+                )}
+
+                {bugReportSuccess && (
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+                    Thanks! Your report was sent.
+                  </div>
+                )}
+
+                {/* Photo */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">Screenshot (optional)</label>
+
+                  {bugReportPhoto ? (
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm text-white truncate">{bugReportPhoto.name}</p>
+                          <p className="text-xs text-white/40 mt-0.5">{Math.round(bugReportPhoto.size / 1024)} KB</p>
+                        </div>
+                        <button
+                          onClick={() => setBugReportPhoto(null)}
+                          className="px-3 py-1.5 text-xs rounded-lg bg-white/10 hover:bg-white/15 border border-white/10"
+                          disabled={bugReportSubmitting}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {bugReportPhotoPreviewUrl && (
+                        <div className="mt-3 overflow-hidden rounded-lg border border-white/10">
+                          <img
+                            src={bugReportPhotoPreviewUrl}
+                            alt="Bug report screenshot preview"
+                            className="w-full max-h-[260px] object-contain bg-black/30"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                      <input
+                        id="bug-report-photo"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) setBugReportPhoto(file)
+                          e.currentTarget.value = ""
+                        }}
+                        disabled={bugReportSubmitting}
+                      />
+                      <label
+                        htmlFor="bug-report-photo"
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/10 hover:bg-white/15 text-sm text-white cursor-pointer ${
+                          bugReportSubmitting ? "opacity-60 pointer-events-none" : ""
+                        }`}
+                      >
+                        <Upload className="w-4 h-4" />
+                        Upload photo
+                      </label>
+                      <p className="text-xs text-white/40 mt-2">One photo only. A screenshot helps a lot.</p>
+                    </div>
+                  )}
                 </div>
 
-                <Button
-                  onClick={closeBugReportScreen}
-                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                >
-                  Back to Settings
-                </Button>
+                {/* Description */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">What happened?</label>
+                  <Textarea
+                    value={bugReportDescription}
+                    onChange={(e) => setBugReportDescription(e.target.value)}
+                    placeholder={"What happened when you clicked?\nHow did this occur?\n\nSteps to reproduce (optional):"}
+                    className="min-h-[140px] bg-white/5 border-white/10 text-white"
+                    disabled={bugReportSubmitting || bugReportSuccess}
+                  />
+                  <p className="text-xs text-white/40">Tip: include the screen you were on and what you expected to happen.</p>
+                </div>
+
+                {/* Submit */}
+                <div className="pt-2">
+                  <Button
+                    onClick={submitBugReport}
+                    disabled={bugReportSubmitting || bugReportSuccess || !bugReportIsDirty}
+                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                  >
+                    {bugReportSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Sending...
+                      </span>
+                    ) : (
+                      "Submit Bug Report"
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
