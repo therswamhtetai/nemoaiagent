@@ -1814,7 +1814,7 @@ export default function NemoAIDashboard() {
         // Replace skeleton with actual response
         setMessages(prev => prev.map(msg =>
           msg.id === loadingMsgId
-            ? { ...msg, id: `msg-${Date.now()}`, content: aiResponse, isLoading: false }
+            ? { ...msg, content: aiResponse, isLoading: false }
             : msg
         ))
       }
