@@ -22,6 +22,7 @@ const protectedApiRoutes = [
   '/api/monitor',
   '/api/notifications',
   '/api/upload',
+  '/api/bug-report',
 ]
 
 export async function middleware(request: NextRequest) {

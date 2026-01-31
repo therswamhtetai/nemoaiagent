@@ -553,6 +553,8 @@ export default function NemoAIDashboard() {
     setShowBugReportScreen(true)
   }, [])
 
+  const BUG_REPORT_THROTTLE_MS = 2 * 60 * 1000
+
   const submitBugReport = useCallback(async () => {
     if (bugReportSubmitting) return
 
@@ -560,6 +562,19 @@ export default function NemoAIDashboard() {
     const hasPhoto = Boolean(bugReportPhoto)
     if (!trimmed && !hasPhoto) {
       setBugReportError("Please add a description or attach a photo.")
+      return
+    }
+
+    if (!userId) {
+      setBugReportError("You must be signed in to submit a report.")
+      return
+    }
+
+    const throttleKey = `nemo_bug_report_last_submitted_at_${userId}`
+    const lastStr = localStorage.getItem(throttleKey)
+    const last = lastStr ? Number(lastStr) : 0
+    if (last && Number.isFinite(last) && Date.now() - last < BUG_REPORT_THROTTLE_MS) {
+      setBugReportError("Please wait a little before sending another report.")
       return
     }
 
@@ -572,7 +587,40 @@ export default function NemoAIDashboard() {
         return
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 650))
+      const form = new FormData()
+      form.set("description", trimmed)
+      if (bugReportPhoto) form.set("photo", bugReportPhoto, bugReportPhoto.name)
+      form.set("user_id", userId)
+      if (userSettings.username) form.set("username", userSettings.username)
+      if (userSettings.full_name) form.set("full_name", userSettings.full_name)
+      if (userSettings.email) form.set("email", userSettings.email)
+      form.set("app_version", CURRENT_VERSION)
+      form.set("screen", "settings:bug-report")
+      form.set("client_timestamp", new Date().toISOString())
+      form.set("user_agent", navigator.userAgent)
+      form.set("client_language", navigator.language || "")
+      form.set("timezone_offset_min", String(new Date().getTimezoneOffset()))
+      form.set("viewport", `${window.innerWidth}x${window.innerHeight}`)
+
+      const res = await fetch("/api/bug-report", {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || (data && data.success === false)) {
+        const code = (data && (data.error_code || data.code)) || "UNKNOWN"
+        if (res.status === 429 || code === "RATE_LIMITED") {
+          setBugReportError("You’re sending reports too quickly. Please try again in a minute.")
+          return
+        }
+        setBugReportError((data && (data.message || data.error)) || "Could not send report. Please try again.")
+        return
+      }
+
+      localStorage.setItem(throttleKey, String(Date.now()))
       setBugReportSuccess(true)
 
       setTimeout(() => {
@@ -580,11 +628,21 @@ export default function NemoAIDashboard() {
       }, 900)
     } catch (e) {
       console.error("Bug report submit failed", e)
-      setBugReportError("Could not send report. Please try again.")
+      setBugReportError("Could not send report. Please check your connection and try again.")
     } finally {
       setBugReportSubmitting(false)
     }
-  }, [bugReportDescription, bugReportPhoto, bugReportSubmitting, closeBugReportScreen])
+  }, [
+    BUG_REPORT_THROTTLE_MS,
+    bugReportDescription,
+    bugReportPhoto,
+    bugReportSubmitting,
+    closeBugReportScreen,
+    userId,
+    userSettings.email,
+    userSettings.full_name,
+    userSettings.username,
+  ])
 
   const [settingsLoading, setSettingsLoading] = useState(false)
 
