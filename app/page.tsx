@@ -63,6 +63,7 @@ import {
   Archive,
   LayoutList,
   ChevronLeft,
+  Bug,
   ArrowUp,
 } from "lucide-react"
 
@@ -491,12 +492,26 @@ export default function NemoAIDashboard() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showNotificationPanel, setShowNotificationPanel] = useState(false)
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
+
   const [userSettings, setUserSettings] = useState({
     username: "",
     full_name: "",
     email: "",
     language_code: "en",
   })
+
+  const [showBugReportScreen, setShowBugReportScreen] = useState(false)
+
+  const closeBugReportScreen = useCallback(() => {
+    setShowBugReportScreen(false)
+    setShowSettingsModal(true)
+  }, [])
+
+  const openBugReportScreen = useCallback(() => {
+    setShowSettingsModal(false)
+    setShowBugReportScreen(true)
+  }, [])
+
   const [settingsLoading, setSettingsLoading] = useState(false)
 
   const [settingsSaved, setSettingsSaved] = useState(false)
@@ -5456,6 +5471,27 @@ export default function NemoAIDashboard() {
                 </Button>
               </div>
 
+              {/* Report a Bug */}
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    openBugReportScreen()
+                  }}
+                  className="w-full p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all text-left"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bug className="w-4 h-4 text-white/70" />
+                      <div>
+                        <p className="text-sm text-white">Report a Bug</p>
+                        <p className="text-xs text-white/40 mt-0.5">Send a screenshot + what happened</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/30" />
+                  </div>
+                </button>
+              </div>
+
               {/* Sign Out Button */}
               <div className="pt-2">
                 <button
@@ -5497,6 +5533,59 @@ export default function NemoAIDashboard() {
                     .catch(console.error)
                 }}
               />
+            </div>
+          </div>
+        )
+      }
+
+      {/* Bug Report Screen */}
+      {
+        showBugReportScreen && (
+          <div
+            className="fixed inset-0 bg-black/70 z-50 flex items-stretch md:items-center justify-center"
+            onClick={closeBugReportScreen}
+          >
+            <div
+              className="w-full h-full md:max-w-2xl md:h-[90vh] bg-[#1A1918] border border-[#2A2826] md:rounded-xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <button
+                  onClick={closeBugReportScreen}
+                  className="p-2 hover:bg-white/10 rounded-lg"
+                  aria-label="Back"
+                >
+                  <ChevronLeft className="w-5 h-5 text-white/80" />
+                </button>
+
+                <div className="text-center">
+                  <h2 className="text-lg font-bold text-white">Report a Bug</h2>
+                  <p className="text-xs text-white/40 mt-0.5">Reports are sent to our team for review</p>
+                </div>
+
+                <button
+                  onClick={closeBugReportScreen}
+                  className="p-2 hover:bg-white/10 rounded-lg"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5 text-white/80" />
+                </button>
+              </div>
+
+              <div className="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar-dark h-full">
+                <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                  <p className="text-sm text-white/90">
+                    Share what happened and, if possible, attach a screenshot. Reports are sent to our team for review.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={closeBugReportScreen}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                >
+                  Back to Settings
+                </Button>
+              </div>
             </div>
           </div>
         )
