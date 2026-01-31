@@ -1583,7 +1583,7 @@ export default function NemoAIDashboard() {
     if (!uploadFile || !uploadType) return
 
     setIsUploading(true)
-    const loadingMsgId = `loading-${Date.now()}`
+    const loadingMsgId = `temp-assistant-${Date.now()}`
 
     try {
       // 1. Upload to Supabase Storage first
@@ -1615,7 +1615,7 @@ export default function NemoAIDashboard() {
         mime_type: uploadFile.type
       }
       const userMessage: Message = {
-        id: `msg-${Date.now()}`,
+        id: `temp-upload-${Date.now()}`,
         role: 'user',
         content: messageContent,
         created_at: new Date().toISOString(),
@@ -1750,7 +1750,7 @@ export default function NemoAIDashboard() {
         // Replace skeleton with actual response
         setMessages(prev => prev.map(msg =>
           msg.id === loadingMsgId
-            ? { ...msg, id: `msg-${Date.now()}`, content: aiResponse, isLoading: false }
+            ? { ...msg, content: aiResponse, isLoading: false }
             : msg
         ))
 
